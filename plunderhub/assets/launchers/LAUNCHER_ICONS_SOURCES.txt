@@ -1,0 +1,22 @@
+The launchers' own logos, bundled so PlunderHub shows them whether or not
+a launcher (or its icon) is installed. Each belongs to its project and
+is used here only to name that launcher.
+
+steam.svg    Steam logo, unmodified - byte for byte the Wikimedia Commons
+             file "Steam icon logo.svg" (SHA-1
+             3fe402adcfc131c7f2428799fec5703a96a42c69, checked 2026-10-20):
+             https://commons.wikimedia.org/wiki/File:Steam_icon_logo.svg
+             Public domain there (too simple for copyright), but a
+             trademark: Steam and the Steam logo are trademarks and/or
+             registered trademarks of Valve Corporation in the U.S. and/or
+             other countries. Used only to name Steam; PlunderHub is not
+             affiliated with or endorsed by Valve.
+heroic.svg   Heroic Games Launcher - GPL-3.0-only.
+             From the project's icon (com.heroicgameslauncher.hgl.svg).
+faugus.svg   Faugus Launcher - MIT.
+             From the project's icon (faugus-launcher.svg).
+lutris.svg   Lutris - GPL-3.0-only.
+             From the project's icon (net.lutris.Lutris.svg).
+bottles.svg  Bottles - GPL-3.0-only.
+             From the project's repository,
+             data/icons/hicolor/scalable/apps/com.usebottles.bottles.svg.

@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in PlunderHub doesn't work as it should
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Easiest:** press **Report bug** in PlunderHub - it fills in your system for you.
+
+        - Then press **Copy log** there and paste it into the Log field below.
+        - Nothing personal is included.
+        - No GitHub account? E-mail **PlunderHub@proton.me**
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What did you do, and what happened?
+      description: Which game, launcher or button? What did you see?
+      placeholder: "I clicked Set sail on a Heroic game, the launcher opened but the game never started."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: false
+  - type: dropdown
+    id: how-often
+    attributes:
+      label: How often does it happen?
+      options:
+        - Every time
+        - Sometimes
+        - Only once so far
+    validations:
+      required: true
+  - type: textarea
+    id: system
+    attributes:
+      label: System
+      description: Filled in by the app's Report bug button (or press "Copy info" there and paste it here).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: Press "Copy log" in the app's Report bug window and paste it here (or ~/.config/plunderhub/plunderhub.log).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag pictures here if something looks wrong.
+    validations:
+      required: false

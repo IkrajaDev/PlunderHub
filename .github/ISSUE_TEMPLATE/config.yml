@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: No GitHub account? Report by e-mail
+    url: mailto:PlunderHub@proton.me
+    about: Send what you did, what happened, and the system info and log from the app's Report bug window to PlunderHub@proton.me.

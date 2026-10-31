@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=PlunderHub
+Comment=Unified game launcher
+Exec=plunderhub
+Icon=PlunderHub
+Terminal=false
+Categories=Game;
+StartupWMClass=PlunderHub
