@@ -47,7 +47,7 @@ from plunderhub.core import apng
 from plunderhub.core.models import GameItem
 from plunderhub.core.persistence import save_cover_map, save_game_icon_map, save_hero_map, save_settings
 from plunderhub.core.utils import HEADERS, http_get_json
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, hidpi_pixbuf, pixbuf_scale, raw_set_source_pixbuf, ui_scale
 import gi
 gi.require_version("PangoCairo", "1.0")
 from gi.repository import PangoCairo  # noqa: E402
@@ -478,8 +478,10 @@ class CoversMixin:
         title = (game_title or "").strip()
         # the same colour as Console Mode's stand-in (home_mixin._title_hue)
         hue = (zlib.crc32(title.encode()) % 1000) / 1000 if title else 0.47
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+        hidpi = ui_scale()          # drawn at width x height, with the screen's own pixels
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width * hidpi, height * hidpi)
         cr = cairo.Context(surface)
+        cr.scale(hidpi, hidpi)
         grad = cairo.LinearGradient(0, 0, width, height)
         grad.add_color_stop_rgb(0, *colorsys.hsv_to_rgb(hue, 0.55, 0.55))
         grad.add_color_stop_rgb(1, *colorsys.hsv_to_rgb((hue + 0.12) % 1, 0.70, 0.22))
@@ -544,7 +546,7 @@ class CoversMixin:
             cr.move_to(pad, py + 4)
             PangoCairo.show_layout(cr, small)
         surface.flush()
-        pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height)
+        pixbuf = hidpi_pixbuf(Gdk.pixbuf_get_from_surface(surface, 0, 0, width * hidpi, height * hidpi), hidpi)
         return pixbuf if pixbuf is not None else self._make_black_cover(width, height)
 
     _COVER_CORNER_RADIUS = 8  # matches .game-cover's own border-radius in app.py
@@ -616,7 +618,10 @@ class CoversMixin:
         if cached is not None:
             for attempt in range(2):
                 try:
-                    pb = GdkPixbuf.Pixbuf.new_from_file_at_size(str(cached), w, h)
+                    # the screen's own pixels (see gi_setup.hidpi_pixbuf)
+                    scale = ui_scale()
+                    pb = hidpi_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(str(cached), w * scale, h * scale),
+                                      scale)
                     return self._round_pixbuf_corners(pb)
                 except Exception as e:
                     if log_context:
@@ -657,12 +662,17 @@ class CoversMixin:
         if src_pixbuf is not None:
             pw, ph = src_pixbuf.get_width(), src_pixbuf.get_height()
             frame = src_pixbuf
+            hidpi = ui_scale()
+            target = resolved_size * hidpi       # the screen's own pixels
             if pw > 0 and ph > 0:
-                scale = min(resolved_size / pw, resolved_size / ph)
+                scale = min(target / pw, target / ph)
                 new_w = max(1, int(pw * scale))
                 new_h = max(1, int(ph * scale))
                 if (new_w, new_h) != (pw, ph):
                     frame = src_pixbuf.scale_simple(new_w, new_h, GdkPixbuf.InterpType.BILINEAR)
+            if hidpi > 1:
+                # the shared source isn't marked, only this size of it
+                frame = hidpi_pixbuf(frame.copy() if frame is src_pixbuf else frame, hidpi)
             return self._round_pixbuf_corners(frame)
         pb = self._make_no_cover_placeholder(resolved_size, resolved_size, show_text=False,
                                              game_title=game_title)
@@ -687,7 +697,9 @@ class CoversMixin:
         width, height = pixbuf.get_width(), pixbuf.get_height()
         if width <= 0 or height <= 0:
             return pixbuf
-        r = max(0, min(radius if radius is not None else self._COVER_CORNER_RADIUS, width // 2, height // 2))
+        hidpi = pixbuf_scale(pixbuf)            # works on pixels: the radius in them
+        r = (radius if radius is not None else self._COVER_CORNER_RADIUS) * hidpi
+        r = max(0, min(r, width // 2, height // 2))
         if r == 0:
             return pixbuf
         surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
@@ -703,9 +715,9 @@ class CoversMixin:
         cr.arc(r, r, r, math.pi, 3 * math.pi / 2)
         cr.close_path()
         cr.clip()
-        Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0)
+        raw_set_source_pixbuf(cr, pixbuf, 0, 0)
         cr.paint()
-        return Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height)
+        return hidpi_pixbuf(Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height), hidpi)
 
     def _steamgrid_search(self, title: str) -> Optional[int]:
         safe_title = urllib.parse.quote(title, safe="")

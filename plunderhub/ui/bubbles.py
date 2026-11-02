@@ -50,6 +50,9 @@ LAYERS = (
     dict(name="near", rmin=20.0, rmax=36.0, count=9, rise=0.70, parallax=0.55, soft=False),
 )
 POP_SECONDS = 0.45
+# the sizes above are for a screen this many logical pixels high (a
+# 1440p monitor); on a smaller one the bubbles shrink with it
+SIZE_REFERENCE_HEIGHT = 1440
 
 
 def _mix(a: RGB, b: RGB, t: float) -> RGB:
@@ -59,6 +62,7 @@ def _mix(a: RGB, b: RGB, t: float) -> RGB:
 class BubbleField:
     def __init__(self):
         self.rng = random.Random()
+        self.size = 1.0          # set_screen_height: the sizes in LAYERS times this
         self.layers = [dict(spec=spec, vel=0.0, bubbles=[self._spawn(spec, anywhere=True)
                                                          for _ in range(spec["count"])])
                        for spec in LAYERS]
@@ -77,12 +81,27 @@ class BubbleField:
 
     def _spawn(self, spec: Dict, anywhere: bool = False) -> Dict:
         rng = self.rng
-        r = rng.uniform(spec["rmin"], spec["rmax"])
+        r = rng.uniform(spec["rmin"], spec["rmax"]) * self.size
         return dict(x=rng.random(), y=rng.random() if anywhere else 1.0 + rng.random() * 0.15,
                     r=r, speed=rng.uniform(0.75, 1.3), sway=rng.uniform(6, 18) * (r / 20 + 0.4),
                     freq=rng.uniform(0.25, 0.6), phase=rng.uniform(0, 6.3),
                     ox=0.0, oy=0.0, vx=0.0, vy=0.0, hit=-9.0, touching=False,
                     pop_at=rng.uniform(0.04, 0.45))
+
+    def set_screen_height(self, height: int):
+        """Bubbles in proportion to the screen: LAYERS' sizes are for a
+        1440 px high one, a 1080p laptop at 125 % (864) gets them at 0.6.
+        The ones already afloat are resized with it."""
+        size = min(1.5, max(0.5, height / SIZE_REFERENCE_HEIGHT)) if height > 0 else 1.0
+        if abs(size - self.size) < 0.01:
+            return
+        k = size / self.size
+        self.size = size
+        for layer in self.layers:
+            for b in layer["bubbles"]:
+                b["r"] *= k
+                b["sway"] *= k
+        self.sprites.clear()
 
     # --- colours ---------------------------------------------------------------
 
@@ -101,15 +120,19 @@ class BubbleField:
             self.colours = colours
             self.sprites.clear()
 
-    def _sprite(self, layer: str, r: float) -> cairo.ImageSurface:
-        key = (layer, round(r * 2) / 2)
+    def _sprite(self, layer: str, r: float, d: int = 1) -> cairo.ImageSurface:
+        """d: the screen's scale - a 2x screen gets 2x the pixels, so the
+        sprite is copied as it is, not stretched (blurry, and resampled on
+        every frame)."""
+        key = (layer, round(r * 2) / 2, d)
         sprite = self.sprites.get(key)
         if sprite is not None:
             return sprite
         c = self.colours
         soft = next(s["soft"] for s in LAYERS if s["name"] == layer)
         size = int(math.ceil(r * 2 + 6))
-        sprite = cairo.ImageSurface(cairo.FORMAT_ARGB32, size, size)
+        sprite = cairo.ImageSurface(cairo.FORMAT_ARGB32, size * d, size * d)
+        sprite.set_device_scale(d, d)
         cr = cairo.Context(sprite)
         cx = cy = size / 2
         a = c["k"]
@@ -173,7 +196,7 @@ class BubbleField:
             shift = layer["vel"] * frames
             solid = spec["name"] != "far"
             for b in layer["bubbles"]:
-                b["y"] += (shift - spec["rise"] * b["speed"] * frames) / h
+                b["y"] += (shift - spec["rise"] * self.size * b["speed"] * frames) / h
                 if solid:
                     self._touch(b, t, w, h, mvx, mvy, frames)
                 b["ox"] += b["vx"] * frames
@@ -216,7 +239,9 @@ class BubbleField:
         nx, ny = dx / d, dy / d
         if not b["touching"]:
             along = max(0.0, mvx * nx + mvy * ny)
-            kick = min(9.0, 1.9 + along * 0.45)
+            # in proportion to the screen, as the bubbles are: the same flick
+            # sends one as far across a laptop's screen as across a 1440p one
+            kick = min(9.0, 1.9 + along * 0.45) * self.size
             b["vx"] += nx * kick
             b["vy"] += ny * kick
             b["hit"] = t
@@ -290,6 +315,7 @@ class BubbleField:
 
     def draw(self, cr, t: float, w: int, h: int):
         x1, y1, x2, y2 = cr.clip_extents()
+        d = max(1, round(cr.get_target().get_device_scale()[0]))
         for layer in self.layers:
             name = layer["spec"]["name"]
             for b in layer["bubbles"]:
@@ -297,8 +323,8 @@ class BubbleField:
                 bx, by, bw, bh = self._rect(b, look)
                 if bx > x2 or by > y2 or bx + bw < x1 or by + bh < y1:
                     continue
-                sprite = self._sprite(name, b["r"])
-                s = sprite.get_width()
+                sprite = self._sprite(name, b["r"], d)
+                s = sprite.get_width() / d
                 cr.save()
                 cr.translate(look[0], look[1])
                 cr.scale(look[2], look[3])

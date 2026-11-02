@@ -157,6 +157,7 @@ class ConsoleModeMixin:
             self._console_hidden_for_game = False
             self._console_reset_cursor_hide_timer()
         self._console_take_fullscreen_back()
+        self._refresh_file_watchers()
         return False
 
     def _console_take_fullscreen_back(self):

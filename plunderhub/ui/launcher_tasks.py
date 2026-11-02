@@ -66,7 +66,7 @@ from plunderhub.core.root_helper import ACTION, FLATPAK_INSTALL, PACMAN_TMPDB, R
 from plunderhub.core.scan_paths import LAUNCHER_FLATPAK_IDS, resolve_launcher_invocation
 from plunderhub.core.tools import TOOLS_BY_NAME, installed_path, reboot_needed
 from plunderhub.core.utils import detect_linux_distro_family, immutable_system, which
-from plunderhub.gi_setup import Gdk, GdkPixbuf, Gio, GLib, Gtk
+from plunderhub.gi_setup import Gdk, GdkPixbuf, Gio, GLib, Gtk, pixbuf_at_size, theme_icon_pixbuf
 from plunderhub.launchers.registry import (
     ARCH_AUR_PACKAGES, LAUNCHER_ICON_NAMES, LAUNCHER_REGISTRY, NATIVE_PACKAGE_TOOLS, NATIVE_RECIPES,
     NativeRecipe, bundled_launcher_icon,
@@ -1073,14 +1073,14 @@ def launcher_pixbuf(name: str, size: int):
     bundled = bundled_launcher_icon(name)
     if bundled is not None:
         try:
-            return GdkPixbuf.Pixbuf.new_from_file_at_size(str(bundled), size, size)
+            return pixbuf_at_size(bundled, size, size)
         except GLib.Error as e:
             logger.debug(f"Couldn't load the bundled icon {bundled}: {e}")
     theme = Gtk.IconTheme.get_default()
     for candidate in LAUNCHER_ICON_NAMES.get(name, []):
         try:
             if theme.has_icon(candidate):
-                return theme.load_icon(candidate, size, Gtk.IconLookupFlags.FORCE_SIZE)
+                return theme_icon_pixbuf(theme, candidate, size, Gtk.IconLookupFlags.FORCE_SIZE)
         except GLib.Error:
             pass
     return None
@@ -1870,7 +1870,7 @@ def _resolve_batch_item(app, item: BatchItem):
             item.refs = there
         return _job_flatpak_refs(item.refs, item.action == "install"), False, None
     if item.action == "remove":
-        resolved = remove_work(app, item.name)
+        resolved = remove_work(app, item.logo or item.name)
         if resolved is None:
             return _("source_not_installed")
         if isinstance(resolved, str):

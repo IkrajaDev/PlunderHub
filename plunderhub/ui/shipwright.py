@@ -38,7 +38,7 @@ from plunderhub.core import flatpak_layers, inspection
 from plunderhub.core.tools import GROUPS, TOOLS, full_upgrade_only, pending_updates, snapshots_on
 from plunderhub.core.persistence import save_settings
 from plunderhub.core.utils import detect_linux_distro_family, immutable_system
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, logical_size
 from plunderhub.icons import get_icon_pixbuf
 from plunderhub.launchers.registry import LAUNCHER_REGISTRY
 from plunderhub.logging_setup import logger
@@ -87,6 +87,12 @@ class Item:
     gui: bool = False
     removable: bool = True
     layer: object = None
+    # the name PlunderHub knows it by (TOOLS_BY_NAME, the launcher
+    # registry): name is what's shown, translated for a descriptive one
+    ident: str = ""
+
+    def __post_init__(self):
+        self.ident = self.ident or self.name
 
 
 def _icon_tile(icon: str, size: int = 48, colour: Optional[tuple] = None) -> Gtk.DrawingArea:
@@ -136,7 +142,7 @@ def _bare_icon(icon: str, size: int, colour: Optional[tuple] = None) -> Gtk.Draw
 
 def _item_icon(item: Item, size: int) -> Gtk.Widget:
     if item.launcher:
-        pb = launcher_tasks.launcher_pixbuf(item.name, size)
+        pb = launcher_tasks.launcher_pixbuf(item.ident, size)
         if pb is not None:
             image = _pixbuf_area(pb)
             image.set_halign(Gtk.Align.START)
@@ -168,7 +174,7 @@ class NavIcon(Gtk.DrawingArea):
     def _draw(self, widget, cr) -> bool:
         w, h = widget.get_allocated_width(), widget.get_allocated_height()
         if self.pb is not None:
-            Gdk.cairo_set_source_pixbuf(cr, self.pb, (w - self.pb.get_width()) / 2, (h - self.pb.get_height()) / 2)
+            Gdk.cairo_set_source_pixbuf(cr, self.pb, (w - logical_size(self.pb)[0]) / 2, (h - logical_size(self.pb)[1]) / 2)
             cr.paint()
         if self.dot:
             x, y = w / 2 + 7, h / 2 - 7
@@ -471,7 +477,7 @@ class ToolCard:
 
     def _art(self, px: int) -> Optional[GdkPixbuf.Pixbuf]:
         if self.item.launcher:
-            pb = launcher_tasks.launcher_pixbuf(self.item.name, px)
+            pb = launcher_tasks.launcher_pixbuf(self.item.ident, px)
             if pb is not None:
                 return pb
             return get_icon_pixbuf("applications-games-symbolic", px, _hex(_accent_rgb(self.dialog)))
@@ -520,7 +526,7 @@ class ToolCard:
             else:
                 nb.set_tooltip_text(_(native.reason).format(**native.args))
             fb.set_tooltip_text(_("task_flatpak_desc").format(
-                app_id=launcher_tasks.flatpak_plan(self.item.name).package))
+                app_id=launcher_tasks.flatpak_plan(self.item.ident).package))
             picked = sw.source_of(key)
             self._setting = True
             nb.set_active(picked == "native")
@@ -716,7 +722,7 @@ class Shipwright:
             name = _(f"sw_name_{tool.id}") if f"sw_name_{tool.id}" in self.app.strings else tool.name
             self.items[tool.id] = Item(tool.id, name, tool.group, _(f"sw_desc_{tool.id}"),
                                        _(used) if used in self.app.strings else "", tool.icon,
-                                       gui=tool.gui, removable=tool.removable)
+                                       gui=tool.gui, removable=tool.removable, ident=tool.name)
         for layer in flatpak_layers.LAYERS:
             key = f"flatpak:{layer.id}"
             used = f"sw_used_{layer.id}"
@@ -1186,7 +1192,11 @@ class Shipwright:
 
     @staticmethod
     def _set_label(btn: Gtk.Button, text: str):
-        btn.get_child().get_children()[0].set_text(text)
+        # None once Shipwright is closed: an update check still running then
+        # comes back to a button that's gone
+        child = btn.get_child()
+        if child is not None:
+            child.get_children()[0].set_text(text)
 
     # --- navigation -------------------------------------------------------------------
 
@@ -1423,7 +1433,7 @@ class Shipwright:
     def _on_flathub(self, key: str) -> bool:
         if key not in self.flatpak_ok:
             item = self.items[key]
-            self.flatpak_ok[key] = item.layer is None and launcher_tasks.flatpak_plan(item.name) is not None
+            self.flatpak_ok[key] = item.layer is None and launcher_tasks.flatpak_plan(item.ident) is not None
         return self.flatpak_ok[key]
 
     def _offers_choice(self, key: str) -> bool:
@@ -1451,7 +1461,7 @@ class Shipwright:
         if key in self.asking:
             return
         self.asking.add(key)
-        name = self.items[key].name
+        name = self.items[key].ident
 
         def work():
             try:
@@ -1611,7 +1621,7 @@ class Shipwright:
                 if item.layer is not None:
                     continue
                 try:
-                    st = launcher_tasks.launcher_state(item.name)
+                    st = launcher_tasks.launcher_state(item.ident)
                 except Exception:
                     logger.exception(f"Checking {item.name}")
                     st = launcher_tasks.LauncherState(installed=False)
@@ -1630,10 +1640,10 @@ class Shipwright:
                 st = states.get(key)
                 if st is None or st["installed"] or key not in self.items or self.items[key].layer is not None:
                     continue
-                if launcher_tasks._flatpak_ids(self.items[key].name):
+                if launcher_tasks._flatpak_ids(self.items[key].ident):
                     continue        # the Flatpak can still be had
                 try:
-                    plan = launcher_tasks.native_plan(self.items[key].name)
+                    plan = launcher_tasks.native_plan(self.items[key].ident)
                 except Exception:
                     logger.exception(f"Looking up {key}")
                     continue
@@ -1933,8 +1943,8 @@ class Shipwright:
         if action == "install" and self._offers_choice(key):
             source = self.source_of(key)
             return launcher_tasks.BatchItem(key, item.name + (" · Flatpak" if source == "flatpak" else ""), action,
-                                            source=source, logo=item.name)
-        return launcher_tasks.BatchItem(key, item.name, action, logo=item.name)
+                                            source=source, logo=item.ident)
+        return launcher_tasks.BatchItem(key, item.name, action, logo=item.ident)
 
     def _start(self, batch: List[launcher_tasks.BatchItem]):
         if self.busy or not batch:
@@ -2003,7 +2013,7 @@ class Shipwright:
             for key in native:
                 update = self.updates[key]
                 # its 32-bit half goes along when that has an update too
-                extras = [p for p in launcher_tasks._extras(self.family, self.items[key].name)
+                extras = [p for p in launcher_tasks._extras(self.family, self.items[key].ident)
                           if p.split(":")[0].split(".")[0] in self.system_updates]
                 batch.append(launcher_tasks.BatchItem(f"update:{key}", self.items[key].name, "update",
                                                       packages=[update.name] + extras))
@@ -2020,7 +2030,7 @@ class Shipwright:
                      for c in checks])
 
     def _open(self, item: Optional[Item]):
-        argv = launcher_tasks.launch_argv(item.name) if item and item.layer is None else None
+        argv = launcher_tasks.launch_argv(item.ident) if item and item.layer is None else None
         if not argv:
             return
         try:

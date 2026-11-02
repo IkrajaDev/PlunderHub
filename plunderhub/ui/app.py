@@ -84,7 +84,7 @@ from plunderhub.core.utils import (
 from plunderhub.core.update_check import (
     fetch_latest_release_tag, is_newer_version, release_page_url,
 )
-from plunderhub.gi_setup import AppIndicator3, Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango, _INDICATOR_BACKEND
+from plunderhub.gi_setup import AppIndicator3, Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango, _INDICATOR_BACKEND, logical_size, pixbuf_at_size, theme_icon_pixbuf
 from plunderhub.i18n import AI_TRANSLATED_LANGUAGES, LANGUAGE_NATIVE_NAMES, LANGUAGE_ORDER, STRINGS
 from plunderhub.icons import get_icon_pixbuf
 from plunderhub.input.joystick import JoystickManager
@@ -143,10 +143,44 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         Gdk.KEY_Down: "down", Gdk.KEY_KP_Down: "down",
     }
 
+    def _fit_default_size(self, width: int, height: int):
+        """The main window at width x height - smaller on a screen that has
+        no room for it (a 1080p laptop at 125 %: 1536 x 864 logical pixels),
+        and then maximized, so it never opens past the screen's edges."""
+        try:
+            display = Gdk.Display.get_default()
+            monitor = display.get_primary_monitor() or display.get_monitor(0) if display else None
+            if monitor is not None:
+                work = monitor.get_workarea()
+                if work.width > 0 and work.height > 0 and (width > work.width - 40 or height > work.height - 40):
+                    width = max(640, min(width, work.width - 40))
+                    height = max(480, min(height, work.height - 40))
+                    self.maximize()
+        except Exception as e:
+            logger.debug(f"Main window: couldn't read the monitor size: {e}")
+        self.set_default_size(width, height)
+
+    def _fit_bubbles_to_screen(self):
+        """The bubbles' size follows the monitor's height (see
+        BubbleField.set_screen_height): the one the window is on once it's
+        shown, the primary one before."""
+        try:
+            display = Gdk.Display.get_default()
+            if display is None:
+                return
+            gdk_window = self.get_window()
+            monitor = (display.get_monitor_at_window(gdk_window) if gdk_window is not None else None) \
+                or display.get_primary_monitor() or display.get_monitor(0)
+            if monitor is not None:
+                self._bubble_field.set_screen_height(monitor.get_geometry().height)
+                self._redraw_all_bubbles()
+        except Exception as e:
+            logger.debug(f"Bubbles: couldn't read the monitor size: {e}")
+
     def __init__(self):
         super().__init__(title=APP_NAME)
         register_bundled_fonts()
-        self.set_default_size(1620, 900)
+        self._fit_default_size(1620, 900)
         self.set_border_width(0)
         self._apply_window_icon()
 
@@ -161,6 +195,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._maybe_prompt_first_run_language()
         _capture_original_theme_preference()
         self._bubble_field = BubbleField()
+        self._fit_bubbles_to_screen()
+        self.connect("map", lambda *_: self._fit_bubbles_to_screen())
+        # the screen it's shown on decides the compact top bar (built before)
+        self.connect("map", lambda *_: hasattr(self, "_topbar_narrow") and self._apply_compact_topbar())
         self._bubble_frame_t = 0.0
         self._bubble_last_frame_us: Optional[int] = None
         self._bubble_full_redraw = True
@@ -297,6 +335,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._tray_quit_item: Optional[Gtk.MenuItem] = None
         self._file_monitors: List[Gio.FileMonitor] = []
         self._watch_debounce_id: Optional[int] = None
+        self._watched_paths: Set[str] = set()
+        self._watch_refresh_at = 0.0
 
         self._load_css()
         self._apply_theme(self.theme)
@@ -914,7 +954,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         pb = get_icon_pixbuf(self._undo_toast_icon_name, 14,
                              "#%02x%02x%02x" % tuple(round(c * 255) for c in rgb))
         if pb is not None:
-            Gdk.cairo_set_source_pixbuf(cr, pb, cx - pb.get_width() / 2, cy - pb.get_height() / 2)
+            Gdk.cairo_set_source_pixbuf(cr, pb, cx - logical_size(pb)[0] / 2, cy - logical_size(pb)[1] / 2)
             cr.paint()
         return False
 
@@ -1678,7 +1718,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         icon = Gtk.Image()
         if _app_icon_file() is not None:
             try:
-                icon.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(str(_app_icon_file()), 72, 72))
+                icon.set_from_pixbuf(pixbuf_at_size(_app_icon_file(), 72, 72))
             except GLib.Error as e:
                 logger.debug(f"Couldn't load the app icon: {e}")
         column.pack_start(icon, False, False, 0)
@@ -2052,6 +2092,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             logger.warning(f"Failed to load font-size CSS: {e}")
         # the hand-drawn text follows along
         self.queue_draw()
+        # bigger text may no longer fit the screen with the full top bar
+        if self.get_mapped() and hasattr(self, "_topbar_narrow"):
+            GLib.idle_add(lambda: (self._apply_compact_topbar(), False)[1])
 
     # the card dialogs' own corners (.home-launch-dialog in theme.py)
     DIALOG_CORNER_RADIUS = 20
@@ -2896,8 +2939,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             pass
         if custom_path is not None:
             try:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(str(custom_path), size, size)
-                return Gtk.Image.new_from_pixbuf(pixbuf)
+                return Gtk.Image.new_from_pixbuf(pixbuf_at_size(custom_path, size, size))
             except Exception as e:
                 logger.debug(f"Couldn't load custom cover image {custom_path!r}: {e}")
         self._maybe_restore_icon(name.lower())
@@ -2906,7 +2948,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         bundled = bundled_launcher_icon(name)
         if bundled is not None:
             try:
-                return Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(str(bundled), size, size))
+                return Gtk.Image.new_from_pixbuf(pixbuf_at_size(bundled, size, size))
             except GLib.Error as e:
                 logger.debug(f"Couldn't load the bundled icon {bundled}: {e}")
         # Otherwise the launcher's own icon, as its package installed it -
@@ -2917,7 +2959,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             try:
                 if not icon_theme.has_icon(candidate):
                     continue
-                pixbuf = icon_theme.load_icon(candidate, size, Gtk.IconLookupFlags.FORCE_SIZE)
+                pixbuf = theme_icon_pixbuf(icon_theme, candidate, size, Gtk.IconLookupFlags.FORCE_SIZE)
                 if pixbuf:
                     return Gtk.Image.new_from_pixbuf(pixbuf)
             except Exception as e:
@@ -3565,8 +3607,14 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
     def _on_launchers_checked(self, running) -> bool:
         self._launchers_checking = False
         if running is not None and running != self._launchers_running:
+            closed = self._launchers_running - running
             self._launchers_running = running
             self._refresh_home_sidebar()
+            if closed and getattr(self, "_proton_upkeep", None) is not None:
+                # what waited for it to close (Proton-GE Latest as its
+                # default, games moved off a removed build) is done now,
+                # not at the next scan
+                self._proton_upkeep.after_scan()
         return False
 
     def _poll_running_launchers(self) -> bool:
@@ -7143,39 +7191,62 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._close_to_tray_or_quit()
         return True
 
-    def _setup_file_watchers(self):
+    def _setup_file_watchers(self) -> bool:
+        """Watches each launcher's library file / Steam steamapps folder
+        that exists now and isn't watched yet; True when one was added.
+        Run at startup and again when the window gets the focus back
+        (_refresh_file_watchers): a launcher installed - or its first game,
+        or a new Steam library - after PlunderHub started has nothing to
+        watch at startup, and its games would wait for F5."""
+        added = False
         single_file_watches: List[Path] = [
             p for p in (faugus_games_path(), lutris_db_path(), bottles_library_path()) if p is not None
         ]
         single_file_watches.extend(heroic_roots())
         for p in single_file_watches:
-            try:
-                if not p.exists():
-                    continue
-                gfile = Gio.File.new_for_path(str(p))
-                monitor = gfile.monitor(Gio.FileMonitorFlags.NONE, None)
-                monitor.connect("changed", self._on_watched_file_changed)
-                self._file_monitors.append(monitor)
-            except Exception as e:
-                logger.warning(f"Couldn't watch: {p} ({e})")
+            added |= self._watch_path(p, self._on_watched_file_changed)
 
         for root in steam_roots():
             steamapps = root / "steamapps"
             if steamapps.exists():
-                self._watch_steamapps_dir(steamapps)
+                added |= self._watch_path(steamapps, self._on_watched_steamapps_changed)
                 for lib in steam_library_paths(root):
                     lib_steamapps = lib / "steamapps"
                     if lib_steamapps.exists():
-                        self._watch_steamapps_dir(lib_steamapps)
+                        added |= self._watch_path(lib_steamapps, self._on_watched_steamapps_changed)
+        return added
 
-    def _watch_steamapps_dir(self, steamapps: Path):
+    def _watch_path(self, path: Path, handler) -> bool:
+        """One monitor per real path (Steam's ~/.steam links lead to the
+        same folder); True when a new one was set up."""
         try:
-            gfile = Gio.File.new_for_path(str(steamapps))
-            monitor = gfile.monitor(Gio.FileMonitorFlags.NONE, None)
-            monitor.connect("changed", self._on_watched_steamapps_changed)
+            if not path.exists():
+                return False
+            key = str(path.resolve())
+            if key in self._watched_paths:
+                return False
+            monitor = Gio.File.new_for_path(str(path)).monitor(Gio.FileMonitorFlags.NONE, None)
+            monitor.connect("changed", handler)
             self._file_monitors.append(monitor)
+            self._watched_paths.add(key)
+            return True
         except Exception as e:
-            logger.warning(f"Couldn't watch: {steamapps} ({e})")
+            logger.warning(f"Couldn't watch: {path} ({e})")
+            return False
+
+    def _refresh_file_watchers(self):
+        """On focus-in, at most every few seconds: a library that appeared
+        since the last look gets watched and the games reloaded once."""
+        now = time.monotonic()
+        if now - self._watch_refresh_at < 3.0:
+            return
+        self._watch_refresh_at = now
+        try:
+            if self._setup_file_watchers():
+                logger.info("A launcher library appeared - watching it, reloading the games")
+                self._schedule_debounced_reload()
+        except Exception as e:
+            logger.warning(f"Refreshing the file watchers failed: {e}")
 
     def _on_watched_file_changed(self, monitor, file, other_file, event_type):
         self._schedule_debounced_reload()

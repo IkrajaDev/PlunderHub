@@ -31,7 +31,7 @@ import cairo
 
 from plunderhub.core.persistence import save_playtime_history
 from plunderhub.core.utils import format_bytes
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, image_surface
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, image_surface, logical_size, ui_scale
 from plunderhub.icons import get_icon_pixbuf
 from plunderhub.logging_setup import logger
 from plunderhub.theme import THEME_PALETTES
@@ -701,9 +701,9 @@ class DashboardView(Gtk.DrawingArea):
             removed = uid not in self.app.game_index
             fade = 0.5 if removed else 1.0
             # at the drawing's scale, so it stays sharp
-            k = self.app._text_factor()
+            k = self.app._text_factor() * ui_scale()     # and the screen's own pixels
             icon = self._icon(uid, title, round(40 * k))
-            iw, ih = icon.get_width() / k, icon.get_height() / k
+            iw, ih = logical_size(icon)[0] / k, logical_size(icon)[1] / k
             cr.save()
             cr.translate(pad + (40 - iw) / 2, ry + 2 + (40 - ih) / 2)
             cr.scale(1 / k, 1 / k)

@@ -125,7 +125,13 @@ def faugus_umu_path() -> Optional[Path]:
     if games_path is None:
         return None
     umu = games_path.parent / "umu-run"
-    return umu if umu.exists() else None
+    if umu.exists():
+        return umu
+    # Faugus downloads its own on its first start (even its distro package
+    # does, beside a system umu-launcher): till then the system's, if any,
+    # so its games aren't missing from the library
+    system = which("umu-run")
+    return Path(system) if system else None
 
 
 FLATPAK_APP_DIRS: List[Path] = [

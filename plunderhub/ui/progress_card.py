@@ -39,7 +39,7 @@ import gi
 gi.require_version("PangoCairo", "1.0")
 from gi.repository import PangoCairo  # noqa: E402
 
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango  # noqa: E402
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, logical_size  # noqa: E402
 from plunderhub.icons import get_icon_pixbuf  # noqa: E402
 from plunderhub.ui.home_mixin import _accent_rgb, _on_accent_rgb, _rounded  # noqa: E402
 
@@ -178,7 +178,7 @@ class ProgressRing(Gtk.DrawingArea):
             icon = get_icon_pixbuf(self.symbolic, round(RING_ICON * 0.7),
                                    "#%02x%02x%02x" % tuple(round(c * 255) for c in fg))
         if icon is not None:
-            Gdk.cairo_set_source_pixbuf(cr, icon, cx - icon.get_width() / 2, cy - icon.get_height() / 2)
+            Gdk.cairo_set_source_pixbuf(cr, icon, cx - logical_size(icon)[0] / 2, cy - logical_size(icon)[1] / 2)
             cr.paint()
         # the percentage, or a check / cross, in a pill on the ring's foot
         text = {"done": "✓", "failed": "✕"}.get(self.state, f"{int(self.shown * 100)}%")

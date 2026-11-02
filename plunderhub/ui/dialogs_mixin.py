@@ -29,7 +29,7 @@ import cairo
 
 from plunderhub.constants import CONTROLLER_GLYPH_TEXT
 from plunderhub.core.models import GameItem
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, logical_size
 from plunderhub.icons import get_icon_pixbuf
 from plunderhub.logging_setup import logger
 from plunderhub.theme import _app_icon_file
@@ -426,7 +426,7 @@ class DialogsMixin:
                 cr.save()
                 cr.translate(cx, cy)
                 cr.scale(size / scale, size / scale)
-                Gdk.cairo_set_source_pixbuf(cr, pb, -pb.get_width() / 2, -pb.get_height() / 2)
+                Gdk.cairo_set_source_pixbuf(cr, pb, -logical_size(pb)[0] / 2, -logical_size(pb)[1] / 2)
                 cr.paint_with_alpha(min(1.0, t * 2.5))
                 cr.restore()
             return False

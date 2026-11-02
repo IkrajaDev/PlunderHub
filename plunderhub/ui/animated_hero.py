@@ -303,9 +303,14 @@ def argb_surface(pb: GdkPixbuf.Pixbuf) -> cairo.ImageSurface:
     surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, pb.get_width(), pb.get_height())
     cr = cairo.Context(surface)
     cr.set_operator(cairo.OPERATOR_SOURCE)
-    Gdk.cairo_set_source_pixbuf(cr, pb, 0, 0)
+    from plunderhub.gi_setup import pixbuf_scale, raw_set_source_pixbuf
+    raw_set_source_pixbuf(cr, pb, 0, 0)       # pixel for pixel
     cr.paint()
     surface.flush()
+    # a HiDPI pixbuf (gi_setup.hidpi_pixbuf) keeps its logical size
+    scale = pixbuf_scale(pb)
+    if scale > 1:
+        surface.set_device_scale(scale, scale)
     return surface
 
 

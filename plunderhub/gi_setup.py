@@ -17,6 +17,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
+import logging
 import os
 
 import cairo
@@ -40,7 +41,8 @@ __all__ = [
 
 def image_surface(window, fmt: int, width: int, height: int, scale: int = 0) -> cairo.ImageSurface:
     """What Gdk.Window.create_similar_image_surface gives (width and height
-    in device pixels, the device scale set), made with pycairo alone:
+    in DEVICE pixels - a caller passes its logical size times the scale -
+    the device scale set), made with pycairo alone:
     PyGObject 3.48 (Ubuntu 24.04, Mint 22) fails on that call with
     "ValueError: invalid enum value: 5" building the cairo.Format enum."""
     if not scale:
@@ -230,6 +232,66 @@ def _drop_double_close(window: Gtk.Window) -> bool:
     return False
 
 
+def _fit_to_screen(window: Gtk.Window):
+    """A window bigger than the screen (a laptop at 175-200 %: 960 x 540
+    logical px) ran off it - its buttons out of reach. Then its content
+    goes into a scrolled window as big as the screen allows: the window
+    is as big as before where there's room, and scrolls where there isn't.
+    The main window has its own way (App._fit_default_size, the compact
+    top bar)."""
+    if hasattr(window, "_fit_default_size") or window.get_window_type() != Gtk.WindowType.TOPLEVEL:
+        return
+    try:
+        display = Gdk.Display.get_default()
+        gdk_window = window.get_window()
+        monitor = (display.get_monitor_at_window(gdk_window) if gdk_window is not None else None) \
+            or display.get_primary_monitor() or display.get_monitor(0)
+        work = monitor.get_workarea()
+        whole = monitor.get_geometry()
+    except Exception:
+        return
+    # Wayland doesn't tell GTK 3 where the panels are (the work area is the
+    # whole screen): room for one is left then
+    panel = 56 if (work.width, work.height) == (whole.width, whole.height) else 0
+    max_w, max_h = work.width - 24, work.height - 24 - panel
+    if max_w < 200 or max_h < 200:
+        return
+    rw, rh = window.get_size_request()
+    if rw > max_w or rh > max_h:
+        window.set_size_request(min(rw, max_w), min(rh, max_h))
+    dw, dh = window.get_default_size()
+    if dw > max_w or dh > max_h:
+        window.set_default_size(min(dw, max_w), min(dh, max_h))
+    def shrink_when_shown(*_a):
+        # the size it was given on show (before this) may still be too big
+        w, h = window.get_size()
+        if w > max_w or h > max_h:
+            window.resize(min(w, max_w), min(h, max_h))
+        return False
+    window.connect("map", lambda *_: GLib.idle_add(shrink_when_shown))
+    minimum, natural = window.get_preferred_size()
+    if minimum.width <= max_w and minimum.height <= max_h:
+        if natural.width > max_w or natural.height > max_h:
+            # it can be made that small: just not as big as it would like
+            window.resize(min(natural.width, max_w), min(natural.height, max_h))
+        return
+    child = window.get_child()
+    if child is None or isinstance(child, Gtk.ScrolledWindow):
+        return
+    window.remove(child)
+    scroller = Gtk.ScrolledWindow()
+    scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+    scroller.set_propagate_natural_width(True)
+    scroller.set_propagate_natural_height(True)
+    scroller.set_max_content_width(max_w)
+    scroller.set_max_content_height(max_h)
+    scroller.add(child)
+    scroller.show()          # a Viewport it adds round a plain child is shown with it
+    window.add(scroller)
+    window._plunderhub_fitted = scroller
+    window.resize(min(natural.width, max_w), min(natural.height, max_h))
+
+
 def _on_realize(widget, *_args) -> bool:
     # On realize, however the widget was made (a constructor like
     # Scale.new_with_range never runs a Python __init__).
@@ -237,6 +299,10 @@ def _on_realize(widget, *_args) -> bool:
         return True
     if isinstance(widget, Gtk.Window):
         widget._plunderhub_hooked = True
+        try:
+            _fit_to_screen(widget)
+        except Exception as e:
+            logging.getLogger("plunderhub").debug(f"Fitting a window to the screen failed: {e}")
         widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         widget.connect("motion-notify-event", _pointer_moved)
         widget.connect("set-focus", _focus_set)
@@ -279,6 +345,119 @@ def _set_markup(label, markup):
 
 Gtk.Label.set_text = _set_text
 Gtk.Label.set_markup = _set_markup
+
+
+# HiDPI pictures. On a 2x screen (GTK's scale 2 - also what KDE's 125 % /
+# 150 % gives a GTK3 app) a pixbuf drawn by Gtk.Image or
+# Gdk.cairo_set_source_pixbuf has one pixel per LOGICAL pixel and is
+# stretched - blurry. So the loaders (icons, logos, covers) make their
+# pictures with ui_scale() times the pixels and mark them (hidpi_pixbuf);
+# a marked pixbuf is drawn at its logical size with all its pixels, by
+# every Gtk.Image and every Gdk.cairo_set_source_pixbuf in the app. Code
+# that lays a picture out by its size asks logical_size(pb), not
+# pb.get_width(). At scale 1 nothing changes.
+HIDPI_OPTION = "x-plunderhub-scale"
+_ui_scale: int = 0
+
+
+def ui_scale() -> int:
+    """The largest scale of the screens (1 or 2, 3 on rare ones), read
+    once: what the picture loaders make pixels for."""
+    global _ui_scale
+    if not _ui_scale:
+        scale = 1
+        try:
+            display = Gdk.Display.get_default()
+            for i in range(display.get_n_monitors() if display is not None else 0):
+                scale = max(scale, display.get_monitor(i).get_scale_factor())
+        except Exception:
+            pass
+        _ui_scale = max(1, min(4, int(scale)))
+    return _ui_scale
+
+
+def hidpi_pixbuf(pb, scale: int):
+    """Marks pb as made with scale x its logical size in pixels."""
+    if pb is not None and scale > 1 and not pb.get_option(HIDPI_OPTION):
+        pb.set_option(HIDPI_OPTION, str(int(scale)))
+    return pb
+
+
+def pixbuf_at_size(path, width: int, height: int):
+    """GdkPixbuf.Pixbuf.new_from_file_at_size with ui_scale() x the pixels,
+    marked: shown at width x height (logical)."""
+    scale = ui_scale()
+    return hidpi_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(str(path), width * scale, height * scale), scale)
+
+
+def theme_icon_pixbuf(theme, name: str, size: int, flags):
+    """Gtk.IconTheme.load_icon with ui_scale() x the pixels, marked."""
+    scale = ui_scale()
+    pb = theme.load_icon_for_scale(name, size, scale, flags)
+    return hidpi_pixbuf(pb, scale) if pb is not None and pb.get_width() > size else pb
+
+
+def pixbuf_scale(pb) -> int:
+    try:
+        return int(pb.get_option(HIDPI_OPTION) or 1) if pb is not None else 1
+    except (TypeError, ValueError):
+        return 1
+
+
+def logical_size(pb):
+    """pb's size as laid out: its pixels over its scale."""
+    s = pixbuf_scale(pb)
+    return pb.get_width() / s, pb.get_height() / s
+
+
+def pixbuf_surface(pb):
+    """pb as a cairo surface with the device scale of its mark."""
+    return Gdk.cairo_surface_create_from_pixbuf(pb, pixbuf_scale(pb), None)
+
+
+_image_set_from_pixbuf = Gtk.Image.set_from_pixbuf
+_image_new_from_pixbuf = Gtk.Image.new_from_pixbuf
+_image_get_pixbuf = Gtk.Image.get_pixbuf
+_cairo_set_source_pixbuf = Gdk.cairo_set_source_pixbuf
+
+
+def _set_from_pixbuf(image, pb):
+    if pixbuf_scale(pb) > 1:
+        image._hidpi_pixbuf = pb       # what get_pixbuf gives back
+        image.set_from_surface(pixbuf_surface(pb))
+    else:
+        image._hidpi_pixbuf = None
+        _image_set_from_pixbuf(image, pb)
+
+
+def _new_from_pixbuf(pb):
+    if pixbuf_scale(pb) > 1:
+        image = Gtk.Image()
+        _set_from_pixbuf(image, pb)
+        return image
+    return _image_new_from_pixbuf(pb)
+
+
+def _get_pixbuf(image):
+    pb = getattr(image, "_hidpi_pixbuf", None)
+    return pb if pb is not None and image.get_storage_type() == Gtk.ImageType.SURFACE else _image_get_pixbuf(image)
+
+
+def _set_source_pixbuf(cr, pb, x, y):
+    if pixbuf_scale(pb) > 1:
+        cr.set_source_surface(pixbuf_surface(pb), x, y)
+    else:
+        _cairo_set_source_pixbuf(cr, pb, x, y)
+
+
+# the original: pixel for pixel, for code that works on pixels (rounding a
+# picture's corners into a plain surface)
+raw_set_source_pixbuf = _cairo_set_source_pixbuf
+
+Gtk.Image.set_from_pixbuf = _set_from_pixbuf
+Gtk.Image.new_from_pixbuf = staticmethod(_new_from_pixbuf)
+Gtk.Image.get_pixbuf = _get_pixbuf
+Gdk.cairo_set_source_pixbuf = _set_source_pixbuf
 
 
 # A frameless window (a card: Report a bug, a task, Shipwright) still got a

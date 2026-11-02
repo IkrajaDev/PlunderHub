@@ -319,18 +319,22 @@ class ConsoleView(Gtk.DrawingArea):
             self._art[key] = pb
         return self._art[key]
 
-    def _cover(self, game: GameItem, w: int, h: int) -> Optional[cairo.ImageSurface]:
-        """The cover cut to w x h, as a surface - made once, not converted
-        from a pixbuf on every frame of a glide."""
-        key = ("cover", game.uid, w, h)
+    def _cover(self, game: GameItem, w: int, h: int, d: float = 1.0) -> Optional[cairo.ImageSurface]:
+        """The cover cut to w x h (logical), as a surface - made once, not
+        converted from a pixbuf on every frame of a glide. d is the pixel
+        density it's drawn at (window scale, x 1+GROW on a card): its
+        pixels are w*d x h*d, so a 2x screen doesn't stretch a 1x picture."""
+        key = ("cover", game.uid, w, h, d)
         if key not in self._art:
             src = self._source(game)
             surface = None
+            pw, ph = max(1, math.ceil(w * d)), max(1, math.ceil(h * d))
             if src is not None and w > 0 and h > 0:
-                s = max(w / src.get_width(), h / src.get_height())
+                s = max(pw / src.get_width(), ph / src.get_height())
                 sw, sh = int(src.get_width() * s) + 1, int(src.get_height() * s) + 1
                 surface = argb_surface(src.scale_simple(sw, sh, GdkPixbuf.InterpType.BILINEAR).new_subpixbuf(
-                    (sw - w) // 2, (sh - h) // 2, w, h))
+                    (sw - pw) // 2, (sh - ph) // 2, pw, ph))
+                surface.set_device_scale(d, d)
             self._art[key] = surface
         return self._art[key]
 
@@ -345,13 +349,13 @@ class ConsoleView(Gtk.DrawingArea):
                 del self._art[key]
         self.queue_draw()
 
-    def _paint_cover(self, cr, game: GameItem, w: int, h: int, alpha: float = 1.0):
+    def _paint_cover(self, cr, game: GameItem, w: int, h: int, alpha: float = 1.0, d: float = 1.0):
         if not self.app.show_covers:
             # the library's name plate
             meta = self.app._home_playtime_text(game.uid) if self.app.show_playtime else None
             _paint_name_plate(cr, self, game.title, meta, w, h, alpha)
             return
-        surface = self._cover(game, w, h)
+        surface = self._cover(game, w, h, d)
         if surface is not None:
             cr.set_source_surface(surface, 0, 0)
             if alpha >= 1:
@@ -394,7 +398,11 @@ class ConsoleView(Gtk.DrawingArea):
     # --- drawing ------------------------------------------------------------------
 
     def _scale(self) -> float:
-        return CONSOLE_UI_SCALE_CSS_PERCENT.get(self.app.console_ui_scale, 100) / 100
+        """The picked size - smaller on a screen under 1080 logical pixels
+        high (a laptop at 150-200 %), where the hero's text would run into
+        the shelves; positions are fractions of the height already."""
+        fit = min(1.0, max(0.5, self.get_allocated_height() / 1080)) if self.get_allocated_height() > 1 else 1.0
+        return CONSOLE_UI_SCALE_CSS_PERCENT.get(self.app.console_ui_scale, 100) / 100 * fit
 
     def _bg_rgb(self) -> Tuple[float, float, float]:
         palette = THEME_PALETTES.get(self.app.theme)
@@ -424,7 +432,7 @@ class ConsoleView(Gtk.DrawingArea):
         if (self._overlay_dirty or overlay is None
                 or (overlay.get_width(), overlay.get_height()) != (W * scale, H * scale)):
             if overlay is None or (overlay.get_width(), overlay.get_height()) != (W * scale, H * scale):
-                overlay = self._overlay = image_surface(window, cairo.FORMAT_ARGB32, W, H, scale)
+                overlay = self._overlay = image_surface(window, cairo.FORMAT_ARGB32, W * scale, H * scale, scale)
             ocr = cairo.Context(overlay)
             ocr.set_operator(cairo.OPERATOR_CLEAR)
             ocr.paint()
@@ -457,7 +465,8 @@ class ConsoleView(Gtk.DrawingArea):
             # full-screen backdrops a step.
             scene = next((v for k, v in self._posters.items() if k[:6] == key[:6]), None)
         if scene is None:
-            scene = image_surface(window, cairo.FORMAT_RGB24, W, H)
+            scale = window.get_scale_factor()
+            scene = image_surface(window, cairo.FORMAT_RGB24, W * scale, H * scale, scale)
             self._paint_scene(cairo.Context(scene), game, W, H, bg)
             scene.flush()
             # this game's older ones go (a playing hero's last frame), and
@@ -490,7 +499,8 @@ class ConsoleView(Gtk.DrawingArea):
             for old in [k for k in self._art if k[0] == "veil"]:
                 del self._art[old]
             hh = int(H * 0.72)
-            veil = image_surface(window, cairo.FORMAT_ARGB32, W, H)
+            scale = window.get_scale_factor()
+            veil = image_surface(window, cairo.FORMAT_ARGB32, W * scale, H * scale, scale)
             cr = cairo.Context(veil)
             cr.rectangle(0, hh, W, H - hh)
             cr.set_source_rgb(*bg)
@@ -580,17 +590,19 @@ class ConsoleView(Gtk.DrawingArea):
         """The game's SteamGridDB hero, filling w x h (cut to it, a little
         above the middle), or None without one. Animated heroes show their
         first frame."""
-        key = ("hero", game.uid, w, h)
+        d = self.get_scale_factor()        # w x h logical, the screen's own pixels
+        key = ("hero", game.uid, w, h, d)
         if key not in self._art:
             pb = None
             path = self.app.hero_path(game.uid) if self.app.show_covers else None
             if path is not None and w > 0 and h > 0:
                 try:
                     src = GdkPixbuf.PixbufAnimation.new_from_file(str(path)).get_static_image()
-                    s = max(w / src.get_width(), h / src.get_height())
+                    s = max(w * d / src.get_width(), h * d / src.get_height())
                     sw, sh = int(src.get_width() * s) + 1, int(src.get_height() * s) + 1
                     pb = argb_surface(src.scale_simple(sw, sh, GdkPixbuf.InterpType.BILINEAR).new_subpixbuf(
-                        (sw - w) // 2, int((sh - h) * 0.3), w, h))
+                        (sw - w * d) // 2, int((sh - h * d) * 0.3), w * d, h * d))
+                    pb.set_device_scale(d, d)
                 except Exception as e:
                     logger.debug(f"Console Mode couldn't load the hero of {game.uid}: {e}")
             # Only one size of a hero is ever on screen: older sizes go -
@@ -680,7 +692,7 @@ class ConsoleView(Gtk.DrawingArea):
         cr.save()
         cr.translate(x0, 0)
         cr.push_group()
-        self._paint_cover(cr, game, pw, ph)
+        self._paint_cover(cr, game, pw, ph, d=self.get_scale_factor())
         pattern = cr.pop_group()
         fade = cairo.LinearGradient(0, 0, pw * 0.55, 0)
         fade.add_color_stop_rgba(0, 0, 0, 0, 0)
@@ -759,13 +771,15 @@ class ConsoleView(Gtk.DrawingArea):
     def _logo(self, px: int) -> Optional[cairo.ImageSurface]:
         """The app's logo at px, read from its file once per size (the view
         redraws every frame while something on it moves)."""
-        key = ("logo", px)
+        d = self.get_scale_factor()
+        key = ("logo", px, d)
         if key not in self._art:
             pb = None
             icon_file = _app_icon_file()
             if icon_file is not None:
                 try:
-                    pb = argb_surface(GdkPixbuf.Pixbuf.new_from_file_at_size(str(icon_file), px, px))
+                    pb = argb_surface(GdkPixbuf.Pixbuf.new_from_file_at_size(str(icon_file), px * d, px * d))
+                    pb.set_device_scale(d, d)
                 except Exception as e:
                     logger.debug(f"Console Mode couldn't load the logo: {e}")
             self._art[key] = pb
@@ -779,7 +793,7 @@ class ConsoleView(Gtk.DrawingArea):
         logo_px = int(64 * s)
         logo = self._logo(logo_px)
         if logo is not None:
-            cr.set_source_surface(logo, pad, cy - logo.get_height() / 2)
+            cr.set_source_surface(logo, pad, cy - logo_px / 2)
             cr.paint()
         tx = pad + logo_px + 14 * s
         pw, ph = self._measure(cr, "Plunder", 26 * s, True)
@@ -986,6 +1000,9 @@ class ConsoleView(Gtk.DrawingArea):
             cw = int(ch * 1.05)
             ch = int(cw * 0.56)
         gap = 22 * s
+        # the cards' own size against the one picked (a short screen makes
+        # them smaller): their badge, star, glow and frame shrink with them
+        self._card_k = min(1.0, ch / max(1.0, app.console_cover_size * 4 / 3 * 0.8)) if app.show_covers else 1.0
         top = H * 0.50
         shelf_h = ch + int(ch * GROW) + 78 * s
         target_y = self.shelf * shelf_h
@@ -1029,17 +1046,19 @@ class ConsoleView(Gtk.DrawingArea):
         cr.translate(gx, sy + ch)          # grows up and to the right
         cr.scale(scale, scale)
         cr.translate(0, -ch)
+        c = getattr(self, "_card_k", 1.0)
         if selected:
             for k, a in ((16, 0.10), (10, 0.16), (5, 0.25)):
-                _rounded(cr, -k, -k, cw + 2 * k, ch + 2 * k, 12 + k)
+                k *= c
+                _rounded(cr, -k, -k, cw + 2 * k, ch + 2 * k, 12 * c + k)
                 cr.set_source_rgba(*accent, a * self.sel_anim)
                 cr.fill()
         cr.set_source_surface(self._card_image(game, cw, ch, active_shelf, accent), 0, 0)
         cr.paint()
         if selected:
-            _rounded(cr, -1.5, -1.5, cw + 3, ch + 3, 13)
+            _rounded(cr, -1.5 * c, -1.5 * c, cw + 3 * c, ch + 3 * c, 13 * c)
             cr.set_source_rgba(1, 1, 1, 0.95)
-            cr.set_line_width(3)
+            cr.set_line_width(3 * c)
             cr.stroke()
         cr.restore()
 
@@ -1050,15 +1069,19 @@ class ConsoleView(Gtk.DrawingArea):
         running = app._is_game_running(game.uid)
         is_new = app._is_new_game(game.uid)
         key = ("card", game.uid, cw, ch, active_shelf, running, is_new, game.uid in app.favorites,
-               self.tab is None, accent, app.show_covers)
+               self.tab is None, accent, app.show_covers,
+               self.get_scale_factor(), getattr(self, "_card_k", 1.0))
         image = self._art.get(key)
         if image is not None:
             return image
         for old in [k for k in self._art if k[0] == "card" and k[1] == game.uid and k[2:5] == key[2:5]]:
             del self._art[old]
         window = self.get_window()
-        scale = window.get_scale_factor() if window is not None else 1
-        image = image_surface(window, cairo.FORMAT_ARGB32, cw, ch, scale)
+        # pixels for the selected card's full size too (_draw_card grows it
+        # by GROW): drawn at its own size it is scaled down a little, never up
+        d = (window.get_scale_factor() if window is not None else 1) * (1 + GROW)
+        image = cairo.ImageSurface(cairo.FORMAT_ARGB32, max(1, math.ceil(cw * d)), max(1, math.ceil(ch * d)))
+        image.set_device_scale(d, d)
         cr = cairo.Context(image)
         from gi.repository import PangoCairo
         options = PangoCairo.context_get_font_options(self.get_pango_context())
@@ -1067,14 +1090,19 @@ class ConsoleView(Gtk.DrawingArea):
         # cover and shade cut to the rounded corners together (see
         # home_mixin._draw_home_hero), so no light rim shows at them
         cr.push_group()
-        self._paint_cover(cr, game, cw, ch, 1.0 if active_shelf else 0.55)
+        self._paint_cover(cr, game, cw, ch, 1.0 if active_shelf else 0.55, d)
         if running:
             cr.set_source_rgba(0, 0, 0, 0.5)
             cr.paint()
         cr.pop_group_to_source()
-        _rounded(cr, 0, 0, cw, ch, 12)
+        c = getattr(self, "_card_k", 1.0)
+        _rounded(cr, 0, 0, cw, ch, 12 * c)
         cr.fill()
-        badge = self._badge(game.launcher) if self.tab is None else None
+        # badge, New tag and star as on a full-size card, scaled with it
+        cr.save()
+        cr.scale(c, c)
+        cw = cw / c
+        badge = self._badge(game.launcher, d * c) if self.tab is None else None
         if badge is not None:
             bx, by = 10, 10
             cr.set_source_rgba(0, 0, 0, 0.55)
@@ -1101,15 +1129,22 @@ class ConsoleView(Gtk.DrawingArea):
             cr.close_path()
             cr.set_source_rgba(*STAR, 1)
             cr.fill()
+        cr.restore()
         image.flush()
         self._art[key] = image
         return image
 
-    def _badge(self, launcher: str) -> Optional[cairo.ImageSurface]:
-        key = ("badge", launcher)
+    def _badge(self, launcher: str, d: float = 1.0) -> Optional[cairo.ImageSurface]:
+        """The launcher's 28 px logo, with 28*d pixels (see _cover)."""
+        key = ("badge", launcher, d)
         if key not in self._art:
-            pb = self.app._home_launcher_badge(launcher, 28)
-            self._art[key] = argb_surface(pb) if pb is not None else None
+            pb = self.app._home_launcher_badge(launcher, math.ceil(28 * d))
+            surface = None
+            if pb is not None:
+                surface = argb_surface(pb)
+                k = pb.get_width() / 28
+                surface.set_device_scale(k, k)
+            self._art[key] = surface
         return self._art[key]
 
     def _draw_legend(self, cr, W, H, pad, s, game: GameItem):

@@ -41,7 +41,7 @@ from plunderhub.constants import (  # noqa: E402
 from plunderhub.core.desktop import is_tiling_window_manager  # noqa: E402
 from plunderhub.core.models import HEROIC_STORES, GameItem  # noqa: E402
 from plunderhub.core.persistence import save_settings  # noqa: E402
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, image_surface  # noqa: E402
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, image_surface, logical_size, pixbuf_at_size, pixbuf_surface  # noqa: E402
 from plunderhub.icons import get_icon_pixbuf  # noqa: E402
 from plunderhub.logging_setup import logger  # noqa: E402
 from plunderhub.theme import _app_icon_file  # noqa: E402
@@ -88,7 +88,8 @@ def _pixbuf_area(pb: GdkPixbuf.Pixbuf) -> Gtk.DrawingArea:
     image re-laid the whole window out whenever the pointer came onto it or
     left it (GTK3 drops an image's icon on every change of state)."""
     area = _windowless_area()
-    area.set_size_request(pb.get_width(), pb.get_height())
+    w, h = logical_size(pb)
+    area.set_size_request(round(w), round(h))
 
     def draw(_widget, cr):
         Gdk.cairo_set_source_pixbuf(cr, pb, 0, 0)
@@ -386,6 +387,29 @@ def _hero_glyph_area(kind: str, size: int, rgba=None) -> Gtk.DrawingArea:
     return area
 
 
+def _paint_grid_shadows(holder, cr, flow) -> bool:
+    """The lifted cards' shadows, under the grid (see
+    GameCard._shadow_under_grid) - before the grid itself is drawn."""
+    if getattr(holder, "_card_shadows_for", None) is not flow:
+        return False
+    # only the cards that rose (the holder is drawn again under every
+    # bubble that moves over it)
+    for card in list(flow._lifted_cards):
+        lift = card._lift_px()
+        if lift <= 0.01:
+            flow._lifted_cards.discard(card)
+            continue
+        coords = card.deco.translate_coordinates(holder, 0, 0)
+        w, h = card.deco.get_allocated_width(), card.deco.get_allocated_height()
+        if coords is None or w <= 0 or h <= 0:
+            flow._lifted_cards.discard(card)        # gone from the grid
+            continue
+        shadow, pad = _card_shadow(w, h, _accent_rgb(holder))
+        cr.set_source_surface(shadow, coords[0] - pad, coords[1] - pad - lift)
+        cr.paint_with_alpha(min(1.0, card._lift))
+    return False
+
+
 def _card_shadow(w: int, h: int, accent: Tuple[float, float, float]) -> Tuple[cairo.ImageSurface, int]:
     """The lifted card's shadow and glow - the box-shadow it used to have,
     0 16px 30px black 55% and 0 0 24px of the accent at 30%."""
@@ -401,6 +425,19 @@ def _row_shadow(w: int, h: int, accent: Tuple[float, float, float], focused: boo
     """0 12px 26px black 50% and 0 0 22px of the accent - a touch more of
     it stood on - as the row's box-shadow was."""
     return _soft_shadow(w, h, 14, ((22, 0, (*accent, 0.32 if focused else 0.28)), (26, 12, (0, 0, 0, 0.5))))
+
+
+class _CappedBox(Gtk.Box):
+    """A box that would like to be `natural` wide, but makes do with what
+    its children need at the least."""
+
+    def __init__(self, natural: int, **kw):
+        super().__init__(**kw)
+        self._natural = natural
+
+    def do_get_preferred_width(self):
+        minimum, _natural = Gtk.Box.do_get_preferred_width(self)
+        return minimum, max(minimum, self._natural)
 
 
 class GameCard(Gtk.Box):
@@ -626,6 +663,15 @@ class GameCard(Gtk.Box):
             ox, oy = coords
             pad = _card_shadow(w, h, _accent_rgb(btn))[1]
             _queue_area(btn, ox - pad, oy - pad - self.LIFT_PX * 1.3, w + 2 * pad, h + 2 * pad + self.LIFT_PX * 1.3)
+            # the shadow is painted under the grid (_shadow_under_grid): its
+            # holder is asked too - the toplevel's area alone didn't reach it
+            # above the grid's own window
+            flow = self.get_parent().get_parent() if self.get_parent() is not None else None
+            holder = flow.get_parent() if isinstance(flow, Gtk.FlowBox) else None
+            at = self.deco.translate_coordinates(holder, 0, 0) if holder is not None else None
+            if at is not None:
+                holder.queue_draw_area(int(at[0] - pad) - 1, int(at[1] - pad - self.LIFT_PX * 1.3) - 1,
+                                       int(w + 2 * pad) + 3, int(h + 2 * pad + self.LIFT_PX * 1.3) + 3)
 
     def _queue_card(self):
         """The card drawn again where it is now - lifted, its top is above
@@ -664,12 +710,30 @@ class GameCard(Gtk.Box):
         coords = self.deco.translate_coordinates(widget, 0, 0)
         ox, oy = coords if coords else (0, 0)
         w, h = self.deco.get_allocated_width(), self.deco.get_allocated_height()
-        if w > 0 and h > 0:
+        if w > 0 and h > 0 and not self._shadow_under_grid():
             shadow, pad = _card_shadow(w, h, _accent_rgb(widget))
             cr.set_source_surface(shadow, ox - pad, oy - pad - lift)
             cr.paint_with_alpha(min(1.0, self._lift))
         cr.translate(0, -lift)
         return False
+
+    def _shadow_under_grid(self) -> bool:
+        """The grid (a FlowBox) has a window of its own that cuts off
+        whatever is drawn past its edge - the glow of a card in its first
+        row or column, hard, where there's little room round it (a narrow
+        screen). So the shadows are painted by what holds the grid, under
+        it (_paint_grid_shadows): True when that's set up."""
+        child = self.get_parent()
+        flow = child.get_parent() if child is not None else None
+        holder = flow.get_parent() if isinstance(flow, Gtk.FlowBox) else None
+        if holder is None:
+            return False
+        if getattr(holder, "_card_shadows_for", None) is not flow:
+            holder._card_shadows_for = flow
+            flow._lifted_cards = set()
+            holder.connect("draw", _paint_grid_shadows, flow)
+        flow._lifted_cards.add(self)
+        return True
 
     # --- clicks ----------------------------------------------------------
 
@@ -904,7 +968,7 @@ class GameCard(Gtk.Box):
             options = PangoCairo.context_get_font_options(widget.get_pango_context())
 
             def render(top: int, height: int):
-                surface = image_surface(window, cairo.FORMAT_ARGB32, w, max(1, height), scale)
+                surface = image_surface(window, cairo.FORMAT_ARGB32, w * scale, max(1, height) * scale, scale)
                 scr = cairo.Context(surface)
                 if options is not None:
                     scr.set_font_options(options)
@@ -1008,8 +1072,8 @@ class GameCard(Gtk.Box):
             # No plate behind it - just a soft shadow so it reads on light covers.
             badge = app._home_launcher_badge(self.game.launcher, 32)
             if badge is not None:
-                bx, by = 26 - badge.get_width() / 2, 26 - badge.get_height() / 2
-                shadow = Gdk.cairo_surface_create_from_pixbuf(badge, 1, None)
+                bx, by = 26 - logical_size(badge)[0] / 2, 26 - logical_size(badge)[1] / 2
+                shadow = pixbuf_surface(badge)
                 cr.set_source_rgba(0, 0, 0, 0.55)
                 cr.mask_surface(shadow, bx + 1, by + 1.5)
                 Gdk.cairo_set_source_pixbuf(cr, badge, bx, by)
@@ -1050,9 +1114,9 @@ class LauncherLogo(Gtk.DrawingArea):
         self._tick = 0
         self.set_size_request(40, 40)
         self.set_valign(Gtk.Align.CENTER)
-        scale = max(1, app.get_scale_factor())
-        pb = app._load_launcher_icon(name, self.SIZE * scale).get_pixbuf()
-        self._logo = Gdk.cairo_surface_create_from_pixbuf(pb, scale, None) if pb is not None else None
+        # with the screen's own pixels (see gi_setup.hidpi_pixbuf)
+        pb = app._load_launcher_icon(name, self.SIZE).get_pixbuf()
+        self._logo = pixbuf_surface(pb) if pb is not None else None
         self._shadow = self._blurred(pb) if pb is not None else None
         self.connect("draw", self._draw)
         self.connect("unrealize", lambda *_: self._stop())
@@ -1197,7 +1261,7 @@ class HomeMixin:
                 return
             logo.plunderhub_px = px
             try:
-                logo.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(str(icon_file), px, px))
+                logo.set_from_pixbuf(pixbuf_at_size(icon_file, px, px))
             except Exception as e:
                 logger.debug(f"Couldn't load the app icon for the sidebar: {e}")
         first = word.get_children()[0]
@@ -1974,6 +2038,31 @@ class HomeMixin:
         kofi_pill.pack_start(kofi_btn, False, False, 0)
         bar.pack_end(kofi_pill, False, False, 0)
 
+        # On a narrow screen (a laptop at 175-200 %) Ko-fi and Report bug
+        # share one ⋯ menu instead (see _apply_compact_topbar)
+        more_btn = Gtk.MenuButton()
+        more_btn.get_style_context().add_class("home-sort-btn")
+        more_btn.set_can_focus(False)
+        more_btn.set_tooltip_text(self._("about_report_bug") + " · Ko-fi")
+        self._topbar_more_menu_extra = []
+        more_btn.add(self._icon_image_at_size("view-more-symbolic", 18))
+        more_menu = Gtk.Menu()
+        for text, action in ((self._("about_report_bug"), lambda *_: self._show_bug_report(more_btn)),
+                             ("Ko-fi", lambda *_: webbrowser.open(KOFI_URL))):
+            item = Gtk.MenuItem(label=text)
+            item.connect("activate", action)
+            more_menu.append(item)
+        more_btn.set_popup(more_menu)
+        self._topbar_more_menu = more_menu
+        more_pill = Gtk.Box()
+        more_pill.get_style_context().add_class("home-toolbar")
+        more_pill.set_valign(Gtk.Align.CENTER)
+        more_pill.set_margin_end(6)
+        more_pill.pack_start(more_btn, False, False, 0)
+        bar.pack_end(more_pill, False, False, 0)
+        self._topbar_wide = (kofi_pill, report_pill)
+        self._topbar_narrow = more_pill
+
         # icons only - their names show on hover
         self.select_btn = self._make_icon_button("circle-dashed-check-symbolic", self._("selection_mode_btn"))
         self.select_btn.connect("clicked", lambda *_: self._exit_selection_mode() if self.selection_mode
@@ -2024,14 +2113,85 @@ class HomeMixin:
             sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
             sep.get_style_context().add_class("home-toolbar-sep")
             return sep
-        for widget in (self.view_grid_btn, self.view_list_btn, divider(), self.sort_btn, divider(),
+        tools_sep = divider()
+        for widget in (self.view_grid_btn, self.view_list_btn, divider(), self.sort_btn, tools_sep,
                        self.select_btn, self.reorder_btn, self.shortcuts_btn):
             widget.set_valign(Gtk.Align.CENTER)
             toolbar.pack_start(widget, False, False, 0)
+        # compact: these three go into the ⋯ menu too (_set_compact_topbar)
+        self._topbar_tools = (tools_sep, self.select_btn, self.reorder_btn, self.shortcuts_btn)
+        self._topbar_tool_items = [Gtk.SeparatorMenuItem()]
+        for btn, key in ((self.select_btn, "selection_mode_btn"), (self.reorder_btn, "reorder_menu"),
+                         (self.shortcuts_btn, "help_btn_tooltip")):
+            item = Gtk.MenuItem(label=self._(key))
+            item.connect("activate", lambda _i, b=btn: b.clicked())
+            self._topbar_tool_items.append(item)
+        for item in self._topbar_tool_items:
+            self._topbar_more_menu.append(item)
+        self._topbar_more_menu.show_all()
 
         self.home_topbar = drag
         self._home_topbar = drag
+        for pill in (*self._topbar_wide, self._topbar_narrow):
+            # shown or hidden as a whole (_set_compact_topbar): what's in
+            # it is shown now, show_all doesn't reach inside any more
+            for child in pill.get_children():
+                child.show_all()
+            pill.set_no_show_all(True)
+        self._apply_compact_topbar()
         return drag
+
+    # before the window is shown (nothing to measure yet): the main
+    # window's width at full size with "Large" text, window buttons included
+    _COMPACT_BELOW = 1550
+    _COMPACT_LEVELS = 4
+
+    def _apply_compact_topbar(self):
+        """On a screen narrower than the full top bar (1080p at 150-200 %)
+        the window couldn't be made that small and ran off the screen. So
+        the bar gives up room a step at a time, only as far as it has to
+        (measured once the window is shown): 1 the search shrinks and
+        fills what's left, 2 Ko-fi and Report bug go into a ⋯ menu, 3 the
+        sort button shows no words, 4 select, reorder and the shortcuts
+        go into the ⋯ menu too."""
+        width = 0
+        try:
+            display = Gdk.Display.get_default()
+            gdk_window = self.get_window()
+            monitor = (display.get_monitor_at_window(gdk_window) if gdk_window is not None else None) \
+                or display.get_primary_monitor() or display.get_monitor(0)
+            if monitor is not None:
+                width = monitor.get_workarea().width
+        except Exception as e:
+            logger.debug(f"Top bar: couldn't read the screen width: {e}")
+        if width <= 0:
+            return
+        if not self.get_mapped():
+            self._set_compact_topbar(self._COMPACT_LEVELS if width < self._COMPACT_BELOW * self._text_factor() else 0)
+            return
+        for level in range(self._COMPACT_LEVELS + 1):
+            self._set_compact_topbar(level)
+            if self.get_preferred_width()[0] <= width:
+                break
+
+    def _set_compact_topbar(self, level: int):
+        if getattr(self, "_topbar_compact", None) == level:
+            return
+        self._topbar_compact = level
+        self.search_entry.set_size_request(140 if level else 360, -1)
+        bar = self.search_entry.get_parent()
+        if bar is not None:
+            bar.child_set_property(self.search_entry, "expand", bool(level))
+            bar.child_set_property(self.search_entry, "fill", True)
+        for pill in self._topbar_wide:
+            pill.set_visible(level < 2)
+        self._topbar_narrow.set_visible(level >= 2)
+        for widget, hidden in ((self.sort_btn_label, level >= 3),
+                               *((w, level >= 4) for w in self._topbar_tools)):
+            widget.set_no_show_all(hidden)
+            widget.set_visible(not hidden)
+        for item in self._topbar_tool_items:
+            item.set_visible(level >= 4)
 
     def _on_home_topbar_press(self, _w, event) -> bool:
         if event.button != 1:
@@ -2582,7 +2742,7 @@ class HomeMixin:
         if anim is not None and anim.paint(cr, w, h):
             pass
         elif pb is not None:
-            Gdk.cairo_set_source_pixbuf(cr, pb, (w - pb.get_width()) / 2, (h - pb.get_height()) * 0.35)
+            Gdk.cairo_set_source_pixbuf(cr, pb, (w - logical_size(pb)[0]) / 2, (h - logical_size(pb)[1]) * 0.35)
             cr.paint()
         across = cairo.LinearGradient(0, 0, w, 0)
         across.add_color_stop_rgba(0, 0, 0, 0, 0.84)
@@ -2833,9 +2993,11 @@ class HomeMixin:
             self.content.pack_start(heading, False, False, 0)
             self.content.pack_start(self._build_home_empty(), False, False, 30)
         elif self.card_view_mode == "list":
-            column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            # LIST_COLUMN_WIDTH wide where there's room, narrower (down to
+            # what its rows need) on a narrow screen - a fixed width ran off
+            # it at 175-200 %
+            column = _CappedBox(LIST_COLUMN_WIDTH, orientation=Gtk.Orientation.VERTICAL, spacing=8)
             column.set_halign(Gtk.Align.CENTER)
-            column.set_size_request(LIST_COLUMN_WIDTH, -1)
             column.pack_start(heading, False, False, 0)
             rows_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             self._home_list_cols = {k: Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
@@ -2917,10 +3079,14 @@ class HomeMixin:
         if self.card_view_mode == "list":
             # the list view's rows, in its column
             from plunderhub.ui.reorder_view import ReorderList
-            grid = ReorderList(self, games, LIST_COLUMN_WIDTH + 2 * ReorderList.PAD_X, on_change=store)
+            width = LIST_COLUMN_WIDTH + 2 * ReorderList.PAD_X
+            room = self.scroller.get_allocated_width() - 40 if hasattr(self, "scroller") else 0
+            if room > 400:
+                width = min(width, room)        # a narrow screen (see _CappedBox)
+            grid = ReorderList(self, games, width, on_change=store)
             holder = Gtk.Box()
             holder.set_halign(Gtk.Align.CENTER)
-            holder.set_size_request(LIST_COLUMN_WIDTH + 2 * ReorderList.PAD_X, -1)
+            holder.set_size_request(width, -1)
             holder.pack_start(grid, True, True, 0)
         else:
             grid = holder = ReorderGrid(self, games, card_w, card_h, on_change=store)
@@ -2976,7 +3142,10 @@ class HomeMixin:
     def _build_home_hero(self, game: GameItem) -> Gtk.Widget:
         overlay = Gtk.Overlay()
         area = Gtk.DrawingArea()
-        area.set_size_request(-1, HERO_HEIGHT)
+        # in proportion to the text, so a smaller font size keeps the
+        # Large layout (the text filling the banner), only smaller
+        k = min(1.0, self._text_factor())
+        area.set_size_request(-1, round(HERO_HEIGHT * k))
         area.connect("draw", self._draw_home_hero, game)
         self._home_hero_area = area
         from plunderhub.ui.animated_hero import HeroAnimation
@@ -2987,8 +3156,8 @@ class HomeMixin:
         text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         text.set_valign(Gtk.Align.CENTER)
         text.set_halign(Gtk.Align.START)
-        text.set_margin_start(40)
-        text.set_margin_end(40)
+        text.set_margin_start(round(40 * k))
+        text.set_margin_end(round(40 * k))
         # setting sail is said on the button alone
         kicker = None
         if phase not in ("launching", "syncing"):
@@ -3101,16 +3270,16 @@ class HomeMixin:
 
     def _home_hero_logo(self, launcher: str, px: int) -> Gtk.Widget:
         """The launcher's logo, bare and sharp at any display scale."""
-        scale = max(1, self.get_scale_factor())
-        pb = self._load_launcher_icon(launcher, px * scale).get_pixbuf()
+        pb = self._load_launcher_icon(launcher, px).get_pixbuf()     # the screen's own pixels
         area = _windowless_area()
         area.set_size_request(px, px)
         area.set_valign(Gtk.Align.CENTER)
         if pb is not None:
-            surface = Gdk.cairo_surface_create_from_pixbuf(pb, scale, None)
+            surface = pixbuf_surface(pb)
+            lw, lh = logical_size(pb)
 
             def draw(_widget, cr):
-                cr.set_source_surface(surface, (px - pb.get_width() / scale) / 2, (px - pb.get_height() / scale) / 2)
+                cr.set_source_surface(surface, (px - lw) / 2, (px - lh) / 2)
                 cr.paint()
                 return False
             area.connect("draw", draw)
@@ -3567,7 +3736,8 @@ class HomeMixin:
         key = (w, h, pb)
         cached = getattr(widget, "_plunderhub_rest", None)
         if cached is None or cached[0] != key:
-            surface = image_surface(window, cairo.FORMAT_ARGB32, w, h)
+            scale = window.get_scale_factor()
+            surface = image_surface(window, cairo.FORMAT_ARGB32, w * scale, h * scale, scale)
             self._paint_list_row_hero(cairo.Context(surface), uid, pb, w, h, 0.0)
             cached = widget._plunderhub_rest = (key, surface)
         cr.set_source_surface(cached[1], margin.left, margin.top)

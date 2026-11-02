@@ -66,7 +66,7 @@ from plunderhub.core import flatpak_layers, prefix_tools  # noqa: E402
 from plunderhub.core.apng import open_animation  # noqa: E402
 from plunderhub.core.tools import TOOLS_BY_ID  # noqa: E402
 from plunderhub.core.utils import HEADERS, format_bytes  # noqa: E402
-from plunderhub.gi_setup import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango  # noqa: E402
+from plunderhub.gi_setup import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango, hidpi_pixbuf, logical_size, raw_set_source_pixbuf, ui_scale  # noqa: E402
 from plunderhub.icons import get_icon_pixbuf  # noqa: E402
 from plunderhub.launchers.registry import LAUNCHER_SEARCH_NAMES  # noqa: E402
 from plunderhub.logging_setup import logger  # noqa: E402
@@ -119,6 +119,8 @@ def _load_scaled(path: Optional[Path], w: int, h: int, crop: bool = False) -> Op
         return None
     if pb is None:
         return None
+    hidpi = ui_scale()          # w x h logical, with the screen's own pixels
+    w, h = w * hidpi, h * hidpi
     pw, ph = pb.get_width(), pb.get_height()
     scale = max(w / pw, h / ph) if crop else min(w / pw, h / ph)
     nw, nh = max(1, int(pw * scale)), max(1, int(ph * scale))
@@ -126,7 +128,7 @@ def _load_scaled(path: Optional[Path], w: int, h: int, crop: bool = False) -> Op
     if crop:
         x, y = max(0, (nw - w) // 2), max(0, int((nh - h) * 0.3))
         pb = pb.new_subpixbuf(x, y, min(w, nw - x), min(h, nh - y)).copy()
-    return pb
+    return hidpi_pixbuf(pb, hidpi)
 
 
 class ToggleSwitch(Gtk.Switch):
@@ -1042,7 +1044,7 @@ class GamePage(Gtk.Dialog):
         if moving:
             pass
         elif self.cover_pb is not None:
-            Gdk.cairo_set_source_pixbuf(cr, self.cover_pb, x + (cw - self.cover_pb.get_width()) / 2, y)
+            Gdk.cairo_set_source_pixbuf(cr, self.cover_pb, x + (cw - logical_size(self.cover_pb)[0]) / 2, y)
             cr.paint()
         else:
             cr.set_source_rgba(1, 1, 1, 0.06)
@@ -1063,8 +1065,8 @@ class GamePage(Gtk.Dialog):
         _rounded(cr, ix, iy, iw, ih, 12)
         cr.clip()
         if self.icon_pb is not None:
-            Gdk.cairo_set_source_pixbuf(cr, self.icon_pb, ix + (iw - self.icon_pb.get_width()) / 2,
-                                        iy + (ih - self.icon_pb.get_height()) / 2)
+            Gdk.cairo_set_source_pixbuf(cr, self.icon_pb, ix + (iw - logical_size(self.icon_pb)[0]) / 2,
+                                        iy + (ih - logical_size(self.icon_pb)[1]) / 2)
             cr.paint()
         else:
             cr.set_source_rgba(1, 1, 1, 0.06)
@@ -2274,7 +2276,7 @@ def _surface(pb, radius: float) -> cairo.ImageSurface:
     cr = cairo.Context(surface)
     _rounded(cr, 0, 0, pw, ph, min(radius, pw / 2, ph / 2))
     cr.clip()
-    Gdk.cairo_set_source_pixbuf(cr, pb, 0, 0)
+    raw_set_source_pixbuf(cr, pb, 0, 0)       # pixel for pixel
     cr.paint()
     surface.flush()
     return surface

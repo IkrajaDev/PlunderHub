@@ -27,7 +27,7 @@ from typing import Callable, Dict, List, Optional
 import cairo
 
 from plunderhub.core.models import GameItem
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, logical_size
 from plunderhub.logging_setup import logger
 from plunderhub.ui.home_mixin import (
     _accent_rgb, _on_accent_rgb, _paint_name_plate, _pango_text, _rounded, _title_hue,
@@ -615,9 +615,9 @@ class ReorderList(ReorderGrid):
         left = 12 + bw + 14
         icon = self._icon(g)
         if icon is not None:
-            Gdk.cairo_set_source_pixbuf(cr, icon, left, (ch - icon.get_height()) / 2)
+            Gdk.cairo_set_source_pixbuf(cr, icon, left, (ch - logical_size(icon)[1]) / 2)
             cr.paint()
-            left += icon.get_width() + 16
+            left += logical_size(icon)[0] + 16
 
         # the right-hand side: grip, playtime, launcher - laid out from the edge
         right = cw - 16
@@ -634,8 +634,8 @@ class ReorderList(ReorderGrid):
         badge = self._badge(g.launcher)
         _pango_text(cr, widget, g.launcher, right - 110, ch / 2 - 10, 110, 10.5, False, (*fg_rgb, 0.65))
         if badge is not None:
-            Gdk.cairo_set_source_pixbuf(cr, badge, right - 110 - badge.get_width() - 8,
-                                        (ch - badge.get_height()) / 2)
+            Gdk.cairo_set_source_pixbuf(cr, badge, right - 110 - logical_size(badge)[0] - 8,
+                                        (ch - logical_size(badge)[1]) / 2)
             cr.paint()
         right -= 150
 
@@ -879,8 +879,8 @@ class LauncherOrderList(Gtk.DrawingArea):
             ty = (self.ROW_H - 4 - 40) / 2
             icon = self._icon(n)
             if icon is not None:
-                Gdk.cairo_set_source_pixbuf(cr, icon, 30 + (40 - icon.get_width()) / 2,
-                                            ty + (40 - icon.get_height()) / 2)
+                Gdk.cairo_set_source_pixbuf(cr, icon, 30 + (40 - logical_size(icon)[0]) / 2,
+                                            ty + (40 - logical_size(icon)[1]) / 2)
                 cr.paint()
             _pango_text(cr, widget, n, 82, (self.ROW_H - 4) / 2 - 10, w - 112, None, n == self.current or lifted,
                         (fg.red, fg.green, fg.blue, 1))

@@ -20,7 +20,7 @@
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-from plunderhub.gi_setup import GdkPixbuf
+from plunderhub.gi_setup import GdkPixbuf, hidpi_pixbuf, ui_scale
 from plunderhub.logging_setup import logger
 
 BUNDLED_ICONS_DIR = Path(__file__).resolve().parent / "assets" / "icons"
@@ -164,7 +164,10 @@ def get_icon_pixbuf(name: str, px_size: int, color_hex: str) -> Optional[GdkPixb
         return None
     filename, mode = entry
 
-    cache_key = (name, px_size, color_hex)
+    # px_size is logical: on a 2x screen the icon has twice the pixels
+    # (see gi_setup.hidpi_pixbuf) and is drawn at px_size all the same
+    scale = ui_scale()
+    cache_key = (name, px_size, color_hex, scale)
     if cache_key in _PIXBUF_CACHE:
         return _PIXBUF_CACHE[cache_key]
 
@@ -183,13 +186,13 @@ def get_icon_pixbuf(name: str, px_size: int, color_hex: str) -> Optional[GdkPixb
     try:
         loader = GdkPixbuf.PixbufLoader.new_with_type("svg")
 
-        def _on_size_prepared(ldr, width, height, _target=px_size):
+        def _on_size_prepared(ldr, width, height, _target=px_size * scale):
             ldr.set_size(_target, _target)
 
         loader.connect("size-prepared", _on_size_prepared)
         loader.write(svg_text.encode("utf-8"))
         loader.close()
-        pixbuf = loader.get_pixbuf()
+        pixbuf = hidpi_pixbuf(loader.get_pixbuf(), scale)
     except Exception as e:
         logger.warning(f"Failed to render bundled icon {filename!r} at {px_size}px: {e}")
         pixbuf = None

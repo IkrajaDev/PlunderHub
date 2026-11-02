@@ -35,7 +35,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import cairo
 
-from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango
+from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, pixbuf_at_size
 from plunderhub.icons import get_icon_pixbuf
 from plunderhub.logging_setup import logger
 from plunderhub.perf_guard import allow_hover_relayout
@@ -525,7 +525,7 @@ def _launcher_logo(name: str, px: int = 18) -> Gtk.Widget:
     pb = None
     if path is not None:
         try:
-            pb = GdkPixbuf.Pixbuf.new_from_file_at_size(str(path), px, px)
+            pb = pixbuf_at_size(path, px, px)
         except GLib.Error:
             pb = None
     if pb is None:

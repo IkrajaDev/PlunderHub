@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 from plunderhub.core.models import GameItem
 from plunderhub.core.persistence import save_settings
 from plunderhub.core.scan_paths import LAUNCHER_FLATPAK_IDS, resolve_launcher_invocation
-from plunderhub.gi_setup import GdkPixbuf, GLib, Gtk
+from plunderhub.gi_setup import GdkPixbuf, GLib, Gtk, pixbuf_at_size
 from plunderhub.launchers.registry import LAUNCHER_REGISTRY, bundled_launcher_icon
 
 
@@ -51,7 +51,7 @@ class RenderingMixin:
             if path is None:
                 continue
             try:
-                logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(str(path), 44, 44))
+                logo = Gtk.Image.new_from_pixbuf(pixbuf_at_size(path, 44, 44))
             except GLib.Error:
                 continue
             logo.set_tooltip_text(ldef.name)

@@ -55,7 +55,8 @@ def _config_home() -> Path:
 # --- Steam ----------------------------------------------------------------------------------
 
 def _steam(name: str) -> Tuple[str, str]:
-    from plunderhub.core.launch_options import SteamBackend, _STEAM_COMPAT_PATH, _write_with_backup, vdf_set
+    from plunderhub.core.launch_options import (SteamBackend, _STEAM_COMPAT_PATH, _load_native_record,
+                                                _write_with_backup, vdf_set)
     backend = SteamBackend()
     try:
         config = backend._config_vdf()
@@ -67,13 +68,26 @@ def _steam(name: str) -> Tuple[str, str]:
         return ALREADY, str(config)
     if backend.blocking_process_running():
         return LATER, "Steam is running"
+    previous = backend.default_tool()
     text = config.read_text(encoding="utf-8", errors="ignore")
     new = text
     # what Steam writes for its own default: priority 75 (a game's is 250)
     for key, value in (("name", name), ("config", ""), ("priority", "75")):
         new = vdf_set(new, [*_STEAM_COMPAT_PATH, "0"], key, value)
+    # Games with a Linux version PlunderHub put on the default Proton by
+    # itself (apply_default_proton) - maybe a moment before this, on the
+    # old default - move along with it; a choice of their own stays.
+    record = _load_native_record()
+    mapping = backend._compat_mapping()
+    moved = [a for a in record["defaulted"] if a not in record["native"]
+             and backend._mapped_tool(mapping, a) == previous]
+    for appid in moved:
+        new = vdf_set(new, [*_STEAM_COMPAT_PATH, appid], "name", name)
     if new != text:
         _write_with_backup(config, new)
+    if moved:
+        logger.info(f"Proton: {name} also for {len(moved)} Steam game(s) set to the old default "
+                    f"{previous}: {', '.join(moved)}")
     return DONE, str(config)
 
 
