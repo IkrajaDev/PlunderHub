@@ -1294,6 +1294,63 @@ button.sw-chip:checked label {{ color: {on_accent}; }}
 .proton-pill-accent {{ background-color: {tint(0.18)}; color: {accent}; }}
 .proton-pill-quiet {{ background-color: {tint(0.08)}; color: {fg_dim}; }}
 .proton-status-title {{ font-size: 115%; }}
+/* The release notes window (ui/release_notes_window.py). */
+.notes-sidebar {{ background-color: {tint(0.04)}; border-radius: 20px 0 0 20px; }}
+.notes-divider {{ background-color: {tint(0.14)}; min-width: 1px; }}
+.notes-nav-title {{ font-weight: 700; }}
+.notes-bullet {{ color: {accent}; font-weight: 800; }}
+.notes-code {{
+    background-color: {tint(0.07)};
+    border: 1px solid {tint(0.12)};
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 4px 0;
+}}
+.notes-code-text {{ font-family: monospace; font-size: 92%; }}
+button.notes-game-chip {{
+    background-color: {tint(0.16)};
+    background-image: none;
+    color: {accent};
+    border: none;
+    box-shadow: none;
+    border-radius: 999px;
+    padding: 2px 12px;
+    min-height: 0;
+    font-weight: 700;
+}}
+button.notes-game-chip:hover {{ background-color: {tint(0.26)}; }}
+/* only the background changes on hover: a colour change lays the window out again */
+button.notes-close {{
+    min-width: 34px; min-height: 34px; padding: 0;
+    border-radius: 10px; border: none; box-shadow: none; background: transparent;
+}}
+button.notes-close:hover {{ background-color: {tint(0.12)}; }}
+/* "A newer Proton release mentions this game" (ui/proton_hints.py) */
+.ph-strip {{
+    background-color: {tint(0.10)};
+    border: 1px solid {tint(0.28)};
+    border-radius: 16px;
+    padding: 14px 16px;
+}}
+.ph-title {{ font-weight: 700; color: {accent}; }}
+/* opened from the card's badge: lit a moment (GamePage._bring_hint) - border and
+   shadow only, once */
+.ph-strip {{ transition: border-color 400ms ease-out, box-shadow 400ms ease-out; }}
+.ph-strip.ph-strip-lit {{ border-color: {accent}; box-shadow: 0 0 18px {tint(0.45)}; }}
+.ph-quote {{ font-style: italic; color: {fg_dim}; }}
+button.ph-pill {{
+    background-color: {tint(0.18)}; background-image: none; color: {accent};
+    border: none; box-shadow: none; border-radius: 999px;
+    padding: 0 9px; min-height: 0; font-size: 75%; font-weight: 700;
+}}
+button.ph-pill:hover {{ background-color: {tint(0.30)}; }}
+/* The Captain's Log (ui/captains_log.py): the notes on a raised panel */
+scrolledwindow.log-notes {{
+    background-color: {tint(0.06)};
+    border: 1px solid {tint(0.12)};
+    border-radius: 14px;
+    margin-top: 6px;
+}}
 .home-chip-count {{ opacity: 0.7; font-weight: 600; }}
 .sw-strip {{
     background-color: {raised};

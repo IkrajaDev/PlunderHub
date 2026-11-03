@@ -197,6 +197,31 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
             sw.close()
     steps.append(_step("performance: Shipwright's Proton page", calm_proton_page))
 
+    def calm_release_notes():
+        from types import SimpleNamespace as R
+        from plunderhub.ui.release_notes_window import SINCE, open_notes
+        game = next(iter(window.game_index.values()), None)
+        name = game.title if game is not None else "Star Citizen"
+        notes = ("# GE-Proton99-2\n\nHotfix Release\n\n## Fixes\n\n- Fixed **%s** crashing at start "
+                 "([#865](https://github.com/GloriousEggroll/proton-ge-custom/issues/865)).\n"
+                 "  - Nested point with `PROTON_LOG=1` and https://gitlab.winehq.org/wine/wine/-/merge_requests/1\n"
+                 "\n```\nPROTON_ENABLE_WAYLAND=1 %%command%%\n```\n\n---\n\n1. Numbered\n" % name)
+        releases = [R(tag=f"GE-Proton99-{n}", date="2026-11-0%d" % n, size=500 << 20, notes=notes)
+                    for n in (3, 2, 1)]
+        builds = [R(family="ge", tag="GE-Proton99-1", latest=True)]
+        notes_window = open_notes(window, window, "ge", None, releases, builds)
+        try:
+            assert notes_window.current == SINCE, "doesn't open on 'Since your version'"
+            from plunderhub.core.release_notes import _forms
+            if game is not None and _forms(name):
+                assert notes_window.mention_box.get_visible(), f"no chip for {name!r} the notes mention"
+            perf_guard.assert_calm(notes_window.dialog, "the release notes window")
+            notes_window.listbox.select_row(notes_window.rows["GE-Proton99-2"])
+            perf_guard.assert_calm(notes_window.dialog, "the release notes window (one release)")
+        finally:
+            notes_window.dialog.destroy()
+    steps.append(_step("performance: the release notes window", calm_release_notes))
+
     def calm_game_menus():
         from plunderhub.ui.game_page import GameMenu, LauncherMenu
         menus = []
@@ -286,6 +311,58 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
                        lambda: calm_card_dialog("shortcuts dialog", window._show_shortcuts_dialog)))
     steps.append(_step("performance: the Report bug card",
                        lambda: calm_card_dialog("Report bug card", window._show_bug_report)))
+
+    def calm_captains_log():
+        from plunderhub.ui import captains_log
+        info = {"tag": "v9.9.9", "date": "2026-11-03",
+                "notes": "## PlunderHub 9.9.9\n\nA test.\n\n- One **fix**\n  - and `a detail`\n"
+                         "- [#1](https://github.com/IkrajaDev/PlunderHub/issues/1)\n"}
+        calm_card_dialog("Captain's Log", lambda: captains_log.show(window, window, info, "9.9.9"),
+                         wait_ms=1500)
+    steps.append(_step("performance: the Captain's Log", calm_captains_log))
+
+    def captains_log_only_after_an_update():
+        """A first install marks the version seen (no log); a start after
+        an update fetches it; the same version again doesn't."""
+        from plunderhub.constants import APP_VERSION
+        from plunderhub.ui import captains_log
+        saved = dict(window.settings)
+        calls = []
+        real = captains_log.fetch_release_notes
+        captains_log.fetch_release_notes = lambda version: calls.append(version)
+        try:
+            for welcome_shown, seen, expect in ((False, None, False), (True, "0.0.1", True),
+                                                (True, APP_VERSION, False)):
+                calls.clear()
+                window.settings.pop("tip_hide", None)
+                window.settings["welcome_shown"] = welcome_shown
+                window.settings.pop(captains_log.SEEN_KEY, None)
+                if seen:
+                    window.settings[captains_log.SEEN_KEY] = seen
+                if not welcome_shown:
+                    window._show_welcome, real_welcome = (lambda: None), window._show_welcome
+                try:
+                    window._maybe_show_first_run_tip()
+                finally:
+                    if not welcome_shown:
+                        del window._show_welcome
+                deadline = time.monotonic() + 3
+                while not calls and time.monotonic() < deadline:
+                    from gi.repository import Gtk
+                    Gtk.main_iteration_do(False)
+                assert bool(calls) == expect, \
+                    f"welcome_shown={welcome_shown}, seen={seen}: log {'not ' if expect else ''}asked for"
+                if not welcome_shown:
+                    assert window.settings.get(captains_log.SEEN_KEY) == APP_VERSION, \
+                        "a first install didn't mark its version seen"
+        finally:
+            captains_log.fetch_release_notes = real
+            window.settings.clear()
+            window.settings.update(saved)
+            from plunderhub.core.persistence import save_settings
+            save_settings(window.settings)
+    steps.append(_step("the Captain's Log comes after an update, never after a first install",
+                       captains_log_only_after_an_update))
 
     def log_keeps_personal_details_out():
         from pathlib import Path

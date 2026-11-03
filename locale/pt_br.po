@@ -1978,6 +1978,38 @@ msgstr "Tela cheia"
 msgid "lo_win_fullscreen_sub"
 msgstr "Pede ao jogo para iniciar em tela cheia"
 
+#. English: Every release on GitHub
+msgid "log_all"
+msgstr "Wszystkie wydania na GitHubie"
+
+#. English: Nothing was written in the log for this version.
+msgid "log_empty"
+msgstr "W dzienniku nie ma wpisu dla tej wersji."
+
+#. English: The log can't be fetched right now - GitHub is out of reach.
+msgid "log_failed"
+msgstr "Nie można teraz pobrać dziennika - GitHub jest poza zasięgiem."
+
+#. English: Hauling the log up from GitHub…
+msgid "log_loading"
+msgstr "Wciągam dziennik z GitHuba…"
+
+#. English: Open the log
+msgid "log_open_btn"
+msgstr "Otwórz dziennik"
+
+#. English: What changed in PlunderHub {version}
+msgid "log_row_sub"
+msgstr "Co się zmieniło w PlunderHub {version}"
+
+#. English: PlunderHub {version} is aboard - here's what changed.
+msgid "log_sub"
+msgstr "PlunderHub {version} jest na pokładzie - oto co się zmieniło."
+
+#. English: Captain's Log
+msgid "log_title"
+msgstr "Dziennik kapitana"
+
 #. English: Open games on the next workspace
 msgid "next_workspace_check"
 msgstr "Abrir jogos na próxima área de trabalho"
@@ -2149,6 +2181,82 @@ msgstr "Instala no prefixo do jogo os componentes do Windows que faltam: Visual 
 #. English: Wine's settings for this game: Windows version, DLL overrides, audio, graphics.
 msgid "pfx_winecfg_sub"
 msgstr "As configurações do Wine para este jogo: versão do Windows, substituições de DLL, áudio, gráficos."
+
+#. English: Proton fix
+msgid "ph_badge_fix"
+msgstr "Poprawka Proton"
+
+#. English: Proton news
+msgid "ph_badge_news"
+msgstr "Nowość Proton"
+
+#. English: Another Proton download is running - try again once it's done.
+msgid "ph_busy"
+msgstr "Trwa inne pobieranie Protona - spróbuj ponownie, gdy się skończy."
+
+#. English: {tag} mentions this game - open its Proton
+msgid "ph_card_tooltip"
+msgstr "{tag} wspomina tę grę - otwórz jej Proton"
+
+#. English: It runs on {current}
+msgid "ph_current"
+msgstr "Działa na {current}"
+
+#. English: Don't show this one again
+msgid "ph_dismiss"
+msgstr "Nie pokazuj więcej tego"
+
+#. English: Download {latest} and switch
+msgid "ph_download_switch"
+msgstr "Pobierz {latest} i przełącz"
+
+#. English: {tag} brings a fix for this game
+msgid "ph_fix_title"
+msgstr "{tag} przynosi poprawkę dla tej gry"
+
+#. English: your {latest} still holds {held}
+msgid "ph_latest_behind"
+msgstr "twój {latest} wciąż zawiera {held}"
+
+#. English: {latest} isn't downloaded yet
+msgid "ph_latest_missing"
+msgstr "{latest} nie jest jeszcze pobrany"
+
+#. English: Read the notes
+msgid "ph_read"
+msgstr "Przeczytaj"
+
+#. English: A recent Proton-GE release mentions this game ({tag})
+msgid "ph_soft_title"
+msgstr "Niedawne wydanie Proton-GE wspomina tę grę ({tag})"
+
+#. English: Switch to {latest}
+msgid "ph_switch"
+msgstr "Przełącz na {latest}"
+
+#. English: Couldn't switch the game's Proton.
+msgid "ph_switch_failed"
+msgstr "Nie udało się zmienić Protona gry."
+
+#. English: Now on {latest}
+msgid "ph_switched"
+msgstr "Teraz na {latest}"
+
+#. English: {tag} mentions this game
+msgid "ph_title"
+msgstr "{tag} wspomina tę grę"
+
+#. English: Update {latest}
+msgid "ph_update"
+msgstr "Zaktualizuj {latest}"
+
+#. English: Update {latest} and switch
+msgid "ph_update_switch"
+msgstr "Zaktualizuj {latest} i przełącz"
+
+#. English: {latest} is up to date - the game has it
+msgid "ph_updated"
+msgstr "{latest} jest aktualny - gra już go ma"
 
 #. English: All
 msgid "pk_all"
@@ -2366,6 +2474,10 @@ msgstr "Do GloriousEggroll: o Proton da Valve com o Wine, DXVK e VKD3D mais rece
 msgid "pm_get_latest"
 msgstr "Baixar Latest"
 
+#. English: mentioned in {tag}
+msgid "pm_hint_pill"
+msgstr "wspomniana w {tag}"
+
 #. English: {name} is in use by a running game - close it first.
 msgid "pm_in_use"
 msgstr "{name} está sendo usado por um jogo aberto - feche-o primeiro."
@@ -2397,6 +2509,66 @@ msgstr "Não há espaço livre suficiente para {tag}."
 #. English: No Proton version downloaded
 msgid "pm_none_downloaded"
 msgstr "Nenhuma versão do Proton baixada"
+
+#. English: What's new
+msgid "pm_notes_btn"
+msgstr "Co nowego"
+
+#. English: {tag} · What's new?
+msgid "pm_notes_card_line"
+msgstr "{tag} · Co nowego?"
+
+#. English: Proton-GE updated
+msgid "pm_notes_card_title"
+msgstr "Proton-GE zaktualizowany"
+
+#. English: Mentions your games:
+msgid "pm_notes_games"
+msgstr "Wspomina twoje gry:"
+
+#. English: Open on GitHub
+msgid "pm_notes_github"
+msgstr "Otwórz na GitHubie"
+
+#. English: Release notes
+msgid "pm_notes_heading"
+msgstr "Informacje o wydaniu"
+
+#. English: Hotfix
+msgid "pm_notes_hotfix"
+msgstr "Poprawka"
+
+#. English: Installed
+msgid "pm_notes_installed"
+msgstr "Zainstalowana"
+
+#. English: Newest
+msgid "pm_notes_newest"
+msgstr "Najnowsza"
+
+#. English: This release came without notes.
+msgid "pm_notes_none"
+msgstr "To wydanie nie ma opisu."
+
+#. English: Since your version
+msgid "pm_notes_since"
+msgstr "Od twojej wersji"
+
+#. English: {n} releases, up to {newest} - newest first
+msgid "pm_notes_since_line"
+msgstr "{n} wydań do {newest} - najnowsze najpierw"
+
+#. English: {n} newer than {tag}
+msgid "pm_notes_since_sub"
+msgstr "{n} nowszych niż {tag}"
+
+#. English: What's new since {tag}
+msgid "pm_notes_since_title"
+msgstr "Nowości od {tag}"
+
+#. English: The release notes can't be shown: GitHub can't be reached and they haven't been saved yet.
+msgid "pm_notes_unavailable"
+msgstr "Nie można pokazać informacji o wydaniu: GitHub jest nieosiągalny, a nie zostały jeszcze zapisane."
 
 #. English: Nothing yet
 msgid "pm_nothing"

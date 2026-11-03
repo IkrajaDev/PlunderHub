@@ -64,6 +64,25 @@ if [ -r /etc/os-release ]; then
         *" void "*)   PKG_MANAGER="xbps" ;;
     esac
 fi
+# os-release names no known family (Garuda only says ID=garuda unless its
+# own hook adds ID_LIKE; small derivatives may leave it out): go by the
+# package manager that's actually there. apt-get / dnf only with their
+# package database tool (ALT Linux has an apt-get that installs RPMs).
+if [ "$PKG_MANAGER" = "unknown" ]; then
+    if command -v pacman > /dev/null 2>&1; then
+        PKG_MANAGER="pacman"
+    elif command -v apt-get > /dev/null 2>&1 && command -v dpkg > /dev/null 2>&1; then
+        PKG_MANAGER="apt"
+    elif command -v zypper > /dev/null 2>&1 && command -v rpm > /dev/null 2>&1; then
+        PKG_MANAGER="zypper"
+    elif command -v dnf > /dev/null 2>&1 && command -v rpm > /dev/null 2>&1; then
+        PKG_MANAGER="dnf"
+    elif command -v apk > /dev/null 2>&1; then
+        PKG_MANAGER="apk"
+    elif command -v xbps-install > /dev/null 2>&1; then
+        PKG_MANAGER="xbps"
+    fi
+fi
 
 echo "Detected distro: $DISTRO_NAME"
 if [ "$PKG_MANAGER" != "unknown" ]; then

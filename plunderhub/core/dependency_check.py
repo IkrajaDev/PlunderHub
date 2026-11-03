@@ -127,7 +127,7 @@ def detect_pkg_manager(os_release_path: str = "/etc/os-release") -> Tuple[str, s
             key, _, value = line.partition("=")
             fields[key] = value.strip().strip('"')
     except OSError:
-        return pkg_manager, distro_name
+        pass
 
     distro_name = fields.get("PRETTY_NAME") or fields.get("NAME") or "unknown"
     tokens = set(f"{fields.get('ID', '')} {fields.get('ID_LIKE', '')}".split())
@@ -143,6 +143,12 @@ def detect_pkg_manager(os_release_path: str = "/etc/os-release") -> Tuple[str, s
         pkg_manager = "apk"
     elif "void" in tokens:
         pkg_manager = "xbps"
+    else:
+        # os-release names no known family (Garuda without its ID_LIKE
+        # hook, small derivatives): go by the package manager that's there
+        from plunderhub.core.utils import family_from_tools
+        pkg_manager = {"arch": "pacman", "debian": "apt", "suse": "zypper", "fedora": "dnf",
+                       "alpine": "apk", "void": "xbps"}.get(family_from_tools(), "unknown")
     return pkg_manager, distro_name
 
 

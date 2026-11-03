@@ -275,6 +275,9 @@ class RealProtonData(ProtonData):
             def done(found, problem):
                 self._loading.discard(family)
                 self._releases[family] = found
+                hints = getattr(self.app, "proton_hints", None)
+                if hints is not None and found:
+                    hints.refresh()     # a fresh list may mention more games
                 if problem is not None:
                     self.release_problems[family] = problem
                 else:
@@ -626,6 +629,9 @@ class ProtonPage(Gtk.Box):
         self.status_btn.set_no_show_all(True)
         self.status_btn.connect("clicked", self._on_status_btn)
         card.pack_end(self.status_btn, False, False, 0)
+        # the notes: since the installed Latest when newer ones are out
+        self.notes_btn = self._notes_button(None, "ghost")
+        card.pack_end(self.notes_btn, False, False, 0)
         self._update_status()
         return card
 
@@ -783,6 +789,20 @@ class ProtonPage(Gtk.Box):
         btn.connect("clicked", lambda *_: action())
         btn.set_sensitive(not self.data.status()["busy"])
         return btn
+
+    def _notes_button(self, tag: Optional[str], kind: str = "ghost") -> Gtk.Button:
+        """What's new: the release notes window - never greyed out, a
+        download going on or not."""
+        btn = self.app._dialog_button(S["notes_btn"], kind)
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.set_focus_on_click(False)
+        btn.connect("clicked", lambda *_: self._open_notes(tag))
+        return btn
+
+    def _open_notes(self, tag: Optional[str]):
+        from plunderhub.ui.release_notes_window import open_notes
+        releases = self.data.releases(self.family, lambda: None)
+        open_notes(self.app, self.get_toplevel(), self.family, tag, releases or None, self.data.builds())
 
     def _used_by(self) -> Optional[Dict[str, int]]:
         games = self.data.games(lambda: self.view == "versions" and self._render())
@@ -987,6 +1007,16 @@ class ProtonPage(Gtk.Box):
         sub = Gtk.Label(label=entry.launcher, xalign=0)
         sub.get_style_context().add_class("settings-row-sub")
         where.pack_start(sub, False, False, 0)
+        # a newer release mentions it (ui/proton_hints.py): the pill opens those notes
+        hints = getattr(self.app, "proton_hints", None)
+        found = hints.get(entry.game.uid) if hints is not None and entry.game is not None else None
+        if found is not None:
+            pill = Gtk.Button(label=S["hint_pill"].format(tag=found[0].tag))
+            pill.get_style_context().add_class("ph-pill")
+            pill.set_focus_on_click(False)
+            pill.set_tooltip_text(f"“{found[0].excerpt}”")
+            pill.connect("clicked", lambda *_a, uid=entry.game.uid: hints.read(uid, self.get_toplevel()))
+            where.pack_start(pill, False, False, 6)
         texts.pack_start(where, False, False, 0)
         row.pack_start(texts, True, True, 0)
         if entry.native:
@@ -1048,7 +1078,8 @@ class HomeDownloadCard(Gtk.Revealer):
         button.set_can_focus(False)
         button.get_style_context().add_class("home-update-card")
         button.get_style_context().add_class("proton-home-card")
-        button.connect("clicked", lambda *_: open_page())
+        self._notes_tag: Optional[str] = None
+        button.connect("clicked", lambda *_: self._clicked(open_page))
         top = Gtk.Box(spacing=10)
         self.ring = _Ring(36)
         top.pack_start(self.ring, False, False, 0)
@@ -1087,11 +1118,37 @@ class HomeDownloadCard(Gtk.Revealer):
         last = self.data.finished()
         failed = (not st["busy"] and proton_store.latest_build("ge") is None and last is not None
                   and bool(last.error) and last.error != "cancelled")
+        # Proton-GE Latest got a new release: what's new in it, once
+        notes = None
+        if not st["busy"] and last is not None and not last.error and last.kind == "install" \
+                and last.name == proton_store.FAMILIES["ge"].latest_name and last.tag \
+                and last.tag != self.app.settings.get("pm_notes_seen"):
+            notes = last.tag
+        self._notes_tag = notes if not (busy or failed) else None
+        if self._notes_tag:
+            self.title.set_text(S["notes_card_title"])
+            self.line.set_text(S["notes_card_line"].format(tag=notes))
+            self.get_child().set_tooltip_text(None)
+            self.ring.set_progress(1.0)
         if busy or failed:
             self.title.set_text(st["title"])
             # the reason is too long for the sidebar: in short here, in full on hover
             self.line.set_text(S["st_missing"] if failed else st["line"].split("  ·  ")[0])
             self.get_child().set_tooltip_text(st["line"] if failed else None)
             self.ring.set_progress(st["progress"] if busy else 0.0)
-        if self.get_reveal_child() != (busy or failed):
-            self.set_reveal_child(busy or failed)
+        shown = busy or failed or bool(self._notes_tag)
+        if self.get_reveal_child() != shown:
+            self.set_reveal_child(shown)
+
+    def _clicked(self, open_page: Callable[[], None]):
+        tag = self._notes_tag
+        if not tag:
+            open_page()
+            return
+        from plunderhub.core.persistence import save_settings
+        from plunderhub.ui.release_notes_window import open_notes
+        self.app.settings["pm_notes_seen"] = tag
+        save_settings(self.app.settings)
+        self._notes_tag = None
+        self.set_reveal_child(False)
+        open_notes(self.app, self.get_toplevel(), "ge", tag, None, self.data.builds())

@@ -1488,6 +1488,30 @@ msgstr "Fullscreen"
 msgid "lo_win_fullscreen_sub"
 msgstr "Asks the game to start fullscreen"
 
+msgid "log_all"
+msgstr "Every release on GitHub"
+
+msgid "log_empty"
+msgstr "Nothing was written in the log for this version."
+
+msgid "log_failed"
+msgstr "The log can't be fetched right now - GitHub is out of reach."
+
+msgid "log_loading"
+msgstr "Hauling the log up from GitHub…"
+
+msgid "log_open_btn"
+msgstr "Open the log"
+
+msgid "log_row_sub"
+msgstr "What changed in PlunderHub {version}"
+
+msgid "log_sub"
+msgstr "PlunderHub {version} is aboard - here's what changed."
+
+msgid "log_title"
+msgstr "Captain's Log"
+
 msgid "next_workspace_check"
 msgstr "Open games on the next workspace"
 
@@ -1616,6 +1640,63 @@ msgstr "Install missing Windows parts into this game's prefix: Visual C++, Direc
 
 msgid "pfx_winecfg_sub"
 msgstr "Wine's settings for this game: Windows version, DLL overrides, audio, graphics."
+
+msgid "ph_badge_fix"
+msgstr "Proton fix"
+
+msgid "ph_badge_news"
+msgstr "Proton news"
+
+msgid "ph_busy"
+msgstr "Another Proton download is running - try again once it's done."
+
+msgid "ph_card_tooltip"
+msgstr "{tag} mentions this game - open its Proton"
+
+msgid "ph_current"
+msgstr "It runs on {current}"
+
+msgid "ph_dismiss"
+msgstr "Don't show this one again"
+
+msgid "ph_download_switch"
+msgstr "Download {latest} and switch"
+
+msgid "ph_fix_title"
+msgstr "{tag} brings a fix for this game"
+
+msgid "ph_latest_behind"
+msgstr "your {latest} still holds {held}"
+
+msgid "ph_latest_missing"
+msgstr "{latest} isn't downloaded yet"
+
+msgid "ph_read"
+msgstr "Read the notes"
+
+msgid "ph_soft_title"
+msgstr "A recent Proton-GE release mentions this game ({tag})"
+
+msgid "ph_switch"
+msgstr "Switch to {latest}"
+
+msgid "ph_switch_failed"
+msgstr "Couldn't switch the game's Proton."
+
+msgid "ph_switched"
+msgstr "Now on {latest}"
+
+msgid "ph_title"
+msgstr "{tag} mentions this game"
+
+msgid "ph_update"
+msgstr "Update {latest}"
+
+msgid "ph_update_switch"
+msgstr "Update {latest} and switch"
+
+msgid "ph_updated"
+msgstr "{latest} is up to date - the game has it"
 
 msgid "pk_all"
 msgstr "All"
@@ -1779,6 +1860,9 @@ msgstr "By GloriousEggroll: Valve's Proton with the newest Wine, DXVK and VKD3D,
 msgid "pm_get_latest"
 msgstr "Get Latest"
 
+msgid "pm_hint_pill"
+msgstr "mentioned in {tag}"
+
 msgid "pm_in_use"
 msgstr "{name} is in use by a running game - close it first."
 
@@ -1802,6 +1886,51 @@ msgstr "Not enough free space for {tag}."
 
 msgid "pm_none_downloaded"
 msgstr "No Proton version downloaded"
+
+msgid "pm_notes_btn"
+msgstr "What's new"
+
+msgid "pm_notes_card_line"
+msgstr "{tag} · What's new?"
+
+msgid "pm_notes_card_title"
+msgstr "Proton-GE updated"
+
+msgid "pm_notes_games"
+msgstr "Mentions your games:"
+
+msgid "pm_notes_github"
+msgstr "Open on GitHub"
+
+msgid "pm_notes_heading"
+msgstr "Release notes"
+
+msgid "pm_notes_hotfix"
+msgstr "Hotfix"
+
+msgid "pm_notes_installed"
+msgstr "Installed"
+
+msgid "pm_notes_newest"
+msgstr "Newest"
+
+msgid "pm_notes_none"
+msgstr "This release came without notes."
+
+msgid "pm_notes_since"
+msgstr "Since your version"
+
+msgid "pm_notes_since_line"
+msgstr "{n} releases, up to {newest} - newest first"
+
+msgid "pm_notes_since_sub"
+msgstr "{n} newer than {tag}"
+
+msgid "pm_notes_since_title"
+msgstr "What's new since {tag}"
+
+msgid "pm_notes_unavailable"
+msgstr "The release notes can't be shown: GitHub can't be reached and they haven't been saved yet."
 
 msgid "pm_nothing"
 msgstr "Nothing yet"

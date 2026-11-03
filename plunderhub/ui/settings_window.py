@@ -360,7 +360,7 @@ class SettingsWindow:
             card.pack_start(sep, False, False, 0)
 
     def _version_text(self) -> str:
-        """1.0.1 - with "beta" after it while this is a beta."""
+        """1.0.2 - with "beta" after it while this is a beta."""
         return f"{APP_VERSION} {self._('beta_badge').lower()}" if APP_CHANNEL else APP_VERSION
 
     def row(self, card: Gtk.Box, title: str, subtitle=None, controls=(), icon=None,
@@ -1028,12 +1028,20 @@ class SettingsWindow:
         bug_btn.connect("clicked", lambda b: app._show_bug_report(b))
         self.row(card, f"PlunderHub {self._version_text()}", self._("about_author").format(author=APP_AUTHOR),
                  [github_btn, kofi_btn, license_btn, bug_btn], icon="help-about-symbolic")
+        log_btn = self.button(self._("log_open_btn"), "scroll-text-symbolic")
+        log_btn.connect("clicked", lambda *_: self._open_captains_log())
+        self.row(card, self._("log_title"), self._("log_row_sub").format(version=APP_VERSION),
+                 [log_btn], icon="scroll-text-symbolic")
 
         card = self.group(col, self._("section_danger_zone"), danger=True)
         delete_btn = self.button(self._("delete_config_btn"), "user-trash-symbolic", destructive=True)
         delete_btn.connect("clicked", lambda *_: app._delete_full_config(self.dialog))
         self.row(card, self._("delete_config_btn"), self._("settings_delete_sub"), [delete_btn],
                  icon="triangle-alert-symbolic")
+
+    def _open_captains_log(self):
+        from plunderhub.ui import captains_log
+        captains_log.show(self.app, self.dialog)
 
     # --- keyboard / controller ---------------------------------------------------
 

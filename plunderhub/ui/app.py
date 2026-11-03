@@ -1791,9 +1791,15 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         """The welcome card, by itself once: on the very first start (or
         never, for anyone who ticked "don't show again" back when it came
         up every time). Clicking the PlunderHub wordmark brings it back (_show_welcome)."""
+        from plunderhub.ui import captains_log
         if self.settings.get("welcome_shown") or self.settings.get("tip_hide"):
+            # started before: after an update, the Captain's Log (once)
+            captains_log.after_start(self)
             return
         self.settings["welcome_shown"] = True
+        # a first install: the welcome card greets - no log of changes
+        # for it, now or at the next start
+        self.settings[captains_log.SEEN_KEY] = APP_VERSION
         save_settings(self.settings)
         self._show_welcome()
 

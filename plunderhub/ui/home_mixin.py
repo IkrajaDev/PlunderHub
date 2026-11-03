@@ -24,6 +24,7 @@ import math
 import queue
 import threading
 import time
+import weakref
 import webbrowser
 import zlib
 from pathlib import Path
@@ -440,16 +441,35 @@ class _CappedBox(Gtk.Box):
         return minimum, max(minimum, self._natural)
 
 
+_HINT_GLYPHS: Dict[Tuple[float, ...], Optional[GdkPixbuf.Pixbuf]] = {}
+
+
+PROTON_BADGE_PT = 11.0
+
+
+def _proton_hint_glyph(app, accent) -> Optional[GdkPixbuf.Pixbuf]:
+    """The Proton hint badge's up arrow, in the accent, made once."""
+    key = tuple(round(c, 3) for c in accent)
+    if key not in _HINT_GLYPHS:
+        ink = "#%02x%02x%02x" % tuple(round(c * 255) for c in accent)
+        _HINT_GLYPHS[key] = get_icon_pixbuf("go-up-symbolic", 14, ink)
+    return _HINT_GLYPHS[key]
+
+
 class GameCard(Gtk.Box):
     """One cover in the grid: lifts on hover, shows the title, playtime
     and a play button over a dark fade, carries a launcher badge and a
     favourite star. A running game's cover is dimmed - the hero up top
     has its timer and Stop button."""
 
+    # every card there is: the Proton hints redraw theirs (ui/proton_hints.py)
+    live: "weakref.WeakSet[GameCard]" = weakref.WeakSet()
+
     def __init__(self, app, game: GameItem, cover_w: int, cover_h: int):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.game = game
+        GameCard.live.add(self)
         self.hover = 0.0
         self._target = 0.0
         self._anim_id: Optional[int] = None
@@ -459,7 +479,7 @@ class GameCard(Gtk.Box):
         # the button the pointer is over (fav, menu, play), and how lit
         # each one is - eased like the lift
         self._hot: Optional[str] = None
-        self._hot_level: Dict[str, float] = {"fav": 0.0, "menu": 0.0, "play": 0.0}
+        self._hot_level: Dict[str, float] = {"fav": 0.0, "menu": 0.0, "play": 0.0, "proton": 0.0}
         # the lift, 0..1 (a touch over while it overshoots), and its tween:
         # drawn, not laid out - see _draw_lift
         self._lift = 0.0
@@ -757,6 +777,9 @@ class GameCard(Gtk.Box):
         if zone == "menu":
             self._popup_menu(event)
             return True
+        if zone == "proton":
+            self.app._open_proton_hint(self.game)
+            return True
         if zone == "play" and self._phase() == "running":
             self.app._on_stop_game_clicked(None, self.game)
             return True
@@ -770,6 +793,8 @@ class GameCard(Gtk.Box):
             return "fav"
         if self.app.selection_mode:
             return None
+        if self._in_proton_badge(x, y):
+            return "proton"
         if self.app.show_card_menu_button and self.hover > 0.3 and math.hypot(x - (w - 52), y - 20) <= 15:
             return "menu"
         if self._phase() != "launching" and math.hypot(x - w / 2, y - h / 2) <= self._play_radius(w) + 4:
@@ -810,7 +835,8 @@ class GameCard(Gtk.Box):
         running = self._phase() == "running"
         tooltip.set_text({"fav": _("gm_unfavorite") if self.game.uid in self.app.favorites else _("gm_favorite"),
                           "menu": _("lm_more_tooltip"),
-                          "play": _("stop_game_tooltip") if running else _("launch_label")}[self._hot])
+                          "play": _("stop_game_tooltip") if running else _("launch_label"),
+                          "proton": self._proton_hint_tooltip()}[self._hot])
         return True
 
     # --- drawing ---------------------------------------------------------
@@ -842,6 +868,7 @@ class GameCard(Gtk.Box):
             cr.paint()
 
         self._paint_static_layer(widget, cr, w, h, phase, accent)
+        self._paint_proton_hint(cr, accent)
 
         if hv > 0.02 and not app.selection_mode and phase != "launching":
             # in the middle of the cover
@@ -946,6 +973,77 @@ class GameCard(Gtk.Box):
             cr.stroke()
         return False
 
+
+    def _proton_hint(self):
+        hints = getattr(self.app, "proton_hints", None)
+        return hints.get(self.game.uid) if hints is not None and self.app.show_covers else None
+
+    def _proton_badge(self) -> Optional[Tuple[float, float, float, str]]:
+        """The Proton hint's badge: (x, y, width, its words) - beside the
+        launcher's, after the New tag when there is one, as wide as its
+        words; None without a hint."""
+        found = self._proton_hint()
+        if found is None:
+            return None
+        text = self.app._("ph_badge_fix" if found[0].fix else "ph_badge_news")
+        cached = getattr(self, "_badge_width", None)
+        if cached is None or cached[0] != text:
+            layout = self.deco.create_pango_layout(text)
+            desc = self.deco.get_pango_context().get_font_description().copy()
+            desc.set_size(int(PROTON_BADGE_PT * Pango.SCALE))
+            desc.set_weight(Pango.Weight.BOLD)
+            layout.set_font_description(desc)
+            cached = self._badge_width = (text, layout.get_pixel_size()[0])
+        width = 10 + 14 + 6 + cached[1] + 12
+        x = 50.0
+        if self.app._is_new_game(self.game.uid):
+            x = 48 + 22 + 10.5 * len(self.app._("home_new_badge")) + 8
+        return x, 11.0, float(width), text
+
+    def _proton_hint_x(self) -> Optional[float]:
+        badge = self._proton_badge()
+        return None if badge is None else badge[0]
+
+    def _in_proton_badge(self, x: float, y: float) -> bool:
+        badge = self._proton_badge()
+        return badge is not None and badge[0] - 2 <= x <= badge[0] + badge[2] + 2 and 9 <= y <= 43
+
+    def _proton_hint_tooltip(self) -> str:
+        found = self._proton_hint()
+        if found is None:
+            return ""
+        mention = found[0]
+        return self.app._("ph_card_tooltip").format(tag=mention.tag)
+
+    def _paint_proton_hint(self, cr, accent):
+        """A newer Proton release has something for the game: a dark pill
+        with an accent rim, an up arrow and "Proton fix" / "Proton news"
+        beside the launcher's badge - lit while pointed at."""
+        badge = self._proton_badge()
+        if badge is None:
+            return
+        x, y, width, text = badge
+        lit = self._hot_level.get("proton", 0.0)
+        h = 30
+        cr.save()
+        cr.set_source_rgba(0, 0, 0, 0.4)
+        _rounded(cr, x + 1, y + 1.5, width, h, 15)
+        cr.fill()
+        _rounded(cr, x, y, width, h, 15)
+        cr.set_source_rgba(0.05 + 0.10 * lit * accent[0], 0.08 + 0.10 * lit * accent[1],
+                           0.09 + 0.10 * lit * accent[2], 0.85)
+        cr.fill_preserve()
+        cr.set_source_rgba(*_lighter(accent, 0.2 * lit), 1)
+        cr.set_line_width(1.6)
+        cr.stroke()
+        glyph = _proton_hint_glyph(self.app, accent)
+        if glyph is not None:
+            gw, gh = logical_size(glyph)
+            Gdk.cairo_set_source_pixbuf(cr, glyph, x + 10, y + (h - gh) / 2)
+            cr.paint()
+        _pango_text(cr, self.deco, text, x + 30, y + 6, width - 36, PROTON_BADGE_PT, True,
+                    (*_lighter(accent, 0.2 * lit), 1))
+        cr.restore()
 
     def _paint_static_layer(self, widget, cr, w: int, h: int, phase: Optional[str], accent):
         """The parts of the card that don't move - the fade, title and
@@ -1310,6 +1408,8 @@ class HomeMixin:
         side.pack_start(Gtk.Box(), True, True, 0)
         # while a Proton build downloads (ui/proton_page.py)
         from plunderhub.ui import proton_page
+        from plunderhub.ui.proton_hints import ProtonHints
+        self.proton_hints = ProtonHints(self)
         self._proton_card = proton_page.HomeDownloadCard(
             self, proton_page.RealProtonData(self), lambda: self.show_proton_page())
         side.pack_start(self._proton_card, False, False, 0)
@@ -1941,6 +2041,12 @@ class HomeMixin:
                 self._home_focus_sidebar()
             return True
         return False
+
+    def _open_proton_hint(self, game: GameItem):
+        """The card's Proton hint badge: the game page on Launch options,
+        where its hint and the Proton picker are."""
+        from plunderhub.ui.game_page import GamePage
+        GamePage(self, game, tab="launch", show_hint=True)
 
     def _home_launcher_badge(self, launcher: str, size: int = 16) -> Optional[GdkPixbuf.Pixbuf]:
         key = (launcher, size)
@@ -2957,6 +3063,9 @@ class HomeMixin:
         for section in launchers:
             for game in section["games"]:
                 self.game_index[game.uid] = game
+        hints = getattr(self, "proton_hints", None)
+        if hints is not None:
+            hints.library_changed()
         self._refresh_home_sidebar()
         self.info.set_text("")
 

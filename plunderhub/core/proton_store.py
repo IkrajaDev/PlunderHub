@@ -101,6 +101,7 @@ class Release:
     url: str                # the archive for this machine
     size: int               # bytes, the download
     sha_url: Optional[str]  # its .sha512sum
+    notes: str = ""         # its release notes (GitHub Markdown)
 
 
 @dataclass
@@ -334,9 +335,11 @@ def _release_from(family: str, data: Dict) -> Optional[Release]:
     if picked is None:
         return None
     archive, sha = picked
+    from plunderhub.core.release_notes import MAX_NOTES
     return Release(family, str(data.get("tag_name", "")), str(data.get("published_at", ""))[:10],
                    archive.get("browser_download_url", ""), int(archive.get("size") or 0),
-                   sha.get("browser_download_url") if sha else None)
+                   sha.get("browser_download_url") if sha else None,
+                   str(data.get("body") or "")[:MAX_NOTES])
 
 
 def newest_release(family: str) -> Optional[Release]:
@@ -353,7 +356,9 @@ def releases(family: str, refresh: bool = False) -> List[Release]:
     if not refresh:
         try:
             cached = json.loads(cache.read_text(encoding="utf-8"))
-            if time.time() - cached.get("at", 0) < RELEASES_TTL_S:
+            # a list cached before the notes were kept is fetched again once
+            if time.time() - cached.get("at", 0) < RELEASES_TTL_S and all(
+                    "notes" in r for r in cached.get("releases", [])):
                 return [Release(**r) for r in cached.get("releases", [])]
         except (OSError, ValueError, TypeError):
             pass
@@ -863,3 +868,13 @@ def latest_outdated(family: str) -> Optional[Release]:
     if current is not None and current.tag == release.tag or waiting_tag == release.tag:
         return None
     return release
+
+
+def cached_releases(family: str) -> List[Release]:
+    """The family's releases as last fetched, however old - the release
+    notes window falls back on them when GitHub can't be reached."""
+    try:
+        cached = json.loads((CACHE_DIR / f"proton-releases-{family}.json").read_text(encoding="utf-8"))
+        return [Release(**r) for r in cached.get("releases", [])]
+    except (OSError, ValueError, TypeError):
+        return []

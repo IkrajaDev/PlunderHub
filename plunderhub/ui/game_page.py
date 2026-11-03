@@ -641,7 +641,7 @@ class GamePage(Gtk.Dialog):
     """The game's own page. One scroll for all of it - the header goes up
     with the content, nothing gets cut off part way."""
 
-    def __init__(self, app, game: GameItem):
+    def __init__(self, app, game: GameItem, tab: str = "overview", show_hint: bool = False):
         super().__init__(transient_for=app._dialog_transient_parent(), modal=True)
         self.app, self.game = app, game
         self._ = app._
@@ -750,6 +750,12 @@ class GamePage(Gtk.Dialog):
         self.set_focus(None)
         if self.launch is not None:
             self.launch.footer.hide()
+        if tab == "launch":
+            self.show_launch_options()
+        if show_hint:
+            # opened from the card's Proton badge: down to its strip, lit up
+            # a moment - else it looks as if nothing happened
+            GLib.timeout_add(300, self._bring_hint)
         app._game_page = self
         app._enter_dimmed_dialog()
         try:
@@ -909,6 +915,56 @@ class GamePage(Gtk.Dialog):
                        and (w in chips or w in self.tab_buttons.values())), None)
         (picked or target[0]).grab_focus()
         return True
+
+    def _proton_switched(self, choice: str):
+        """The game was put on Proton-GE Latest from its hint: Launch
+        options shows it (and won't save the old one back)."""
+        if self.launch is not None:
+            self.launch.proton_switched(choice)
+        # the strip on the other tab says nothing anymore
+        shown = self.pages.get_visible_child_name()
+        for name, strip in (("overview", getattr(self, "_hint_strip", None)),
+                            ("launch", getattr(self.launch, "hint_strip", None))):
+            if strip is not None and name != shown:
+                strip.hide()
+
+    def _bring_hint(self) -> bool:
+        """Glides the page down to the Proton hint's strip on the tab
+        shown (a third of the way down the view) and lights it up."""
+        shown = self.pages.get_visible_child_name()
+        holder = (getattr(self.launch, "hint_strip", None) if shown == "launch"
+                  else getattr(self, "_hint_strip", None))
+        page = self.scroller.get_child()
+        if isinstance(page, Gtk.Viewport):
+            page = page.get_child()
+        if holder is None or not holder.get_visible() or page is None:
+            return False
+        at = holder.translate_coordinates(page, 0, 0)
+        if not at:
+            return False
+        adj = self.scroller.get_vadjustment()
+        start = adj.get_value()
+        goal = max(adj.get_lower(), min(adj.get_upper() - adj.get_page_size(),
+                                        at[1] - adj.get_page_size() / 3))
+        strip = holder.get_children()[0] if holder.get_children() else holder
+        strip.get_style_context().add_class("ph-strip-lit")
+        GLib.timeout_add(1600, lambda: strip.get_style_context().remove_class("ph-strip-lit") and False)
+        began = {"t": None}
+
+        def glide(_w, clock) -> bool:
+            now = clock.get_frame_time()
+            began["t"] = began["t"] or now
+            k = min(1.0, (now - began["t"]) / 380_000)
+            ease = 1 - (1 - k) ** 3
+            adj.set_value(start + (goal - start) * ease)
+            return k < 1.0
+        if abs(goal - start) > 2:
+            self.scroller.add_tick_callback(glide)
+        return False
+
+    def show_launch_options(self):
+        if "launch" in self.tab_buttons:
+            self.tab_buttons["launch"].set_active(True)
 
     def _show_tab(self, name: str):
         self.pages.set_visible_child_name(name)
@@ -1175,6 +1231,11 @@ class GamePage(Gtk.Dialog):
         grid.attach(version_card, 0, 0, 1, 1)
         grid.attach(runner_card, 1, 0, 1, 1)
         grid.attach(size_card, 2, 0, 1, 1)
+        # a newer Proton release mentions this game (ui/proton_hints.py)
+        from plunderhub.ui.proton_hints import hint_strip
+        hint = self._hint_strip = hint_strip(app, game, lambda: self, on_switched=self._proton_switched)
+        grid.insert_row(0)
+        grid.attach(hint, 0, 0, 3, 1)
 
         # where it lives - each one opens on a click
         places = []
@@ -1476,6 +1537,14 @@ class LaunchOptionsTab(Gtk.Box):
         # as it is unless another one is picked (see _read)
         self._proton_alias = current if active != current else None
 
+    def proton_switched(self, choice: str):
+        combo = self.ui.get("proton")
+        self.loaded.proton = choice or None
+        self.opts.proton = choice or None
+        if combo is not None:
+            combo.remove_all()
+            self._fill_proton(combo, choice or "")
+
     def _open_proton_page(self):
         """Shipwright's Proton page; once it closes, the Proton list here
         has what was downloaded or removed there."""
@@ -1537,6 +1606,11 @@ class LaunchOptionsTab(Gtk.Box):
         if native:
             runtime.insert(0, self._row(_("gp_lo_native"), _("gp_lo_native_sub"), self._toggle("native")))
         col.pack_start(self._section("rocket-symbolic", _("gp_runs_with"), runtime), False, False, 0)
+        # a newer Proton release mentions this game - also one for a game on another Proton
+        from plunderhub.ui.proton_hints import hint_strip
+        self.hint_strip = hint_strip(self.app, game, lambda: self.get_toplevel(),
+                                     on_switched=self.page._proton_switched, soft=True)
+        col.pack_start(self.hint_strip, False, False, 0)
 
         fps_box = Gtk.Box(spacing=8)
         fps_entry = self._entry("fps_entry", 5)

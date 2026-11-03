@@ -40,6 +40,7 @@ goes out through the callbacks given to Updater; nothing in this module
 touches GTK.
 """
 
+import hashlib
 import os
 import re
 import shutil
@@ -50,7 +51,7 @@ import tempfile
 import threading
 import urllib.request
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from plunderhub.core.update_check import GITHUB_REPO
 from plunderhub.logging_setup import logger
@@ -120,11 +121,22 @@ def package_root() -> Path:
     return Path(plunderhub.__file__).resolve().parent.parent
 
 
+def _same_dir(root: Path, fixed: Path) -> bool:
+    """package_root() is symlink-resolved, so the fixed path has to be
+    too: on Fedora Atomic (Bazzite, Silverblue, Kinoite...) /usr/local is
+    a symlink to /var/usrlocal, and a plain compare called install.sh's
+    install "unsupported" there (Auto update greyed out)."""
+    try:
+        return root == fixed.resolve()
+    except OSError:
+        return root == fixed
+
+
 def detect_install_method() -> str:
     root = package_root()
-    if root == PACMAN_ROOT:
+    if _same_dir(root, PACMAN_ROOT):
         return METHOD_PACMAN
-    if root == SCRIPT_ROOT:
+    if _same_dir(root, SCRIPT_ROOT):
         return METHOD_SCRIPT
     if (root / ".git").exists():
         return METHOD_GIT
@@ -300,8 +312,27 @@ class Updater:
         finally:
             shutil.rmtree(workdir, ignore_errors=True)
 
+    def _source_url(self) -> Tuple[str, Optional[str]]:
+        """Where the release's source comes from, and its sha256 when
+        GitHub gives one: the tarball attached to the release
+        (plunderhub-X.Y.Z.tar.gz, since 1.0.2 - its downloads are counted),
+        else GitHub's own archive of the tag (older releases, or the API
+        can't be reached / its hourly limit is used up)."""
+        from plunderhub.core.utils import http_get_json
+        archive_url = f"https://github.com/{GITHUB_REPO}/archive/refs/tags/{self.tag}.tar.gz"
+        version = self.tag[1:] if self.tag.startswith("v") else self.tag
+        data = http_get_json(f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{self.tag}",
+                             {"Accept": "application/vnd.github+json"}, timeout=10)
+        assets = data.get("assets") if isinstance(data, dict) else None
+        for asset in assets or []:
+            if asset.get("name") == asset_name(version) and asset.get("browser_download_url"):
+                digest = str(asset.get("digest") or "")
+                return asset["browser_download_url"], (digest[7:].lower() if digest.startswith("sha256:")
+                                                        else None)
+        return archive_url, None
+
     def _download_and_extract(self, workdir: Path) -> Path:
-        url = f"https://github.com/{GITHUB_REPO}/archive/refs/tags/{self.tag}.tar.gz"
+        url, sha256 = self._source_url()
         archive = workdir / "source.tar.gz"
         self._on_log(f"GET {url}")
         try:
@@ -323,6 +354,12 @@ class Updater:
         except Exception as e:
             raise UpdateError("update_error_download", str(e))
         self._on_log(f"Downloaded {_format_size(archive.stat().st_size)}")
+        if sha256:
+            found = _sha256(archive)
+            if found != sha256:
+                raise UpdateError("update_error_download",
+                                  f"The download's checksum doesn't match GitHub's ({found} != {sha256})")
+            self._on_log("Checksum OK (sha256, as GitHub lists it)")
 
         extract_dir = workdir / "source"
         extract_dir.mkdir()
@@ -427,6 +464,20 @@ class Updater:
         if cmd[0] == "pkexec" and code in (_PKEXEC_DISMISSED, _PKEXEC_NOT_AUTHORIZED):
             raise UpdateError("update_error_auth", "\n".join(tail))
         raise UpdateError(error_key, f"exit code {code}\n" + "\n".join(tail))
+
+
+def asset_name(version: str) -> str:
+    """The source tarball attached to a release (PlunderHubTools/
+    make_release_asset.sh makes it from the tag)."""
+    return f"plunderhub-{version}.tar.gz"
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 _GIT_PROGRESS_RE = re.compile(r"^(remote: )?[A-Za-z ]+:\s+\d+% \(")

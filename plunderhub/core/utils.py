@@ -356,11 +356,35 @@ def immutable_system() -> Optional[str]:
     return None
 
 
+# The package manager that's actually there, for when /etc/os-release names
+# no known family: Garuda only says ID=garuda unless its own hook adds
+# ID_LIKE, and small derivatives (Drauger OS...) may leave ID_LIKE out.
+# apt-get / dnf only count with their package database tool next to them
+# (ALT Linux has an apt-get that installs RPMs).
+_FAMILY_TOOLS = (
+    ("arch", ("pacman",)),
+    ("debian", ("apt-get", "dpkg")),
+    ("suse", ("zypper", "rpm")),
+    ("fedora", ("dnf", "rpm")),
+    ("alpine", ("apk",)),
+    ("void", ("xbps-install",)),
+)
+
+
+def family_from_tools() -> str:
+    """arch / debian / suse / fedora / alpine / void by the package
+    manager on PATH, or "unknown"."""
+    for family, tools in _FAMILY_TOOLS:
+        if all(shutil.which(t) for t in tools):
+            return family
+    return "unknown"
+
+
 def detect_linux_distro_family() -> str:
     try:
         text = Path("/etc/os-release").read_text(encoding="utf-8", errors="ignore")
     except Exception:
-        return "unknown"
+        text = ""
     info: Dict[str, str] = {}
     for line in text.splitlines():
         if "=" in line:
@@ -375,4 +399,6 @@ def detect_linux_distro_family() -> str:
         return "suse"
     if "debian" in ident or "ubuntu" in ident:
         return "debian"
-    return "unknown"
+    family = family_from_tools()
+    # the callers only know these four
+    return family if family in ("arch", "fedora", "suse", "debian") else "unknown"

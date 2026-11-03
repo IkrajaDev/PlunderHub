@@ -52,9 +52,14 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 # the checkout it was actually launched from, with no visible error.
 # Reversed here so the intended priority order (source checkout, then
 # /usr/local/..., then /usr/...) is what's actually checked first.
+# Python has already put this script's folder first in sys.path itself:
+# skipping a candidate that's "already there" left _HERE BEHIND the two
+# install folders - a checkout ran the installed copy whenever there was
+# one. Each candidate is moved to the front instead.
 for _candidate in reversed((_HERE, "/usr/local/lib/plunderhub", "/usr/lib/plunderhub")):
-    if _candidate not in sys.path:
-        sys.path.insert(0, _candidate)
+    while _candidate in sys.path:
+        sys.path.remove(_candidate)
+    sys.path.insert(0, _candidate)
 
 # GNOME on Wayland lets no program bring another one's window to the
 # front - only X11 windows (_NET_ACTIVE_WINDOW): there PlunderHub runs on

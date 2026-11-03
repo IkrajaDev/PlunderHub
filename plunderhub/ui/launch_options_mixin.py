@@ -288,6 +288,10 @@ class LaunchOptionsMixin:
             self._show_info_dialog(f"{self._('lo_save_failed')}: {e}", message_type=Gtk.MessageType.ERROR)
             return False
         logger.info(f"Saved launch options of {game.title!r} to {backend.where(game)}")
+        # the game's Proton may have changed: its hint with it (ui/proton_hints.py)
+        hints = getattr(self, "proton_hints", None)
+        if hints is not None:
+            hints.refresh()
         return True
 
     def close_launcher_asking(self, launcher: str, parent: Gtk.Window) -> bool:

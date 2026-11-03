@@ -92,3 +92,30 @@ def fetch_latest_release_tag() -> Optional[str]:
 
 def release_page_url(tag: str) -> str:
     return f"https://github.com/{GITHUB_REPO}/releases/tag/{tag}"
+
+
+def fetch_release_notes(version: str) -> Optional[dict]:
+    """Blocking (a worker thread). PlunderHub's own release for version
+    ("1.0.2"): {"tag", "date", "notes", "url"} from GitHub, kept in the
+    cache so the Captain's Log opens offline afterwards; None when it
+    can't be had."""
+    import json
+    from plunderhub.constants import CACHE_DIR
+    tag = version if version.startswith("v") else f"v{version}"
+    cache = CACHE_DIR / f"captains-log-{tag}.json"
+    try:
+        return json.loads(cache.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    data = http_get_json(f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{tag}",
+                         {"Accept": "application/vnd.github+json"}, timeout=10)
+    if not isinstance(data, dict) or not data.get("tag_name"):
+        return None
+    found = {"tag": str(data["tag_name"]), "date": str(data.get("published_at") or "")[:10],
+             "notes": str(data.get("body") or ""), "url": str(data.get("html_url") or release_page_url(tag))}
+    try:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(found), encoding="utf-8")
+    except OSError as e:
+        logger.debug(f"Couldn't keep the release notes of {tag}: {e}")
+    return found
