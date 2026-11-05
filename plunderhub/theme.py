@@ -1224,6 +1224,60 @@ button.gp-card-btn:hover, button.gp-card-btn:focus {{ border-color: {accent}; ba
 .gp-card-label {{ color: {fg_dim}; font-size: 82%; font-weight: 700; letter-spacing: 1px; }}
 .gp-card-value {{ font-size: 112%; font-weight: 700; }}
 .gp-open-hint {{ color: {accent}; font-size: 82%; font-weight: 700; }}
+/* The ProtonDB card's tier, in ProtonDB's own colours (game_page._show_protondb). */
+.gp-card-sub {{ color: {fg_dim}; font-size: 82%; }}
+/* Shipwright's Bilge cleaning page (ui/bilge_page.py). */
+.bg-status {{ padding: 16px 18px; }}
+.bg-status-title {{ font-size: 130%; font-weight: 800; }}
+/* the tiles: one per kind of leftover - only background and border change */
+button.bg-tile {{ padding: 14px 10px 12px; border-radius: 14px; border: 1px solid {tint(0.08)};
+    background-color: {tint(0.04)}; }}
+button.bg-tile:hover {{ background-color: {tint(0.08)}; }}
+button.bg-tile:checked {{ background-color: alpha({accent}, 0.16); border-color: {accent}; }}
+.bg-tile-title {{ font-weight: 700; }}
+.bg-tile-sub {{ color: {fg_dim}; font-size: 90%; }}
+/* small pills on a row: what's in the folder */
+.bg-pill {{ padding: 2px 9px; border-radius: 999px; font-size: 82%; font-weight: 700; }}
+.bg-pill-warn {{ background-color: alpha(#f0b429, 0.16); color: #f0b429; }}
+.bg-pill-ok {{ background-color: alpha({accent}, 0.16); color: {accent}; }}
+.bg-pill-quiet {{ background-color: {tint(0.08)}; color: {fg_dim}; }}
+/* round little buttons: open the folder, back up, delete a backup */
+button.bg-icon-btn {{ padding: 6px 10px; min-height: 0; border-radius: 999px; border: 1px solid {tint(0.10)};
+    background-color: {tint(0.04)}; }}
+button.bg-icon-btn:hover {{ background-color: {tint(0.10)}; }}
+/* the dialogs' cards: what goes into a backup (accent), what stays out (quiet) */
+.bg-panel {{ padding: 12px 14px; border-radius: 12px; }}
+.bg-panel-ok {{ background-color: alpha({accent}, 0.10); border: 1px solid alpha({accent}, 0.45); }}
+.bg-panel-quiet {{ background-color: {tint(0.04)}; border: 1px solid {tint(0.08)}; }}
+.bg-panel-title {{ font-weight: 800; }}
+.bg-panel-total {{ font-weight: 700; color: {accent}; }}
+/* big numbers: what's freed, new / replaced / already there */
+.bg-stat {{ padding: 10px 8px; border-radius: 12px; background-color: {tint(0.04)}; }}
+.bg-stat-num {{ font-size: 170%; font-weight: 800; }}
+.bg-stat-ok .bg-stat-num {{ color: {accent}; }}
+.bg-stat-warn .bg-stat-num {{ color: #f0b429; }}
+.bg-stat-big {{ background-color: alpha(#e5484d, 0.10); }}
+.bg-stat-big .bg-stat-num {{ font-size: 220%; color: #ff6b6f; }}
+.bg-beta {{ padding: 10px 14px; border-radius: 12px; background-color: alpha(#f0b429, 0.08);
+    border: 1px solid alpha(#f0b429, 0.30); }}
+.bg-undo {{ padding: 8px 8px 8px 16px; border-radius: 999px; background-color: {tint(0.06)};
+    border: 1px solid alpha({accent}, 0.45); }}
+.bg-list-head {{ border-bottom: 1px solid {tint(0.08)}; }}
+.bg-list-line {{ padding: 4px 2px; }}
+.bg-flash {{ color: {accent}; font-weight: 700; }}
+.bg-state {{ color: {fg_dim}; font-style: italic; }}
+.bg-size {{ font-weight: 700; font-size: 105%; }}
+.bg-saves {{ color: #f0b429; font-weight: 600; }}
+button.bg-path, button.bg-path:hover, button.bg-path:active, button.bg-path:focus {{
+    padding: 0; min-height: 0; border: none; border-radius: 0; background: none; box-shadow: none; }}
+.bg-path label {{ color: {accent}; font-size: 92%; }}
+.pdb-tier-native {{ color: #3ec95a; }}
+.pdb-tier-platinum {{ color: #b4c7dc; }}
+.pdb-tier-gold {{ color: #cfb53b; }}
+.pdb-tier-silver {{ color: #a6a6a6; }}
+.pdb-tier-bronze {{ color: #cd7f32; }}
+.pdb-tier-borked {{ color: #ff4d4d; }}
+.pdb-tier-pending {{ color: {fg_dim}; }}
 .gp-note {{ color: {fg_dim}; }}
 /* The image picker (image_picker.ImageFilePicker): a file dragged over
    it lights the whole window's edge. */

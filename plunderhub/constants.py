@@ -23,7 +23,7 @@ from typing import Dict, List
 
 
 APP_NAME = "PlunderHub"
-APP_VERSION = "1.0.2"
+APP_VERSION = "1.0.3"
 # "beta" puts a Beta badge on the home screen, About and Settings; "" for a
 # stable release.
 APP_CHANNEL = "beta"

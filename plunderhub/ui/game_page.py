@@ -42,6 +42,7 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
@@ -1259,12 +1260,18 @@ class GamePage(Gtk.Dialog):
         last = app.recent.get(game.uid)
         launcher = game.launcher + (f" · {_('store_' + game.store_platform)}"
                                     if game.launcher == "Heroic" and game.store_platform else "")
-        for col, (label, value) in enumerate(((_("gp_launcher"), launcher),
-                                              (_("gp_playtime"), app._home_playtime_text(game.uid)),
-                                              (_("gp_last_played"), app._home_ago_text(last) if last
-                                               else _("home_never_played_short")))):
+        # a box, not the grid's columns: the ProtonDB card joins it as a
+        # fourth once its rating is in (and only if there is one)
+        self._facts_row = Gtk.Box(spacing=14, homogeneous=True)
+        for label, value in ((_("gp_launcher"), launcher),
+                             (_("gp_playtime"), app._home_playtime_text(game.uid)),
+                             (_("gp_last_played"), app._home_ago_text(last) if last
+                              else _("home_never_played_short"))):
             card, _v = self._card(label, value)
-            grid.attach(card, col, 2, 1, 1)
+            self._facts_row.pack_start(card, True, True, 0)
+        grid.attach(self._facts_row, 0, 2, 3, 1)
+        if app.settings.get("protondb_enabled", True):
+            threading.Thread(target=self._fetch_protondb, daemon=True).start()
         if runner_of(game.uid) is not None and not updates_before_launch(game.uid):
             note = Gtk.Label(label=_("heroic_update_auto_off_text"), xalign=0)
             note.set_line_wrap(True)
@@ -1272,6 +1279,49 @@ class GamePage(Gtk.Dialog):
             grid.attach(note, 0, 3, 3, 1)
         threading.Thread(target=self._measure, daemon=True).start()
         return grid
+
+    def _fetch_protondb(self):
+        from plunderhub.core.protondb import rating
+        try:
+            found = rating(self.game.uid, self.game.title)
+        except Exception as e:
+            logger.debug(f"No ProtonDB rating for {self.game.title!r}: {e}")
+            found = None
+        if found is not None:
+            GLib.idle_add(self._show_protondb, found)
+
+    def _show_protondb(self, found) -> bool:
+        """The ProtonDB card: the tier in its colour, how many reports
+        (and that it's the Steam version's, for a game from elsewhere);
+        a click opens the game's ProtonDB page."""
+        if self.get_window() is None:
+            return False
+        _ = self._
+        value = _("pdb_pending") if found.tier == "pending" else found.tier.capitalize()
+        card, val = self._card("ProtonDB", value, lambda: webbrowser.open(found.url))
+        val.get_style_context().add_class(f"pdb-tier-{found.tier}")
+        sub = Gtk.Label(label=_("pdb_reports_steam" if found.by_title else "pdb_reports").format(n=found.total),
+                        xalign=0.5)
+        sub.set_justify(Gtk.Justification.CENTER)
+        sub.set_ellipsize(Pango.EllipsizeMode.END)
+        sub.get_style_context().add_class("gp-card-sub")
+        box = val.get_parent()
+        box.pack_start(sub, False, False, 0)
+        box.reorder_child(sub, 2)
+        if found.tier == "native" and found.proton:
+            # a Linux version on Steam - and how the Windows one runs with
+            # Proton, which is what a copy from another store may well be
+            with_proton = Gtk.Label(xalign=0.5)
+            with_proton.set_markup(GLib.markup_escape_text(_("pdb_with_proton")).replace(
+                "{tier}", f'<span weight="bold" foreground="{TIER_COLOURS[found.proton]}">'
+                          f'{found.proton.capitalize()}</span>'))
+            with_proton.get_style_context().add_class("gp-card-sub")
+            box.pack_start(with_proton, False, False, 0)
+            box.reorder_child(with_proton, 2)
+        card.set_tooltip_text(found.url)
+        self._facts_row.pack_start(card, True, True, 0)
+        card.show_all()
+        return False
 
     def _measure(self):
         game, app = self.game, self.app
@@ -1304,6 +1354,11 @@ class GamePage(Gtk.Dialog):
         self.version_val.set_text(version or self._("gp_unknown"))
         self.runner_val.set_text(runner or self._("gp_native"))
         return False
+
+
+# ProtonDB's own tier colours (theme.py's .pdb-tier-* has the same)
+TIER_COLOURS = {"platinum": "#b4c7dc", "gold": "#cfb53b", "silver": "#a6a6a6", "bronze": "#cd7f32",
+                "borked": "#ff4d4d"}
 
 
 # --- launch options --------------------------------------------------------------------------

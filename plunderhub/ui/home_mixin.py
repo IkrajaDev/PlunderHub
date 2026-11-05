@@ -2598,7 +2598,9 @@ class HomeMixin:
         first one the way out (Esc / the controller's B); Enter and A
         press default, else the last one. extra goes under the text;
         other_responses are ones the caller gives the dialog itself."""
-        dlg = Gtk.Dialog(transient_for=transient_for or self._dialog_transient_parent(), modal=True)
+        parent = transient_for or self._dialog_transient_parent()
+        # the main window not shown yet (started from Steam: the question comes first)
+        dlg = Gtk.Dialog(transient_for=parent if parent.get_visible() else None, modal=True)
         dlg.set_decorated(False)
         dlg.set_resizable(False)
         visual = dlg.get_screen().get_rgba_visual()

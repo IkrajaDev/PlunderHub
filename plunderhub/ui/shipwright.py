@@ -56,7 +56,8 @@ CATEGORY_ICONS = {"overview": "layout-dashboard-symbolic", "inspection": "stetho
                   "updates": "view-refresh-symbolic",
                   "launchers": "applications-games-symbolic", "performance": "zap-symbolic",
                   "graphics": "sparkles-symbolic", "proton": "rocket-symbolic", "flatpak": "package-symbolic",
-                  "controllers": "input-gaming-symbolic", "apps": "cpu-symbolic"}
+                  "controllers": "input-gaming-symbolic", "apps": "cpu-symbolic",
+                  "bilge": "user-trash-symbolic"}
 TILE_CATEGORIES = [c for c in CATEGORIES if c not in ("overview", "inspection", "updates")]
 # The Flatpak launchers' Vulkan layer of a tool: shown and installed
 # along with the tool, on its tile.
@@ -697,6 +698,9 @@ class Shipwright:
         self.proton_page = (PROTON_PAGE or (lambda sw: proton_page.ProtonPage(
             sw, proton_page.RealProtonData(sw.app))))(self)
         self.stack.add_named(self._scroll(self.proton_page), "protons")
+        from plunderhub.ui import bilge_page
+        self.bilge_page = bilge_page.BilgePage(self)
+        self.stack.add_named(self._scroll(self.bilge_page), "bilge")
 
         content.show_all()
         self._set_collapsed(not self.app.settings.get("shipwright_sidebar_open", True))
@@ -800,6 +804,7 @@ class Shipwright:
         self.nav_icons: Dict[str, "NavIcon"] = {}
         cats = list(CATEGORIES)
         cats.insert(cats.index("inspection") + 1, "protons")
+        cats.insert(cats.index("protons") + 1, "bilge")
         for cat in cats:
             row = Gtk.ListBoxRow()
             row.page = cat
@@ -905,6 +910,8 @@ class Shipwright:
             return self._("sw_updates")
         if cat == "protons":
             return self.proton_page.TITLE if getattr(self, "proton_page", None) else "Proton"
+        if cat == "bilge":
+            return self._("bg_title")
         if cat == "launchers":
             return self._("sources_header_launchers")
         return self._(f"sw_group_{cat}" if cat != "overview" else "sw_overview")
@@ -1241,7 +1248,8 @@ class Shipwright:
         self.page = page
         self.stack.set_visible_child_name(page)
         self.page_title.set_text(_("sw_headline") if page == "overview" else self._cat_title(page))
-        self.page_sub.set_text(self.proton_page.SUB if page == "protons" else _(f"sw_cat_sub_{page}"))
+        self.page_sub.set_text(self.proton_page.SUB if page == "protons" else _("bg_sub") if page == "bilge"
+                               else _(f"sw_cat_sub_{page}"))
         self._update_action_bar()
 
     # --- the list: jumping to a shelf, the sidebar following the scrolling ----------------

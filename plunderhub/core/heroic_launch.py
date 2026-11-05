@@ -278,9 +278,14 @@ class HeroicLaunch:
             elif source == prefix and text == f"Auto-Updating {title}":
                 updating = True
                 stage = HeroicLaunchStage("updating")
-            elif text.startswith(f"Progress for {title}:") and (updating or not ours):
-                updating = True
+            elif re.match(rf"Progress for {re.escape(title)}: [\d.]+%", text) and (updating or not ours):
+                # the title then the percent: "The Long Dark: Wintermute: 41%" is another game
                 found = _PROGRESS.search(text)
+                if not updating and found is not None and float(found.group(1)) >= 100:
+                    # a last 100 % line logged after its download ended
+                    # (seen minutes after "Finished Installation")
+                    continue
+                updating = True
                 stage = HeroicLaunchStage("updating")
                 if found is not None:
                     stage.progress = f"{float(found.group(1)):.0f}%"
@@ -288,7 +293,8 @@ class HeroicLaunch:
                     stage.speed = found.group(4) or ""
                     stage.eta = found.group(3) or ""
             elif app_name and source == "[DownloadManager]:" and re.match(
-                    rf"(Finished Update of|Update of) {re.escape(app_name)}\b", text):
+                    rf"(Finished Update of|Update of|Finished Installation of|Installation of) "
+                    rf"{re.escape(app_name)}\b", text):
                 updating = False
                 stage = HeroicLaunchStage("preparing")
             elif source == "[Backend]:" and text.startswith("Launching ") and text.endswith(f"({app_name})"):

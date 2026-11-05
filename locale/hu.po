@@ -270,6 +270,406 @@ msgstr "Megnyitás a mappában"
 msgid "beta_badge"
 msgstr "Béta"
 
+#. English: Copies of your saves. Restore puts them back where they were - even if the game's folder is gone.
+msgid "bg_about_backups"
+msgstr "A mentéseid másolatai. A Visszaállítás visszateszi őket a helyükre – akkor is, ha a játék mappája már nincs meg."
+
+#. English: The same for games removed from Heroic, Lutris or Faugus: their Windows folder stayed behind. Saves may be in it.
+msgid "bg_about_prefixes"
+msgstr "Ugyanez a Heroicból, Lutrisból vagy Faugusból eltávolított játékoknál: a Windows-mappájuk ott maradt. Lehetnek benne mentések."
+
+#. English: Proton versions no game uses any more. Safe to delete - you can download them again any time.
+msgid "bg_about_proton"
+msgstr "Proton-verziók, amiket már egy játék sem használ. Nyugodtan törölhetők – bármikor újra letöltheted őket."
+
+#. English: Graphics data a removed game prepared to start faster. Safe to delete - nothing of yours is in it.
+msgid "bg_about_shader_cache"
+msgstr "Grafikai adatok, amiket egy eltávolított játék a gyorsabb indulásért készített. Nyugodtan törölhető – semmi sajátod nincs benne."
+
+#. English: A removed Steam game's Windows folder (every game runs in its own little Windows). Your saves may be in it - back them up first.
+msgid "bg_about_steam_prefix"
+msgstr "Egy eltávolított Steam-játék Windows-mappája (minden játék a saját kis Windowsában fut). Lehetnek benne mentések – előbb készíts róluk másolatot."
+
+#. English: {files} copied - see Backups
+msgid "bg_backed_up"
+msgstr "{files} lemásolva – a Biztonsági másolatok között találod"
+
+#. English: Back up
+msgid "bg_backup"
+msgstr "Másolat"
+
+#. English: Goes into the backup
+msgid "bg_backup_copied"
+msgstr "Ez kerül a másolatba"
+
+#. English: Couldn't make the copy - nothing was changed: {error}
+msgid "bg_backup_failed"
+msgstr "Nem sikerült a másolat – semmi nem változott: {error}"
+
+#. English: Back up {title}'s saves?
+msgid "bg_backup_head"
+msgstr "Másolatot készítesz {title} mentéseiről?"
+
+#. English: Not needed, left out
+msgid "bg_backup_left"
+msgstr "Nem kell, kimarad"
+
+#. English: Back up
+msgid "bg_backup_ok"
+msgstr "Másolat készítése"
+
+#. English: Your saves and settings are copied to a safe place. Nothing is moved or deleted.
+msgid "bg_backup_text"
+msgstr "A mentéseid és beállításaid biztonságos helyre másolódnak. Semmi nem mozdul el és nem törlődik."
+
+#. English: BETA
+msgid "bg_beta_pill"
+msgstr "BÉTA"
+
+#. English: Backups are in beta and may not work perfectly for every game yet. Keep your own copy of anything important.
+msgid "bg_beta_text"
+msgstr "A biztonsági másolat még béta: nem minden játéknál működhet tökéletesen. Ami fontos, arról legyen saját másolatod is."
+
+#. English: Files the game wrote in its folder
+msgid "bg_cat_programs"
+msgstr "Amit a játék a saját mappájába írt"
+
+#. English: The game's settings stored by Windows
+msgid "bg_cat_registry"
+msgstr "A játék Windowsban tárolt beállításai"
+
+#. English: Saves and settings
+msgid "bg_cat_saves"
+msgstr "Mentések és beállítások"
+
+#. English: Last changed: {date}
+msgid "bg_changed"
+msgstr "Utoljára módosult: {date}"
+
+#. English: The bilge is dry
+msgid "bg_clean"
+msgstr "Tiszta a hajófenék"
+
+#. English: No leftovers from removed games, and every Proton version is in use.
+msgid "bg_clean_sub"
+msgstr "Nincs maradvány eltávolított játékok után, és minden Proton-verzió használatban van."
+
+#. English: Delete {n} folders?
+msgid "bg_confirm_head"
+msgstr "Törlöd ezt a(z) {n} mappát?"
+
+#. English: Delete this folder?
+msgid "bg_confirm_head_1"
+msgstr "Törlöd ezt a mappát?"
+
+#. English: Delete
+msgid "bg_delete"
+msgstr "Törlés"
+
+#. English: Delete backup
+msgid "bg_delete_backup"
+msgstr "Másolat törlése"
+
+#. English: Delete the backup of {title} ({size})? It can't be undone.
+msgid "bg_delete_backup_q"
+msgstr "Törlöd a(z) {title} biztonsági másolatát ({size})? Nem vonható vissza."
+
+#. English: Delete selected…
+msgid "bg_delete_btn"
+msgstr "Kijelöltek törlése…"
+
+#. English: Deleting…
+msgid "bg_deleting"
+msgstr "Törlés…"
+
+#. English: Couldn't delete {path}: {error}
+msgid "bg_failed"
+msgstr "Nem sikerült törölni: {path} ({error})"
+
+#. English: 1 file
+msgid "bg_files_1"
+msgstr "1 fájl"
+
+#. English: {n} files
+msgid "bg_files_n"
+msgstr "{n} fájl"
+
+#. English: {size} can be freed
+msgid "bg_free"
+msgstr "{size} szabadítható fel"
+
+#. English: frees up
+msgid "bg_frees"
+msgstr "szabadul fel"
+
+#. English: Launcher prefixes
+msgid "bg_group_prefixes"
+msgstr "Launcher-prefixek"
+
+#. English: Unused Proton versions
+msgid "bg_group_proton"
+msgstr "Nem használt Proton-verziók"
+
+#. English: Shader caches
+msgid "bg_group_shader_cache"
+msgstr "Shader cache"
+
+#. English: Steam prefixes
+msgid "bg_group_steam_prefix"
+msgstr "Steam-prefixek"
+
+#. English: deleted
+msgid "bg_how_deleted"
+msgstr "törölve"
+
+#. English: to the Trash
+msgid "bg_how_trash"
+msgstr "a Kukába"
+
+#. English: The game is running. Close it first, then restore.
+msgid "bg_in_use"
+msgstr "A játék fut. Előbb zárd be, utána állítsd vissza."
+
+#. English: shader cache
+msgid "bg_kind_cache"
+msgstr "shader cache"
+
+#. English: prefix
+msgid "bg_kind_prefix"
+msgstr "prefix"
+
+#. English: Proton
+msgid "bg_kind_proton"
+msgstr "Proton"
+
+#. English: Caches
+msgid "bg_left_caches_s"
+msgstr "Gyorsítótárak"
+
+#. English: Installed programs
+msgid "bg_left_programs_s"
+msgstr "Telepített programok"
+
+#. English: Wine's own files
+msgid "bg_left_windows_s"
+msgstr "A Wine saját fájljai"
+
+#. English: not enough free space: {need} needed, {free} free
+msgid "bg_no_space"
+msgstr "nincs elég szabad hely: {need} kellene, {free} szabad"
+
+#. English: Their drive has no Trash folder. Delete them permanently?
+msgid "bg_no_trash"
+msgstr "A meghajtójukon nincs Kuka mappa. Véglegesen törlöd őket?"
+
+#. English: These can't go to the Trash
+msgid "bg_no_trash_head"
+msgstr "Ezek nem tehetők a Kukába"
+
+#. English: {n} have saves with no backup yet
+msgid "bg_nobackup_warn"
+msgstr "{n} mappában mentés van, és még nincs róla másolat"
+
+#. English: Nothing selected
+msgid "bg_none_selected"
+msgstr "Nincs kijelölve semmi"
+
+#. English: the game's drive isn't reachable ({path}) - plug it in and try again
+msgid "bg_not_there"
+msgstr "a játék meghajtója nem érhető el ({path}) – dugd be, és próbáld újra"
+
+#. English: Open folder
+msgid "bg_open_folder"
+msgstr "Mappa megnyitása"
+
+#. English: Delete permanently
+msgid "bg_permanent"
+msgstr "Végleges törlés"
+
+#. English: Frees the space now, but it's gone for good.
+msgid "bg_permanent_short"
+msgstr "Azonnal helyet szabadít fel, de végleg eltűnik."
+
+#. English: Backed up
+msgid "bg_pill_backed"
+msgstr "Van másolat"
+
+#. English: Saves inside
+msgid "bg_pill_player"
+msgstr "Mentések vannak benne"
+
+#. English: Proton versions are deleted for good - downloadable again.
+msgid "bg_proton_short"
+msgstr "A Protonok véglegesen törlődnek - újra letölthetők."
+
+#. English: Recently cleaned
+msgid "bg_recent"
+msgstr "Legutóbb törölve"
+
+#. English: Clear the list
+msgid "bg_recent_clear"
+msgstr "Lista törlése"
+
+#. English: Sink the cleaning history?
+msgid "bg_recent_clear_head"
+msgstr "Elsüllyeszted a takarítási előzményeket?"
+
+#. English: Only this list goes - nothing on disk changes, backups stay.
+msgid "bg_recent_clear_text"
+msgstr "Csak ez a lista törlődik - a lemezen semmi nem változik, a biztonsági másolatok maradnak."
+
+#. English: Cleaning history sunk
+msgid "bg_recent_cleared"
+msgstr "Takarítási előzmények a mélybe süllyesztve."
+
+#. English: Look again
+msgid "bg_rescan"
+msgstr "Újra átnézem"
+
+#. English: Restore…
+msgid "bg_restore"
+msgstr "Visszaállítás…"
+
+#. English: Anything it overwrites is kept - you can undo it.
+msgid "bg_restore_aside_short"
+msgstr "Amit felülír, azt megőrzöm – vissza tudod vonni."
+
+#. English: Restoring stopped: {error}.
+msgid "bg_restore_failed"
+msgstr "A visszaállítás megállt: {error}."
+
+#. English: The game's folder is gone - it will be made again for the saves.
+msgid "bg_restore_gone"
+msgstr "A játék mappája már nincs meg – újra létrehozom a mentéseknek."
+
+#. English: Put {title}'s saves back?
+msgid "bg_restore_head"
+msgstr "Visszateszed {title} mentéseit?"
+
+#. English: The folder's Windows settings stay as they are now.
+msgid "bg_restore_kept_short"
+msgstr "A mappa Windows-beállításai maradnak, ahogy most vannak."
+
+#. English: The game's settings come back on their own once you start it.
+msgid "bg_restore_later"
+msgstr "A játék beállításai maguktól visszakerülnek, amint egyszer elindítod."
+
+#. English: Everything is already in place. Nothing to do.
+msgid "bg_restore_nothing"
+msgstr "Már minden a helyén van. Nincs teendő."
+
+#. English: Restore
+msgid "bg_restore_ok"
+msgstr "Visszaállítás"
+
+#. English: The game's settings come back too.
+msgid "bg_restore_registry"
+msgstr "A játék beállításai is visszakerülnek."
+
+#. English: The files are back. Start the game once - its settings will follow on their own.
+msgid "bg_restore_start_first"
+msgstr "A fájlok visszakerültek. Indítsd el egyszer a játékot, és a beállításai maguktól jönnek."
+
+#. English: The saves go back into the game's folder.
+msgid "bg_restore_there"
+msgstr "A mentések visszakerülnek a játék mappájába."
+
+#. English: {files} put back
+msgid "bg_restored"
+msgstr "{files} visszakerült"
+
+#. English: can be undone
+msgid "bg_restored_aside"
+msgstr "visszavonható"
+
+#. English: Looking through the bilge…
+msgid "bg_scanning"
+msgstr "Átnézzük a hajófeneket…"
+
+#. English: Reading every launcher and measuring the folders. Nothing is deleted.
+msgid "bg_scanning_sub"
+msgstr "Minden launchert átnézünk és lemérjük a mappákat. Semmi nem törlődik."
+
+#. English: All {n} in this list
+msgid "bg_select_these"
+msgstr "Mind a(z) {n} ebben a listában"
+
+#. English: {n} selected · {size}
+msgid "bg_selected"
+msgstr "{n} kijelölve · {size}"
+
+#. English: {title}: its settings are back too
+msgid "bg_settings_back"
+msgstr "{title}: a beállításai is visszakerültek"
+
+#. English: Steam was skipped: one of its libraries ({path}) isn't reachable - is that drive plugged in? Otherwise its games there would look removed.
+msgid "bg_skipped_unmounted"
+msgstr "A Steamet most kihagytam: egy Steam-könyvtára ({path}) nem érhető el – be van dugva a meghajtó? Enélkül az ottani játékok eltávolítottnak tűnnének."
+
+#. English: {launcher} was skipped: not all its games could be read, so it can't be told for sure what's left over.
+msgid "bg_skipped_unreadable"
+msgstr "A(z) {launcher} kimaradt: nem tudtam minden játékát beolvasni, így nem tudom biztosan, mi maradvány."
+
+#. English: new
+msgid "bg_stat_new"
+msgstr "új"
+
+#. English: overwritten
+msgid "bg_stat_replaced"
+msgstr "felülíródik"
+
+#. English: already there
+msgid "bg_stat_same"
+msgstr "már megvan"
+
+#. English: Folder gone
+msgid "bg_state_gone_s"
+msgstr "Mappa törölve"
+
+#. English: Folder there
+msgid "bg_state_there_s"
+msgstr "Mappa megvan"
+
+#. English: What removed games left behind on your disk
+msgid "bg_sub"
+msgstr "Amit az eltávolított játékok a lemezeden hagytak"
+
+#. English: Backups
+msgid "bg_tab_backups"
+msgstr "Biztonsági másolatok"
+
+#. English: Bilge cleaning
+msgid "bg_title"
+msgstr "Hajófenék-takarítás"
+
+#. English: Move to the Trash
+msgid "bg_trash"
+msgstr "Áthelyezés a Kukába"
+
+#. English: You can get it back from the Trash
+msgid "bg_trash_short"
+msgstr "A Kukából visszaszerezheted"
+
+#. English: The files go back to how they were before {when}.
+msgid "bg_undo_q"
+msgstr "A fájlok olyanok lesznek, mint {when} előtt voltak."
+
+#. English: {title}: undo the restore?
+msgid "bg_undo_q_head"
+msgstr "{title}: visszavonod a visszaállítást?"
+
+#. English: Undo restore
+msgid "bg_undo_restore"
+msgstr "Visszavonás"
+
+#. English: Undone - the files are as before
+msgid "bg_undone"
+msgstr "Visszavonva – a fájlok olyanok, mint előtte"
+
+#. English: Unknown game (Steam app {appid})
+msgid "bg_unknown_game"
+msgstr "Ismeretlen játék (Steam-azonosító: {appid})"
+
 #. English: Close
 msgid "bug_close"
 msgstr "Bezárás"
@@ -2078,6 +2478,30 @@ msgstr "Animációk szüneteltetése inaktív állapotban"
 msgid "pause_animations_info"
 msgstr "Energiát spórol, amíg játszol, vagy az ablak a háttérben van."
 
+#. English: Too few reports
+msgid "pdb_pending"
+msgstr "Kevés jelentés"
+
+#. English: {n} reports
+msgid "pdb_reports"
+msgstr "{n} jelentés"
+
+#. English: Steam version\n{n} reports
+msgid "pdb_reports_steam"
+msgstr "Steam-verzió\n{n} jelentés"
+
+#. English: Shows a game's rating on its page. Its Steam ID goes to ProtonDB; for a game not from Steam, its title goes to Steam's store search.
+msgid "pdb_setting_sub"
+msgstr "Megmutatja a játék besorolását az oldalán. A Steam-azonosítója a ProtonDB-hez megy; nem Steames játéknál a címe a Steam bolti keresőjéhez."
+
+#. English: ProtonDB ratings
+msgid "pdb_setting_title"
+msgstr "ProtonDB-értékelés"
+
+#. English: With Proton: {tier}
+msgid "pdb_with_proton"
+msgstr "Protonnal: {tier}"
+
 #. English: Browse…
 msgid "pfx_browse"
 msgstr "Tallózás…"
@@ -3430,6 +3854,78 @@ msgstr "Nincs telepítve"
 msgid "sources_header_launchers"
 msgstr "Launcherek"
 
+#. English: Add to Steam
+msgid "ss_add"
+msgstr "Hozzáadás a Steamhez"
+
+#. English: Add
+msgid "ss_add_short"
+msgstr "Hozzáadás"
+
+#. English: Done - PlunderHub is in your Steam library.
+msgid "ss_added"
+msgstr "Kész – a PlunderHub ott van a Steam-könyvtáradban."
+
+#. English: Restart Steam
+msgid "ss_close_ok"
+msgstr "Steam újraindítása"
+
+#. English: Steam has to restart for this. Restart it now?
+msgid "ss_close_q"
+msgstr "Ehhez a Steamet újra kell indítani. Újraindítsam most?"
+
+#. English: Do this in Desktop Mode - Steam has to close for it, and here that would end Game Mode.
+msgid "ss_desktop_only"
+msgstr "Ezt asztali módban csináld – ehhez a Steamnek be kell zárnia, ami itt a játékmódot is bezárná."
+
+#. English: That didn't work: {error}
+msgid "ss_failed"
+msgstr "Ez nem sikerült: {error}"
+
+#. English: Allow
+msgid "ss_flatpak_ok"
+msgstr "Engedélyezés"
+
+#. English: Your Steam is the Flatpak version: it needs your permission to start PlunderHub. Allow it?
+msgid "ss_flatpak_q"
+msgstr "A Steamed Flatpak-változat: engedély kell neki, hogy elindíthassa a PlunderHubot. Megadod?"
+
+#. English: PlunderHub runs from Steam now. Open it from your app menu for this.
+msgid "ss_from_steam"
+msgstr "A PlunderHub most a Steamből fut. Ehhez nyisd meg az alkalmazásmenüből."
+
+#. English: Add to Steam
+msgid "ss_group"
+msgstr "Hozzáadás a Steamhez"
+
+#. English: In your Steam library. Started from Steam it asks: desktop or Console Mode (in Big Picture always Console Mode).
+msgid "ss_in_steam"
+msgstr "Benne van a Steam-könyvtáradban. Steamből indítva megkérdezi: asztali vagy Console Mode (Big Picture-ben mindig Console Mode)."
+
+#. English: Remove from Steam
+msgid "ss_remove"
+msgstr "Eltávolítás a Steamből"
+
+#. English: Remove
+msgid "ss_remove_short"
+msgstr "Eltávolítás"
+
+#. English: Done - PlunderHub is no longer in Steam.
+msgid "ss_removed"
+msgstr "Kész – a PlunderHub már nincs a Steamben."
+
+#. English: Not possible with the Snap version of Steam: it can't start other programs.
+msgid "ss_snap"
+msgstr "A Steam Snap-változatával nem lehetséges: az nem tud más programot elindítani."
+
+#. English: Adds PlunderHub to your Steam library, so you can start it from Big Picture or a Steam Deck's Game Mode - it opens in Console Mode there.
+msgid "ss_sub"
+msgstr "Felveszi a PlunderHubot a Steam-könyvtáradba, így Big Picture-ből vagy a Steam Deck játékmódjából is elindíthatod – ott Console Mode-ban nyílik meg."
+
+#. English: PlunderHub in Steam
+msgid "ss_title"
+msgstr "PlunderHub a Steamben"
+
 #. English: Preparing the ship…
 msgid "startup_loading"
 msgstr "A hajó előkészítése…"
@@ -3485,6 +3981,22 @@ msgstr "Játékfrissítés letöltése…"
 #. English: Steam is waiting for you – check its window
 msgid "steam_stage_waiting"
 msgstr "A Steam rád vár – nézd meg az ablakát"
+
+#. English: Console Mode
+msgid "steam_start_console"
+msgstr "Console Mode"
+
+#. English: Desktop
+msgid "steam_start_desktop"
+msgstr "Asztali"
+
+#. English: How should PlunderHub open?
+msgid "steam_start_head"
+msgstr "Hogyan nyíljon meg a PlunderHub?"
+
+#. English: Desktop: the usual window. Console Mode: full screen, for a controller and the TV.
+msgid "steam_start_text"
+msgstr "Asztali: a megszokott ablak. Console Mode: teljes képernyő, kontrollerhez és tévéhez."
 
 #. English: Build
 msgid "step_build"

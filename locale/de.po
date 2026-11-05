@@ -270,6 +270,406 @@ msgstr "Im Ordner zeigen"
 msgid "beta_badge"
 msgstr "Beta"
 
+#. English: Copies of your saves. Restore puts them back where they were - even if the game's folder is gone.
+msgid "bg_about_backups"
+msgstr "Kopien deiner Spielstände. Wiederherstellen legt sie an ihren Platz zurück – auch wenn der Ordner des Spiels weg ist."
+
+#. English: The same for games removed from Heroic, Lutris or Faugus: their Windows folder stayed behind. Saves may be in it.
+msgid "bg_about_prefixes"
+msgstr "Dasselbe für aus Heroic, Lutris oder Faugus entfernte Spiele: ihr Windows-Ordner ist geblieben. Spielstände können darin sein."
+
+#. English: Proton versions no game uses any more. Safe to delete - you can download them again any time.
+msgid "bg_about_proton"
+msgstr "Proton-Versionen, die kein Spiel mehr nutzt. Können bedenkenlos weg – du kannst sie jederzeit neu herunterladen."
+
+#. English: Graphics data a removed game prepared to start faster. Safe to delete - nothing of yours is in it.
+msgid "bg_about_shader_cache"
+msgstr "Grafikdaten, die ein entferntes Spiel für schnelleres Starten vorbereitet hat. Kann bedenkenlos weg – nichts von dir ist darin."
+
+#. English: A removed Steam game's Windows folder (every game runs in its own little Windows). Your saves may be in it - back them up first.
+msgid "bg_about_steam_prefix"
+msgstr "Der Windows-Ordner eines entfernten Steam-Spiels (jedes Spiel läuft in seinem eigenen kleinen Windows). Deine Spielstände können darin sein – sichere sie zuerst."
+
+#. English: {files} copied - see Backups
+msgid "bg_backed_up"
+msgstr "{files} kopiert – unter Sicherungen"
+
+#. English: Back up
+msgid "bg_backup"
+msgstr "Sichern"
+
+#. English: Goes into the backup
+msgid "bg_backup_copied"
+msgstr "Kommt in die Sicherung"
+
+#. English: Couldn't make the copy - nothing was changed: {error}
+msgid "bg_backup_failed"
+msgstr "Die Kopie ging nicht – nichts wurde verändert: {error}"
+
+#. English: Back up {title}'s saves?
+msgid "bg_backup_head"
+msgstr "Spielstände von {title} sichern?"
+
+#. English: Not needed, left out
+msgid "bg_backup_left"
+msgstr "Nicht nötig, bleibt weg"
+
+#. English: Back up
+msgid "bg_backup_ok"
+msgstr "Sichern"
+
+#. English: Your saves and settings are copied to a safe place. Nothing is moved or deleted.
+msgid "bg_backup_text"
+msgstr "Deine Spielstände und Einstellungen werden an einen sicheren Ort kopiert. Nichts wird verschoben oder gelöscht."
+
+#. English: BETA
+msgid "bg_beta_pill"
+msgstr "BETA"
+
+#. English: Backups are in beta and may not work perfectly for every game yet. Keep your own copy of anything important.
+msgid "bg_beta_text"
+msgstr "Sicherungen sind noch Beta und funktionieren vielleicht nicht bei jedem Spiel perfekt. Behalte von Wichtigem eine eigene Kopie."
+
+#. English: Files the game wrote in its folder
+msgid "bg_cat_programs"
+msgstr "Was das Spiel in seinen Ordner schrieb"
+
+#. English: The game's settings stored by Windows
+msgid "bg_cat_registry"
+msgstr "Die von Windows gespeicherten Einstellungen des Spiels"
+
+#. English: Saves and settings
+msgid "bg_cat_saves"
+msgstr "Spielstände und Einstellungen"
+
+#. English: Last changed: {date}
+msgid "bg_changed"
+msgstr "Zuletzt geändert: {date}"
+
+#. English: The bilge is dry
+msgid "bg_clean"
+msgstr "Die Bilge ist trocken"
+
+#. English: No leftovers from removed games, and every Proton version is in use.
+msgid "bg_clean_sub"
+msgstr "Keine Reste entfernter Spiele, und jede Proton-Version wird benutzt."
+
+#. English: Delete {n} folders?
+msgid "bg_confirm_head"
+msgstr "{n} Ordner löschen?"
+
+#. English: Delete this folder?
+msgid "bg_confirm_head_1"
+msgstr "Diesen Ordner löschen?"
+
+#. English: Delete
+msgid "bg_delete"
+msgstr "Löschen"
+
+#. English: Delete backup
+msgid "bg_delete_backup"
+msgstr "Sicherung löschen"
+
+#. English: Delete the backup of {title} ({size})? It can't be undone.
+msgid "bg_delete_backup_q"
+msgstr "Sicherung von {title} löschen ({size})? Nicht rückgängig zu machen."
+
+#. English: Delete selected…
+msgid "bg_delete_btn"
+msgstr "Auswahl löschen…"
+
+#. English: Deleting…
+msgid "bg_deleting"
+msgstr "Wird gelöscht…"
+
+#. English: Couldn't delete {path}: {error}
+msgid "bg_failed"
+msgstr "{path} konnte nicht gelöscht werden: {error}"
+
+#. English: 1 file
+msgid "bg_files_1"
+msgstr "1 Datei"
+
+#. English: {n} files
+msgid "bg_files_n"
+msgstr "{n} Dateien"
+
+#. English: {size} can be freed
+msgid "bg_free"
+msgstr "{size} können frei werden"
+
+#. English: frees up
+msgid "bg_frees"
+msgstr "werden frei"
+
+#. English: Launcher prefixes
+msgid "bg_group_prefixes"
+msgstr "Launcher-Präfixe"
+
+#. English: Unused Proton versions
+msgid "bg_group_proton"
+msgstr "Ungenutzte Proton-Versionen"
+
+#. English: Shader caches
+msgid "bg_group_shader_cache"
+msgstr "Shader-Caches"
+
+#. English: Steam prefixes
+msgid "bg_group_steam_prefix"
+msgstr "Steam-Präfixe"
+
+#. English: deleted
+msgid "bg_how_deleted"
+msgstr "gelöscht"
+
+#. English: to the Trash
+msgid "bg_how_trash"
+msgstr "in den Papierkorb"
+
+#. English: The game is running. Close it first, then restore.
+msgid "bg_in_use"
+msgstr "Das Spiel läuft. Beende es zuerst, dann stelle wieder her."
+
+#. English: shader cache
+msgid "bg_kind_cache"
+msgstr "Shader-Cache"
+
+#. English: prefix
+msgid "bg_kind_prefix"
+msgstr "Präfix"
+
+#. English: Proton
+msgid "bg_kind_proton"
+msgstr "Proton"
+
+#. English: Caches
+msgid "bg_left_caches_s"
+msgstr "Caches"
+
+#. English: Installed programs
+msgid "bg_left_programs_s"
+msgstr "Installierte Programme"
+
+#. English: Wine's own files
+msgid "bg_left_windows_s"
+msgstr "Wines eigene Dateien"
+
+#. English: not enough free space: {need} needed, {free} free
+msgid "bg_no_space"
+msgstr "zu wenig freier Platz: {need} nötig, {free} frei"
+
+#. English: Their drive has no Trash folder. Delete them permanently?
+msgid "bg_no_trash"
+msgstr "Ihr Laufwerk hat keinen Papierkorb-Ordner. Endgültig löschen?"
+
+#. English: These can't go to the Trash
+msgid "bg_no_trash_head"
+msgstr "Diese können nicht in den Papierkorb"
+
+#. English: {n} have saves with no backup yet
+msgid "bg_nobackup_warn"
+msgstr "{n} enthalten Spielstände ohne Sicherung"
+
+#. English: Nothing selected
+msgid "bg_none_selected"
+msgstr "Nichts ausgewählt"
+
+#. English: the game's drive isn't reachable ({path}) - plug it in and try again
+msgid "bg_not_there"
+msgstr "das Laufwerk des Spiels ist nicht erreichbar ({path}) – schließe es an und versuche es erneut"
+
+#. English: Open folder
+msgid "bg_open_folder"
+msgstr "Ordner öffnen"
+
+#. English: Delete permanently
+msgid "bg_permanent"
+msgstr "Endgültig löschen"
+
+#. English: Frees the space now, but it's gone for good.
+msgid "bg_permanent_short"
+msgstr "Gibt den Platz sofort frei, aber es ist für immer weg."
+
+#. English: Backed up
+msgid "bg_pill_backed"
+msgstr "Gesichert"
+
+#. English: Saves inside
+msgid "bg_pill_player"
+msgstr "Spielstände drin"
+
+#. English: Proton versions are deleted for good - downloadable again.
+msgid "bg_proton_short"
+msgstr "Proton-Versionen werden endgültig gelöscht – neu ladbar."
+
+#. English: Recently cleaned
+msgid "bg_recent"
+msgstr "Zuletzt entfernt"
+
+#. English: Clear the list
+msgid "bg_recent_clear"
+msgstr "Liste leeren"
+
+#. English: Sink the cleaning history?
+msgid "bg_recent_clear_head"
+msgstr "Putz-Verlauf versenken?"
+
+#. English: Only this list goes - nothing on disk changes, backups stay.
+msgid "bg_recent_clear_text"
+msgstr "Nur diese Liste geht – auf der Festplatte ändert sich nichts, Sicherungen bleiben."
+
+#. English: Cleaning history sunk
+msgid "bg_recent_cleared"
+msgstr "Putz-Verlauf versenkt"
+
+#. English: Look again
+msgid "bg_rescan"
+msgstr "Erneut suchen"
+
+#. English: Restore…
+msgid "bg_restore"
+msgstr "Wiederherstellen…"
+
+#. English: Anything it overwrites is kept - you can undo it.
+msgid "bg_restore_aside_short"
+msgstr "Was überschrieben wird, bleibt aufbewahrt – du kannst es rückgängig machen."
+
+#. English: Restoring stopped: {error}.
+msgid "bg_restore_failed"
+msgstr "Wiederherstellen abgebrochen: {error}."
+
+#. English: The game's folder is gone - it will be made again for the saves.
+msgid "bg_restore_gone"
+msgstr "Der Ordner des Spiels ist weg – er wird für die Spielstände neu angelegt."
+
+#. English: Put {title}'s saves back?
+msgid "bg_restore_head"
+msgstr "Spielstände von {title} zurücklegen?"
+
+#. English: The folder's Windows settings stay as they are now.
+msgid "bg_restore_kept_short"
+msgstr "Die Windows-Einstellungen des Ordners bleiben, wie sie jetzt sind."
+
+#. English: The game's settings come back on their own once you start it.
+msgid "bg_restore_later"
+msgstr "Die Einstellungen des Spiels kommen von selbst zurück, sobald du es einmal startest."
+
+#. English: Everything is already in place. Nothing to do.
+msgid "bg_restore_nothing"
+msgstr "Alles ist schon an seinem Platz. Nichts zu tun."
+
+#. English: Restore
+msgid "bg_restore_ok"
+msgstr "Wiederherstellen"
+
+#. English: The game's settings come back too.
+msgid "bg_restore_registry"
+msgstr "Auch die Einstellungen des Spiels kommen zurück."
+
+#. English: The files are back. Start the game once - its settings will follow on their own.
+msgid "bg_restore_start_first"
+msgstr "Die Dateien sind zurück. Starte das Spiel einmal – seine Einstellungen kommen dann von selbst."
+
+#. English: The saves go back into the game's folder.
+msgid "bg_restore_there"
+msgstr "Die Spielstände kommen zurück in den Ordner des Spiels."
+
+#. English: {files} put back
+msgid "bg_restored"
+msgstr "{files} zurückgelegt"
+
+#. English: can be undone
+msgid "bg_restored_aside"
+msgstr "rückgängig machbar"
+
+#. English: Looking through the bilge…
+msgid "bg_scanning"
+msgstr "Die Bilge wird durchsucht…"
+
+#. English: Reading every launcher and measuring the folders. Nothing is deleted.
+msgid "bg_scanning_sub"
+msgstr "Alle Launcher werden gelesen und die Ordner gemessen. Nichts wird gelöscht."
+
+#. English: All {n} in this list
+msgid "bg_select_these"
+msgstr "Alle {n} in dieser Liste"
+
+#. English: {n} selected · {size}
+msgid "bg_selected"
+msgstr "{n} ausgewählt · {size}"
+
+#. English: {title}: its settings are back too
+msgid "bg_settings_back"
+msgstr "{title}: auch die Einstellungen sind zurück"
+
+#. English: Steam was skipped: one of its libraries ({path}) isn't reachable - is that drive plugged in? Otherwise its games there would look removed.
+msgid "bg_skipped_unmounted"
+msgstr "Steam wurde übersprungen: eine seiner Bibliotheken ({path}) ist nicht erreichbar – ist das Laufwerk angeschlossen? Sonst sähen die Spiele dort entfernt aus."
+
+#. English: {launcher} was skipped: not all its games could be read, so it can't be told for sure what's left over.
+msgid "bg_skipped_unreadable"
+msgstr "{launcher} wurde übersprungen: nicht alle seine Spiele ließen sich lesen, also ist nicht sicher, was übrig ist."
+
+#. English: new
+msgid "bg_stat_new"
+msgstr "neu"
+
+#. English: overwritten
+msgid "bg_stat_replaced"
+msgstr "überschrieben"
+
+#. English: already there
+msgid "bg_stat_same"
+msgstr "schon da"
+
+#. English: Folder gone
+msgid "bg_state_gone_s"
+msgstr "Ordner weg"
+
+#. English: Folder there
+msgid "bg_state_there_s"
+msgstr "Ordner da"
+
+#. English: What removed games left behind on your disk
+msgid "bg_sub"
+msgstr "Was entfernte Spiele auf deiner Festplatte hinterlassen haben"
+
+#. English: Backups
+msgid "bg_tab_backups"
+msgstr "Sicherungen"
+
+#. English: Bilge cleaning
+msgid "bg_title"
+msgstr "Bilgen-Putz"
+
+#. English: Move to the Trash
+msgid "bg_trash"
+msgstr "In den Papierkorb"
+
+#. English: You can get it back from the Trash
+msgid "bg_trash_short"
+msgstr "Du kannst es aus dem Papierkorb zurückholen"
+
+#. English: The files go back to how they were before {when}.
+msgid "bg_undo_q"
+msgstr "Die Dateien werden wieder so wie vor {when}."
+
+#. English: {title}: undo the restore?
+msgid "bg_undo_q_head"
+msgstr "{title}: Wiederherstellen rückgängig machen?"
+
+#. English: Undo restore
+msgid "bg_undo_restore"
+msgstr "Rückgängig"
+
+#. English: Undone - the files are as before
+msgid "bg_undone"
+msgstr "Rückgängig gemacht – die Dateien sind wie vorher"
+
+#. English: Unknown game (Steam app {appid})
+msgid "bg_unknown_game"
+msgstr "Unbekanntes Spiel (Steam-App {appid})"
+
 #. English: Close
 msgid "bug_close"
 msgstr "Schließen"
@@ -2078,6 +2478,30 @@ msgstr "Animationen bei Inaktivität pausieren"
 msgid "pause_animations_info"
 msgstr "Spart Energie, während du spielst oder das Fenster im Hintergrund ist."
 
+#. English: Too few reports
+msgid "pdb_pending"
+msgstr "Zu wenige Berichte"
+
+#. English: {n} reports
+msgid "pdb_reports"
+msgstr "{n} Berichte"
+
+#. English: Steam version\n{n} reports
+msgid "pdb_reports_steam"
+msgstr "Steam-Version\n{n} Berichte"
+
+#. English: Shows a game's rating on its page. Its Steam ID goes to ProtonDB; for a game not from Steam, its title goes to Steam's store search.
+msgid "pdb_setting_sub"
+msgstr "Zeigt die Bewertung eines Spiels auf seiner Seite. Seine Steam-ID geht an ProtonDB, bei Spielen nicht von Steam sein Titel an Steams Shopsuche."
+
+#. English: ProtonDB ratings
+msgid "pdb_setting_title"
+msgstr "ProtonDB-Bewertungen"
+
+#. English: With Proton: {tier}
+msgid "pdb_with_proton"
+msgstr "Mit Proton: {tier}"
+
 #. English: Browse…
 msgid "pfx_browse"
 msgstr "Durchsuchen…"
@@ -3430,6 +3854,78 @@ msgstr "Nicht installiert"
 msgid "sources_header_launchers"
 msgstr "Launcher"
 
+#. English: Add to Steam
+msgid "ss_add"
+msgstr "Zu Steam hinzufügen"
+
+#. English: Add
+msgid "ss_add_short"
+msgstr "Hinzufügen"
+
+#. English: Done - PlunderHub is in your Steam library.
+msgid "ss_added"
+msgstr "Fertig – PlunderHub ist in deiner Steam-Bibliothek."
+
+#. English: Restart Steam
+msgid "ss_close_ok"
+msgstr "Steam neu starten"
+
+#. English: Steam has to restart for this. Restart it now?
+msgid "ss_close_q"
+msgstr "Dafür muss Steam neu starten. Jetzt neu starten?"
+
+#. English: Do this in Desktop Mode - Steam has to close for it, and here that would end Game Mode.
+msgid "ss_desktop_only"
+msgstr "Mach das im Desktop-Modus – Steam muss dafür schließen, und hier würde das den Spielmodus beenden."
+
+#. English: That didn't work: {error}
+msgid "ss_failed"
+msgstr "Das hat nicht geklappt: {error}"
+
+#. English: Allow
+msgid "ss_flatpak_ok"
+msgstr "Erlauben"
+
+#. English: Your Steam is the Flatpak version: it needs your permission to start PlunderHub. Allow it?
+msgid "ss_flatpak_q"
+msgstr "Dein Steam ist die Flatpak-Version: es braucht deine Erlaubnis, um PlunderHub zu starten. Erlauben?"
+
+#. English: PlunderHub runs from Steam now. Open it from your app menu for this.
+msgid "ss_from_steam"
+msgstr "PlunderHub läuft gerade über Steam. Öffne es dafür über dein App-Menü."
+
+#. English: Add to Steam
+msgid "ss_group"
+msgstr "Zu Steam hinzufügen"
+
+#. English: In your Steam library. Started from Steam it asks: desktop or Console Mode (in Big Picture always Console Mode).
+msgid "ss_in_steam"
+msgstr "In deiner Steam-Bibliothek. Aus Steam gestartet fragt es: Desktop oder Console Mode (in Big Picture immer Console Mode)."
+
+#. English: Remove from Steam
+msgid "ss_remove"
+msgstr "Aus Steam entfernen"
+
+#. English: Remove
+msgid "ss_remove_short"
+msgstr "Entfernen"
+
+#. English: Done - PlunderHub is no longer in Steam.
+msgid "ss_removed"
+msgstr "Fertig – PlunderHub ist nicht mehr in Steam."
+
+#. English: Not possible with the Snap version of Steam: it can't start other programs.
+msgid "ss_snap"
+msgstr "Mit der Snap-Version von Steam nicht möglich: sie kann keine anderen Programme starten."
+
+#. English: Adds PlunderHub to your Steam library, so you can start it from Big Picture or a Steam Deck's Game Mode - it opens in Console Mode there.
+msgid "ss_sub"
+msgstr "Fügt PlunderHub deiner Steam-Bibliothek hinzu, damit du es aus Big Picture oder dem Spielmodus eines Steam Deck starten kannst – dort öffnet es im Console Mode."
+
+#. English: PlunderHub in Steam
+msgid "ss_title"
+msgstr "PlunderHub in Steam"
+
 #. English: Preparing the ship…
 msgid "startup_loading"
 msgstr "Das Schiff wird vorbereitet…"
@@ -3485,6 +3981,22 @@ msgstr "Ein Spiel-Update wird heruntergeladen…"
 #. English: Steam is waiting for you – check its window
 msgid "steam_stage_waiting"
 msgstr "Steam wartet auf dich – sieh in seinem Fenster nach"
+
+#. English: Console Mode
+msgid "steam_start_console"
+msgstr "Console Mode"
+
+#. English: Desktop
+msgid "steam_start_desktop"
+msgstr "Desktop"
+
+#. English: How should PlunderHub open?
+msgid "steam_start_head"
+msgstr "Wie soll PlunderHub öffnen?"
+
+#. English: Desktop: the usual window. Console Mode: full screen, for a controller and the TV.
+msgid "steam_start_text"
+msgstr "Desktop: das gewohnte Fenster. Console Mode: Vollbild, für Controller und Fernseher."
 
 #. English: Build
 msgid "step_build"

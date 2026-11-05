@@ -595,7 +595,7 @@ class CoversMixin:
 
     def _resolve_cover_pixbuf(self, w: int, h: int, cached: Optional[Path],
                                log_context: Optional[str] = None,
-                               game_title: Optional[str] = None) -> GdkPixbuf.Pixbuf:
+                               game_title: Optional[str] = None, crop: bool = True) -> GdkPixbuf.Pixbuf:
         """A ready-to-display, rounded STATIC cover pixbuf loaded from
         `cached`, or the (also rounded, aspect-fit) "no cover"
         placeholder if `cached` is None or fails to decode.
@@ -620,8 +620,9 @@ class CoversMixin:
                 try:
                     # the screen's own pixels (see gi_setup.hidpi_pixbuf)
                     scale = ui_scale()
-                    pb = hidpi_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size(str(cached), w * scale, h * scale),
-                                      scale)
+                    wide = self._load_cropped_cover(cached, w, h, scale) if crop else None
+                    pb = hidpi_pixbuf(wide or GdkPixbuf.Pixbuf.new_from_file_at_size(str(cached), w * scale,
+                                                                                      h * scale), scale)
                     return self._round_pixbuf_corners(pb)
                 except Exception as e:
                     if log_context:
@@ -630,6 +631,25 @@ class CoversMixin:
                         break
         ph_w, ph_h = self._fit_cover_aspect(w, h)
         return self._round_pixbuf_corners(self._make_no_cover_placeholder(ph_w, ph_h, game_title=game_title))
+
+    def _load_cropped_cover(self, path: Path, w: int, h: int, scale: int) -> Optional[GdkPixbuf.Pixbuf]:
+        """A cover wider than 2:3 (an Epic / GOG 3:4 portrait), cut to the
+        2:3 every other card has, around its middle - fitted whole it came
+        out as wide as the 3:4 box and the card stood out of the grid.
+        None when it isn't wider (then it's fitted as it is)."""
+        info = GdkPixbuf.Pixbuf.get_file_info(str(path))
+        if not info or info[0] is None or not info[1] or not info[2]:
+            return None
+        iw, ih = info[1], info[2]
+        if iw / ih <= self._TYPICAL_COVER_ASPECT * 1.02:
+            return None
+        bw, bh = self._fit_cover_aspect(w, h)
+        bw, bh = bw * scale, bh * scale
+        k = max(bw / iw, bh / ih)
+        sw, sh = max(bw, round(iw * k)), max(bh, round(ih * k))
+        pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), sw, sh, False)
+        x, y = (pb.get_width() - bw) // 2, (pb.get_height() - bh) // 2
+        return pb.new_subpixbuf(max(0, x), max(0, y), min(bw, pb.get_width()), min(bh, pb.get_height())).copy()
 
     def _load_static_icon_source(self, cached: Optional[Path]) -> Optional[GdkPixbuf.Pixbuf]:
         """The raw, un-scaled source image for an icon - always via
@@ -1494,7 +1514,7 @@ class CoversMixin:
     def _show_first_frame(self, widgets, path: Path, width: int, height: int,
                            game_title: Optional[str] = None) -> None:
         pixbuf = self._resolve_cover_pixbuf(width, height, path, log_context=f"Couldn't read first frame of {path}",
-                                             game_title=game_title)
+                                             game_title=game_title, crop=False)
         for widget in widgets:
             widget.set_from_pixbuf(pixbuf)
 

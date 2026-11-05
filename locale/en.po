@@ -207,6 +207,306 @@ msgstr "Show in folder"
 msgid "beta_badge"
 msgstr "Beta"
 
+msgid "bg_about_backups"
+msgstr "Copies of your saves. Restore puts them back where they were - even if the game's folder is gone."
+
+msgid "bg_about_prefixes"
+msgstr "The same for games removed from Heroic, Lutris or Faugus: their Windows folder stayed behind. Saves may be in it."
+
+msgid "bg_about_proton"
+msgstr "Proton versions no game uses any more. Safe to delete - you can download them again any time."
+
+msgid "bg_about_shader_cache"
+msgstr "Graphics data a removed game prepared to start faster. Safe to delete - nothing of yours is in it."
+
+msgid "bg_about_steam_prefix"
+msgstr "A removed Steam game's Windows folder (every game runs in its own little Windows). Your saves may be in it - back them up first."
+
+msgid "bg_backed_up"
+msgstr "{files} copied - see Backups"
+
+msgid "bg_backup"
+msgstr "Back up"
+
+msgid "bg_backup_copied"
+msgstr "Goes into the backup"
+
+msgid "bg_backup_failed"
+msgstr "Couldn't make the copy - nothing was changed: {error}"
+
+msgid "bg_backup_head"
+msgstr "Back up {title}'s saves?"
+
+msgid "bg_backup_left"
+msgstr "Not needed, left out"
+
+msgid "bg_backup_ok"
+msgstr "Back up"
+
+msgid "bg_backup_text"
+msgstr "Your saves and settings are copied to a safe place. Nothing is moved or deleted."
+
+msgid "bg_beta_pill"
+msgstr "BETA"
+
+msgid "bg_beta_text"
+msgstr "Backups are in beta and may not work perfectly for every game yet. Keep your own copy of anything important."
+
+msgid "bg_cat_programs"
+msgstr "Files the game wrote in its folder"
+
+msgid "bg_cat_registry"
+msgstr "The game's settings stored by Windows"
+
+msgid "bg_cat_saves"
+msgstr "Saves and settings"
+
+msgid "bg_changed"
+msgstr "Last changed: {date}"
+
+msgid "bg_clean"
+msgstr "The bilge is dry"
+
+msgid "bg_clean_sub"
+msgstr "No leftovers from removed games, and every Proton version is in use."
+
+msgid "bg_confirm_head"
+msgstr "Delete {n} folders?"
+
+msgid "bg_confirm_head_1"
+msgstr "Delete this folder?"
+
+msgid "bg_delete"
+msgstr "Delete"
+
+msgid "bg_delete_backup"
+msgstr "Delete backup"
+
+msgid "bg_delete_backup_q"
+msgstr "Delete the backup of {title} ({size})? It can't be undone."
+
+msgid "bg_delete_btn"
+msgstr "Delete selected…"
+
+msgid "bg_deleting"
+msgstr "Deleting…"
+
+msgid "bg_failed"
+msgstr "Couldn't delete {path}: {error}"
+
+msgid "bg_files_1"
+msgstr "1 file"
+
+msgid "bg_files_n"
+msgstr "{n} files"
+
+msgid "bg_free"
+msgstr "{size} can be freed"
+
+msgid "bg_frees"
+msgstr "frees up"
+
+msgid "bg_group_prefixes"
+msgstr "Launcher prefixes"
+
+msgid "bg_group_proton"
+msgstr "Unused Proton versions"
+
+msgid "bg_group_shader_cache"
+msgstr "Shader caches"
+
+msgid "bg_group_steam_prefix"
+msgstr "Steam prefixes"
+
+msgid "bg_how_deleted"
+msgstr "deleted"
+
+msgid "bg_how_trash"
+msgstr "to the Trash"
+
+msgid "bg_in_use"
+msgstr "The game is running. Close it first, then restore."
+
+msgid "bg_kind_cache"
+msgstr "shader cache"
+
+msgid "bg_kind_prefix"
+msgstr "prefix"
+
+msgid "bg_kind_proton"
+msgstr "Proton"
+
+msgid "bg_left_caches_s"
+msgstr "Caches"
+
+msgid "bg_left_programs_s"
+msgstr "Installed programs"
+
+msgid "bg_left_windows_s"
+msgstr "Wine's own files"
+
+msgid "bg_no_space"
+msgstr "not enough free space: {need} needed, {free} free"
+
+msgid "bg_no_trash"
+msgstr "Their drive has no Trash folder. Delete them permanently?"
+
+msgid "bg_no_trash_head"
+msgstr "These can't go to the Trash"
+
+msgid "bg_nobackup_warn"
+msgstr "{n} have saves with no backup yet"
+
+msgid "bg_none_selected"
+msgstr "Nothing selected"
+
+msgid "bg_not_there"
+msgstr "the game's drive isn't reachable ({path}) - plug it in and try again"
+
+msgid "bg_open_folder"
+msgstr "Open folder"
+
+msgid "bg_permanent"
+msgstr "Delete permanently"
+
+msgid "bg_permanent_short"
+msgstr "Frees the space now, but it's gone for good."
+
+msgid "bg_pill_backed"
+msgstr "Backed up"
+
+msgid "bg_pill_player"
+msgstr "Saves inside"
+
+msgid "bg_proton_short"
+msgstr "Proton versions are deleted for good - downloadable again."
+
+msgid "bg_recent"
+msgstr "Recently cleaned"
+
+msgid "bg_recent_clear"
+msgstr "Clear the list"
+
+msgid "bg_recent_clear_head"
+msgstr "Sink the cleaning history?"
+
+msgid "bg_recent_clear_text"
+msgstr "Only this list goes - nothing on disk changes, backups stay."
+
+msgid "bg_recent_cleared"
+msgstr "Cleaning history sunk"
+
+msgid "bg_rescan"
+msgstr "Look again"
+
+msgid "bg_restore"
+msgstr "Restore…"
+
+msgid "bg_restore_aside_short"
+msgstr "Anything it overwrites is kept - you can undo it."
+
+msgid "bg_restore_failed"
+msgstr "Restoring stopped: {error}."
+
+msgid "bg_restore_gone"
+msgstr "The game's folder is gone - it will be made again for the saves."
+
+msgid "bg_restore_head"
+msgstr "Put {title}'s saves back?"
+
+msgid "bg_restore_kept_short"
+msgstr "The folder's Windows settings stay as they are now."
+
+msgid "bg_restore_later"
+msgstr "The game's settings come back on their own once you start it."
+
+msgid "bg_restore_nothing"
+msgstr "Everything is already in place. Nothing to do."
+
+msgid "bg_restore_ok"
+msgstr "Restore"
+
+msgid "bg_restore_registry"
+msgstr "The game's settings come back too."
+
+msgid "bg_restore_start_first"
+msgstr "The files are back. Start the game once - its settings will follow on their own."
+
+msgid "bg_restore_there"
+msgstr "The saves go back into the game's folder."
+
+msgid "bg_restored"
+msgstr "{files} put back"
+
+msgid "bg_restored_aside"
+msgstr "can be undone"
+
+msgid "bg_scanning"
+msgstr "Looking through the bilge…"
+
+msgid "bg_scanning_sub"
+msgstr "Reading every launcher and measuring the folders. Nothing is deleted."
+
+msgid "bg_select_these"
+msgstr "All {n} in this list"
+
+msgid "bg_selected"
+msgstr "{n} selected · {size}"
+
+msgid "bg_settings_back"
+msgstr "{title}: its settings are back too"
+
+msgid "bg_skipped_unmounted"
+msgstr "Steam was skipped: one of its libraries ({path}) isn't reachable - is that drive plugged in? Otherwise its games there would look removed."
+
+msgid "bg_skipped_unreadable"
+msgstr "{launcher} was skipped: not all its games could be read, so it can't be told for sure what's left over."
+
+msgid "bg_stat_new"
+msgstr "new"
+
+msgid "bg_stat_replaced"
+msgstr "overwritten"
+
+msgid "bg_stat_same"
+msgstr "already there"
+
+msgid "bg_state_gone_s"
+msgstr "Folder gone"
+
+msgid "bg_state_there_s"
+msgstr "Folder there"
+
+msgid "bg_sub"
+msgstr "What removed games left behind on your disk"
+
+msgid "bg_tab_backups"
+msgstr "Backups"
+
+msgid "bg_title"
+msgstr "Bilge cleaning"
+
+msgid "bg_trash"
+msgstr "Move to the Trash"
+
+msgid "bg_trash_short"
+msgstr "You can get it back from the Trash"
+
+msgid "bg_undo_q"
+msgstr "The files go back to how they were before {when}."
+
+msgid "bg_undo_q_head"
+msgstr "{title}: undo the restore?"
+
+msgid "bg_undo_restore"
+msgstr "Undo restore"
+
+msgid "bg_undone"
+msgstr "Undone - the files are as before"
+
+msgid "bg_unknown_game"
+msgstr "Unknown game (Steam app {appid})"
+
 msgid "bug_close"
 msgstr "Close"
 
@@ -1563,6 +1863,24 @@ msgstr "Pause animations when idle"
 msgid "pause_animations_info"
 msgstr "Saves power while you play or the window is in the background."
 
+msgid "pdb_pending"
+msgstr "Too few reports"
+
+msgid "pdb_reports"
+msgstr "{n} reports"
+
+msgid "pdb_reports_steam"
+msgstr "Steam version\n{n} reports"
+
+msgid "pdb_setting_sub"
+msgstr "Shows a game's rating on its page. Its Steam ID goes to ProtonDB; for a game not from Steam, its title goes to Steam's store search."
+
+msgid "pdb_setting_title"
+msgstr "ProtonDB ratings"
+
+msgid "pdb_with_proton"
+msgstr "With Proton: {tier}"
+
 msgid "pfx_browse"
 msgstr "Browse…"
 
@@ -2577,6 +2895,60 @@ msgstr "Not installed"
 msgid "sources_header_launchers"
 msgstr "Launchers"
 
+msgid "ss_add"
+msgstr "Add to Steam"
+
+msgid "ss_add_short"
+msgstr "Add"
+
+msgid "ss_added"
+msgstr "Done - PlunderHub is in your Steam library."
+
+msgid "ss_close_ok"
+msgstr "Restart Steam"
+
+msgid "ss_close_q"
+msgstr "Steam has to restart for this. Restart it now?"
+
+msgid "ss_desktop_only"
+msgstr "Do this in Desktop Mode - Steam has to close for it, and here that would end Game Mode."
+
+msgid "ss_failed"
+msgstr "That didn't work: {error}"
+
+msgid "ss_flatpak_ok"
+msgstr "Allow"
+
+msgid "ss_flatpak_q"
+msgstr "Your Steam is the Flatpak version: it needs your permission to start PlunderHub. Allow it?"
+
+msgid "ss_from_steam"
+msgstr "PlunderHub runs from Steam now. Open it from your app menu for this."
+
+msgid "ss_group"
+msgstr "Add to Steam"
+
+msgid "ss_in_steam"
+msgstr "In your Steam library. Started from Steam it asks: desktop or Console Mode (in Big Picture always Console Mode)."
+
+msgid "ss_remove"
+msgstr "Remove from Steam"
+
+msgid "ss_remove_short"
+msgstr "Remove"
+
+msgid "ss_removed"
+msgstr "Done - PlunderHub is no longer in Steam."
+
+msgid "ss_snap"
+msgstr "Not possible with the Snap version of Steam: it can't start other programs."
+
+msgid "ss_sub"
+msgstr "Adds PlunderHub to your Steam library, so you can start it from Big Picture or a Steam Deck's Game Mode - it opens in Console Mode there."
+
+msgid "ss_title"
+msgstr "PlunderHub in Steam"
+
 msgid "startup_loading"
 msgstr "Preparing the ship…"
 
@@ -2618,6 +2990,18 @@ msgstr "Downloading a game update…"
 
 msgid "steam_stage_waiting"
 msgstr "Steam is waiting for you – check its window"
+
+msgid "steam_start_console"
+msgstr "Console Mode"
+
+msgid "steam_start_desktop"
+msgstr "Desktop"
+
+msgid "steam_start_head"
+msgstr "How should PlunderHub open?"
+
+msgid "steam_start_text"
+msgstr "Desktop: the usual window. Console Mode: full screen, for a controller and the TV."
 
 msgid "step_build"
 msgstr "Build"

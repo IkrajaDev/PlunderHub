@@ -434,6 +434,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._match_compositor_corners()
         self._running_detector = RunningDetector(interval=3.0, steam_running=is_steam_appid_running)
         self._running_detector.start()
+        if self.settings.get("bilge_waiting"):
+            GLib.timeout_add_seconds(20, self._bilge_check_waiting)
         GLib.timeout_add(1000, self._poll_running_games)
         GLib.timeout_add(1000, self._poll_running_launchers)
 
@@ -913,6 +915,30 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             )
         except Exception as e:
             logger.debug(f"Couldn't show the scan-error toast: {e}")
+
+    def _steam_start(self, mode: str) -> bool:
+        """Opened from Steam: Console Mode, or the person picks (the
+        desktop) - Desktop to start with, the main window shown only after."""
+        if mode == "ask":
+            answer = self._card_dialog(self._("steam_start_head"), self._("steam_start_text"),
+                                       [(self._("steam_start_console"), Gtk.ResponseType.YES, "ghost"),
+                                        (self._("steam_start_desktop"), Gtk.ResponseType.NO, "accent")],
+                                       icon_name="input-gaming-symbolic", default=Gtk.ResponseType.NO)
+            mode = "console" if answer == Gtk.ResponseType.YES else ""
+        if not self.get_visible():
+            self.show_all()
+            self.present()
+            self.deiconify()
+        if mode == "console":
+            self._enter_console_mode()
+        return False
+
+    def _bilge_check_waiting(self) -> bool:
+        """Bilge restores that waited for a game's first start (bilge_page)."""
+        if self.settings.get("bilge_waiting"):
+            from plunderhub.ui.bilge_page import check_waiting
+            check_waiting(self)
+        return False
 
     def _show_undo_toast(self, message: str, undo_callback: Callable[[], None], timeout_ms: int = 6000,
                          action_label: Optional[str] = None, icon_name: str = "rotate-ccw-symbolic"):
@@ -4208,6 +4234,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 self._restore_main_window(by_user=False)
             if finished:
                 self.reload()
+                # a game's first start may have made the prefix a restore waited for
+                # (Wine writes the registry a few seconds after the game quits)
+                GLib.timeout_add_seconds(10, self._bilge_check_waiting)
             self._update_decorative_animation_pause_state()
             for uid, error in failed_launches:
                 GLib.idle_add(self._show_launch_failed, uid, error)
@@ -7278,11 +7307,25 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
 
 class PlunderHubApplication(Gtk.Application):
 
-    def __init__(self, self_test: bool = False, start_minimized: bool = False):
+    def __init__(self, self_test: bool = False, start_minimized: bool = False, steam_start: str = ""):
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.window: Optional["App"] = None
         self._self_test = self_test
         self._start_minimized = start_minimized
+        # started by Steam (core/steam_shortcut.py): "console" in Big Picture /
+        # Game Mode, "ask" on the desktop; "" otherwise
+        self._steam_start = steam_start
+        action = Gio.SimpleAction.new("steam-start", GLib.VariantType.new("s"))
+        action.connect("activate", lambda _a, value: self._on_steam_start(value.get_string()))
+        self.add_action(action)
+
+    def _on_steam_start(self, mode: str):
+        """Steam started PlunderHub while it ran already: this one is told."""
+        if self.window is None:
+            self._steam_start = mode
+            return
+        self.window._restore_main_window()
+        GLib.idle_add(self.window._steam_start, mode)
 
     def do_activate(self):
         if self.window is None:
@@ -7311,11 +7354,17 @@ class PlunderHubApplication(Gtk.Application):
                 # reboot into a --minimized autostart launch).
                 self.window.show_all()
                 self.window.hide()
+            elif self._steam_start == "ask":
+                # Steam started it on the desktop: only the question first,
+                # PlunderHub opens once it's answered (App._steam_start)
+                GLib.idle_add(self.window._steam_start, "ask")
             else:
                 self.window.show_all()
                 self.window.present()
                 self.window.deiconify()
-                if not self._self_test:
+                if self._steam_start:
+                    GLib.idle_add(self.window._steam_start, self._steam_start)
+                elif not self._self_test:
                     # modal - a self-test on a fresh profile would wait on it
                     self.window._maybe_show_first_run_tip()
             if self._self_test:
@@ -7382,7 +7431,20 @@ def main():
     install_exception_logging()
     memory.configure()
 
-    argv = [arg for arg in sys.argv if arg not in ("--diagnose", "--self-test", "--minimized")]
+    from plunderhub.core import steam_shortcut
+    argv = [arg for arg in sys.argv if arg not in ("--diagnose", "--self-test", "--minimized",
+                                                   steam_shortcut.FROM_STEAM, "--console")]
+    # started by Steam: Big Picture / Game Mode always in Console Mode, the
+    # desktop asks; --console asks for Console Mode outright
+    steam_start = ""
+    if "--console" in sys.argv or (steam_shortcut.started_from_steam(sys.argv) and steam_shortcut.in_gamepad_ui()):
+        steam_start = "console"
+    elif steam_shortcut.started_from_steam(sys.argv):
+        steam_start = "ask"
+    if steam_shortcut.started_from_steam(sys.argv):
+        logger.info(f"Started from Steam ({steam_start}): SteamGamepadUI={os.environ.get('SteamGamepadUI')!r}, "
+                    f"XDG_CURRENT_DESKTOP={os.environ.get('XDG_CURRENT_DESKTOP')!r}, "
+                    f"SteamDeck={os.environ.get('SteamDeck')!r}, SteamGameId={os.environ.get('SteamGameId')!r}")
     if "--diagnose" in sys.argv:
         diagnostics.enable()
     self_testing = "--self-test" in sys.argv
@@ -7390,7 +7452,16 @@ def main():
 
     migrate_cache_dirs()
     _set_wm_class()
-    app = PlunderHubApplication(self_test=self_testing, start_minimized=start_minimized)
+    app = PlunderHubApplication(self_test=self_testing, start_minimized=start_minimized, steam_start=steam_start)
+    if steam_start:
+        try:
+            app.register(None)
+            if app.get_is_remote():
+                # PlunderHub runs already: it opens as Steam asked, this one ends
+                app.activate_action("steam-start", GLib.Variant.new_string(steam_start))
+                return
+        except GLib.Error as e:
+            logger.warning(f"Couldn't reach a running PlunderHub: {e.message}")
     app.run(argv)
     if self_testing:
         from plunderhub import selftest

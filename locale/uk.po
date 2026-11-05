@@ -270,6 +270,406 @@ msgstr "Показати в теці"
 msgid "beta_badge"
 msgstr "Бета"
 
+#. English: Copies of your saves. Restore puts them back where they were - even if the game's folder is gone.
+msgid "bg_about_backups"
+msgstr "Копії твоїх збережень. «Відновити» поверне їх на місце — навіть якщо теки гри вже немає."
+
+#. English: The same for games removed from Heroic, Lutris or Faugus: their Windows folder stayed behind. Saves may be in it.
+msgid "bg_about_prefixes"
+msgstr "Те саме для ігор, видалених з Heroic, Lutris чи Faugus: їхня тека Windows лишилася. У ній можуть бути збереження."
+
+#. English: Proton versions no game uses any more. Safe to delete - you can download them again any time.
+msgid "bg_about_proton"
+msgstr "Версії Proton, якими вже не користується жодна гра. Можна сміливо видалити — їх завжди можна завантажити знову."
+
+#. English: Graphics data a removed game prepared to start faster. Safe to delete - nothing of yours is in it.
+msgid "bg_about_shader_cache"
+msgstr "Графічні дані, які видалена гра підготувала для швидшого запуску. Можна сміливо видалити — твого там нічого немає."
+
+#. English: A removed Steam game's Windows folder (every game runs in its own little Windows). Your saves may be in it - back them up first.
+msgid "bg_about_steam_prefix"
+msgstr "Тека Windows видаленої гри зі Steam (кожна гра працює у своєму маленькому Windows). У ній можуть бути твої збереження — спершу зроби копію."
+
+#. English: {files} copied - see Backups
+msgid "bg_backed_up"
+msgstr "{files} скопійовано — дивись «Резервні копії»"
+
+#. English: Back up
+msgid "bg_backup"
+msgstr "Копія"
+
+#. English: Goes into the backup
+msgid "bg_backup_copied"
+msgstr "Потрапляє в копію"
+
+#. English: Couldn't make the copy - nothing was changed: {error}
+msgid "bg_backup_failed"
+msgstr "Не вдалося зробити копію — нічого не змінилося: {error}"
+
+#. English: Back up {title}'s saves?
+msgid "bg_backup_head"
+msgstr "Зробити копію збережень {title}?"
+
+#. English: Not needed, left out
+msgid "bg_backup_left"
+msgstr "Не потрібно, не копіюється"
+
+#. English: Back up
+msgid "bg_backup_ok"
+msgstr "Зробити копію"
+
+#. English: Your saves and settings are copied to a safe place. Nothing is moved or deleted.
+msgid "bg_backup_text"
+msgstr "Твої збереження й налаштування копіюються в безпечне місце. Нічого не переміщується й не видаляється."
+
+#. English: BETA
+msgid "bg_beta_pill"
+msgstr "БЕТА"
+
+#. English: Backups are in beta and may not work perfectly for every game yet. Keep your own copy of anything important.
+msgid "bg_beta_text"
+msgstr "Резервні копії поки в беті й можуть працювати не з усіма іграми ідеально. Майте власну копію всього важливого."
+
+#. English: Files the game wrote in its folder
+msgid "bg_cat_programs"
+msgstr "Що гра записала у свою теку"
+
+#. English: The game's settings stored by Windows
+msgid "bg_cat_registry"
+msgstr "Налаштування гри, збережені Windows"
+
+#. English: Saves and settings
+msgid "bg_cat_saves"
+msgstr "Збереження й налаштування"
+
+#. English: Last changed: {date}
+msgid "bg_changed"
+msgstr "Остання зміна: {date}"
+
+#. English: The bilge is dry
+msgid "bg_clean"
+msgstr "Трюм сухий"
+
+#. English: No leftovers from removed games, and every Proton version is in use.
+msgid "bg_clean_sub"
+msgstr "Немає залишків видалених ігор, і кожна версія Proton використовується."
+
+#. English: Delete {n} folders?
+msgid "bg_confirm_head"
+msgstr "Видалити теки ({n})?"
+
+#. English: Delete this folder?
+msgid "bg_confirm_head_1"
+msgstr "Видалити цю теку?"
+
+#. English: Delete
+msgid "bg_delete"
+msgstr "Видалити"
+
+#. English: Delete backup
+msgid "bg_delete_backup"
+msgstr "Видалити копію"
+
+#. English: Delete the backup of {title} ({size})? It can't be undone.
+msgid "bg_delete_backup_q"
+msgstr "Видалити копію {title} ({size})? Скасувати неможливо."
+
+#. English: Delete selected…
+msgid "bg_delete_btn"
+msgstr "Видалити вибране…"
+
+#. English: Deleting…
+msgid "bg_deleting"
+msgstr "Видалення…"
+
+#. English: Couldn't delete {path}: {error}
+msgid "bg_failed"
+msgstr "Не вдалося видалити {path}: {error}"
+
+#. English: 1 file
+msgid "bg_files_1"
+msgstr "1 файл"
+
+#. English: {n} files
+msgid "bg_files_n"
+msgstr "файлів: {n}"
+
+#. English: {size} can be freed
+msgid "bg_free"
+msgstr "Можна звільнити {size}"
+
+#. English: frees up
+msgid "bg_frees"
+msgstr "звільниться"
+
+#. English: Launcher prefixes
+msgid "bg_group_prefixes"
+msgstr "Префікси лаунчерів"
+
+#. English: Unused Proton versions
+msgid "bg_group_proton"
+msgstr "Невикористані версії Proton"
+
+#. English: Shader caches
+msgid "bg_group_shader_cache"
+msgstr "Кеш шейдерів"
+
+#. English: Steam prefixes
+msgid "bg_group_steam_prefix"
+msgstr "Префікси Steam"
+
+#. English: deleted
+msgid "bg_how_deleted"
+msgstr "видалено"
+
+#. English: to the Trash
+msgid "bg_how_trash"
+msgstr "до кошика"
+
+#. English: The game is running. Close it first, then restore.
+msgid "bg_in_use"
+msgstr "Гра запущена. Спершу закрий її, потім відновлюй."
+
+#. English: shader cache
+msgid "bg_kind_cache"
+msgstr "кеш шейдерів"
+
+#. English: prefix
+msgid "bg_kind_prefix"
+msgstr "префікс"
+
+#. English: Proton
+msgid "bg_kind_proton"
+msgstr "Proton"
+
+#. English: Caches
+msgid "bg_left_caches_s"
+msgstr "Кеші"
+
+#. English: Installed programs
+msgid "bg_left_programs_s"
+msgstr "Встановлені програми"
+
+#. English: Wine's own files
+msgid "bg_left_windows_s"
+msgstr "Власні файли Wine"
+
+#. English: not enough free space: {need} needed, {free} free
+msgid "bg_no_space"
+msgstr "замало вільного місця: потрібно {need}, вільно {free}"
+
+#. English: Their drive has no Trash folder. Delete them permanently?
+msgid "bg_no_trash"
+msgstr "На їхньому диску немає теки кошика. Видалити назавжди?"
+
+#. English: These can't go to the Trash
+msgid "bg_no_trash_head"
+msgstr "Ці не можна перемістити до кошика"
+
+#. English: {n} have saves with no backup yet
+msgid "bg_nobackup_warn"
+msgstr "У {n} є збереження без копії"
+
+#. English: Nothing selected
+msgid "bg_none_selected"
+msgstr "Нічого не вибрано"
+
+#. English: the game's drive isn't reachable ({path}) - plug it in and try again
+msgid "bg_not_there"
+msgstr "диск гри недоступний ({path}) — підключи його й спробуй знову"
+
+#. English: Open folder
+msgid "bg_open_folder"
+msgstr "Відкрити теку"
+
+#. English: Delete permanently
+msgid "bg_permanent"
+msgstr "Видалити назавжди"
+
+#. English: Frees the space now, but it's gone for good.
+msgid "bg_permanent_short"
+msgstr "Одразу звільняє місце, але видаляє назавжди."
+
+#. English: Backed up
+msgid "bg_pill_backed"
+msgstr "Є копія"
+
+#. English: Saves inside
+msgid "bg_pill_player"
+msgstr "Є збереження"
+
+#. English: Proton versions are deleted for good - downloadable again.
+msgid "bg_proton_short"
+msgstr "Версії Proton видаляються назавжди — їх можна завантажити знову."
+
+#. English: Recently cleaned
+msgid "bg_recent"
+msgstr "Нещодавно видалено"
+
+#. English: Clear the list
+msgid "bg_recent_clear"
+msgstr "Очистити список"
+
+#. English: Sink the cleaning history?
+msgid "bg_recent_clear_head"
+msgstr "Потопити історію чищення?"
+
+#. English: Only this list goes - nothing on disk changes, backups stay.
+msgid "bg_recent_clear_text"
+msgstr "Зникає лише цей список — на диску нічого не змінюється, копії лишаються."
+
+#. English: Cleaning history sunk
+msgid "bg_recent_cleared"
+msgstr "Історію чищення потоплено"
+
+#. English: Look again
+msgid "bg_rescan"
+msgstr "Перевірити знову"
+
+#. English: Restore…
+msgid "bg_restore"
+msgstr "Відновити…"
+
+#. English: Anything it overwrites is kept - you can undo it.
+msgid "bg_restore_aside_short"
+msgstr "Те, що замінюється, зберігається — можна скасувати."
+
+#. English: Restoring stopped: {error}.
+msgid "bg_restore_failed"
+msgstr "Відновлення зупинено: {error}."
+
+#. English: The game's folder is gone - it will be made again for the saves.
+msgid "bg_restore_gone"
+msgstr "Теки гри вже немає — її буде створено знову для збережень."
+
+#. English: Put {title}'s saves back?
+msgid "bg_restore_head"
+msgstr "Повернути збереження {title}?"
+
+#. English: The folder's Windows settings stay as they are now.
+msgid "bg_restore_kept_short"
+msgstr "Налаштування Windows у теці лишаться як є."
+
+#. English: The game's settings come back on their own once you start it.
+msgid "bg_restore_later"
+msgstr "Налаштування гри повернуться самі, щойно ти її запустиш."
+
+#. English: Everything is already in place. Nothing to do.
+msgid "bg_restore_nothing"
+msgstr "Усе вже на місці. Нічого робити не треба."
+
+#. English: Restore
+msgid "bg_restore_ok"
+msgstr "Відновити"
+
+#. English: The game's settings come back too.
+msgid "bg_restore_registry"
+msgstr "Налаштування гри теж повернуться."
+
+#. English: The files are back. Start the game once - its settings will follow on their own.
+msgid "bg_restore_start_first"
+msgstr "Файли на місці. Запусти гру один раз — її налаштування повернуться самі."
+
+#. English: The saves go back into the game's folder.
+msgid "bg_restore_there"
+msgstr "Збереження повернуться до теки гри."
+
+#. English: {files} put back
+msgid "bg_restored"
+msgstr "Повернуто: {files}"
+
+#. English: can be undone
+msgid "bg_restored_aside"
+msgstr "можна скасувати"
+
+#. English: Looking through the bilge…
+msgid "bg_scanning"
+msgstr "Оглядаємо трюм…"
+
+#. English: Reading every launcher and measuring the folders. Nothing is deleted.
+msgid "bg_scanning_sub"
+msgstr "Читаємо всі лаунчери й вимірюємо теки. Нічого не видаляється."
+
+#. English: All {n} in this list
+msgid "bg_select_these"
+msgstr "Усі в цьому списку ({n})"
+
+#. English: {n} selected · {size}
+msgid "bg_selected"
+msgstr "Вибрано: {n} · {size}"
+
+#. English: {title}: its settings are back too
+msgid "bg_settings_back"
+msgstr "{title}: налаштування теж повернулися"
+
+#. English: Steam was skipped: one of its libraries ({path}) isn't reachable - is that drive plugged in? Otherwise its games there would look removed.
+msgid "bg_skipped_unmounted"
+msgstr "Steam пропущено: одна з його бібліотек ({path}) недоступна — чи підключено цей диск? Інакше ігри там виглядали б видаленими."
+
+#. English: {launcher} was skipped: not all its games could be read, so it can't be told for sure what's left over.
+msgid "bg_skipped_unreadable"
+msgstr "{launcher} пропущено: не всі його ігри вдалося прочитати, тож не можна точно сказати, що лишилося."
+
+#. English: new
+msgid "bg_stat_new"
+msgstr "нових"
+
+#. English: overwritten
+msgid "bg_stat_replaced"
+msgstr "замінюються"
+
+#. English: already there
+msgid "bg_stat_same"
+msgstr "вже є"
+
+#. English: Folder gone
+msgid "bg_state_gone_s"
+msgstr "Теку видалено"
+
+#. English: Folder there
+msgid "bg_state_there_s"
+msgstr "Тека на місці"
+
+#. English: What removed games left behind on your disk
+msgid "bg_sub"
+msgstr "Що видалені ігри лишили на диску"
+
+#. English: Backups
+msgid "bg_tab_backups"
+msgstr "Резервні копії"
+
+#. English: Bilge cleaning
+msgid "bg_title"
+msgstr "Чищення трюму"
+
+#. English: Move to the Trash
+msgid "bg_trash"
+msgstr "Перемістити до кошика"
+
+#. English: You can get it back from the Trash
+msgid "bg_trash_short"
+msgstr "Можна повернути з Кошика"
+
+#. English: The files go back to how they were before {when}.
+msgid "bg_undo_q"
+msgstr "Файли стануть такими, як були до {when}."
+
+#. English: {title}: undo the restore?
+msgid "bg_undo_q_head"
+msgstr "{title}: скасувати відновлення?"
+
+#. English: Undo restore
+msgid "bg_undo_restore"
+msgstr "Скасувати"
+
+#. English: Undone - the files are as before
+msgid "bg_undone"
+msgstr "Скасовано — файли як раніше"
+
+#. English: Unknown game (Steam app {appid})
+msgid "bg_unknown_game"
+msgstr "Невідома гра (застосунок Steam {appid})"
+
 #. English: Close
 msgid "bug_close"
 msgstr "Закрити"
@@ -2078,6 +2478,30 @@ msgstr "Призупиняти анімації при бездіяльност�
 msgid "pause_animations_info"
 msgstr "Заощаджує енергію, поки ви граєте або вікно у фоні."
 
+#. English: Too few reports
+msgid "pdb_pending"
+msgstr "Замало звітів"
+
+#. English: {n} reports
+msgid "pdb_reports"
+msgstr "Звітів: {n}"
+
+#. English: Steam version\n{n} reports
+msgid "pdb_reports_steam"
+msgstr "Версія Steam\nЗвітів: {n}"
+
+#. English: Shows a game's rating on its page. Its Steam ID goes to ProtonDB; for a game not from Steam, its title goes to Steam's store search.
+msgid "pdb_setting_sub"
+msgstr "Показує оцінку гри на її сторінці. Її Steam ID надсилається до ProtonDB; для гри не зі Steam її назва йде в пошук крамниці Steam."
+
+#. English: ProtonDB ratings
+msgid "pdb_setting_title"
+msgstr "Оцінки ProtonDB"
+
+#. English: With Proton: {tier}
+msgid "pdb_with_proton"
+msgstr "З Proton: {tier}"
+
 #. English: Browse…
 msgid "pfx_browse"
 msgstr "Огляд…"
@@ -3430,6 +3854,78 @@ msgstr "Не встановлено"
 msgid "sources_header_launchers"
 msgstr "Лаунчери"
 
+#. English: Add to Steam
+msgid "ss_add"
+msgstr "Додати до Steam"
+
+#. English: Add
+msgid "ss_add_short"
+msgstr "Додати"
+
+#. English: Done - PlunderHub is in your Steam library.
+msgid "ss_added"
+msgstr "Готово — PlunderHub у бібліотеці Steam."
+
+#. English: Restart Steam
+msgid "ss_close_ok"
+msgstr "Перезапустити Steam"
+
+#. English: Steam has to restart for this. Restart it now?
+msgid "ss_close_q"
+msgstr "Для цього Steam треба перезапустити. Перезапустити зараз?"
+
+#. English: Do this in Desktop Mode - Steam has to close for it, and here that would end Game Mode.
+msgid "ss_desktop_only"
+msgstr "Зроби це в режимі робочого столу — Steam треба закрити, а тут це завершить ігровий режим."
+
+#. English: That didn't work: {error}
+msgid "ss_failed"
+msgstr "Не вдалося: {error}"
+
+#. English: Allow
+msgid "ss_flatpak_ok"
+msgstr "Дозволити"
+
+#. English: Your Steam is the Flatpak version: it needs your permission to start PlunderHub. Allow it?
+msgid "ss_flatpak_q"
+msgstr "Твій Steam — Flatpak-версія: йому потрібен дозвіл, щоб запускати PlunderHub. Дозволити?"
+
+#. English: PlunderHub runs from Steam now. Open it from your app menu for this.
+msgid "ss_from_steam"
+msgstr "PlunderHub зараз запущено зі Steam. Для цього відкрий його з меню застосунків."
+
+#. English: Add to Steam
+msgid "ss_group"
+msgstr "Додати до Steam"
+
+#. English: In your Steam library. Started from Steam it asks: desktop or Console Mode (in Big Picture always Console Mode).
+msgid "ss_in_steam"
+msgstr "Є в бібліотеці Steam. Під час запуску зі Steam запитає: робочий стіл чи Console Mode (у Big Picture — завжди Console Mode)."
+
+#. English: Remove from Steam
+msgid "ss_remove"
+msgstr "Прибрати зі Steam"
+
+#. English: Remove
+msgid "ss_remove_short"
+msgstr "Прибрати"
+
+#. English: Done - PlunderHub is no longer in Steam.
+msgid "ss_removed"
+msgstr "Готово — PlunderHub більше немає в Steam."
+
+#. English: Not possible with the Snap version of Steam: it can't start other programs.
+msgid "ss_snap"
+msgstr "Неможливо зі Snap-версією Steam: вона не може запускати інші програми."
+
+#. English: Adds PlunderHub to your Steam library, so you can start it from Big Picture or a Steam Deck's Game Mode - it opens in Console Mode there.
+msgid "ss_sub"
+msgstr "Додає PlunderHub до бібліотеки Steam, щоб запускати його з Big Picture або ігрового режиму Steam Deck — там він відкриється в Console Mode."
+
+#. English: PlunderHub in Steam
+msgid "ss_title"
+msgstr "PlunderHub у Steam"
+
 #. English: Preparing the ship…
 msgid "startup_loading"
 msgstr "Підготовка корабля…"
@@ -3485,6 +3981,22 @@ msgstr "Завантаження оновлення гри…"
 #. English: Steam is waiting for you – check its window
 msgid "steam_stage_waiting"
 msgstr "Steam чекає на вас – загляньте в його вікно"
+
+#. English: Console Mode
+msgid "steam_start_console"
+msgstr "Console Mode"
+
+#. English: Desktop
+msgid "steam_start_desktop"
+msgstr "Робочий стіл"
+
+#. English: How should PlunderHub open?
+msgid "steam_start_head"
+msgstr "Як відкрити PlunderHub?"
+
+#. English: Desktop: the usual window. Console Mode: full screen, for a controller and the TV.
+msgid "steam_start_text"
+msgstr "Робочий стіл: звичайне вікно. Console Mode: на весь екран, для геймпада й телевізора."
 
 #. English: Build
 msgid "step_build"

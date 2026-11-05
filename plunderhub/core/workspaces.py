@@ -1002,6 +1002,10 @@ def is_steam_client(pid: int) -> bool:
     return "/ubuntu12_" in exe or os.path.basename(exe) in _STEAM_CLIENT_NAMES
 
 
+# how long a game's new window is followed (moved back to its workspace)
+WINDOW_SETTLE = 15.0
+
+
 class WorkspaceMover:
     """Moves a launched game's windows next to PlunderHub's workspace."""
 
@@ -1069,7 +1073,9 @@ class WorkspaceMover:
 
     def watch(self, uid: str, match: GameProcessMatch, target: str):
         """target: the workspace to move the game's windows to."""
-        seen = {wid for wid, _pid, _ws in self._windows_now() or []}
+        # by address AND pid: Hyprland gives a closed window's address to the
+        # next one (a game closed and started again got its old window's)
+        seen = {(wid, pid) for wid, pid, _ws in self._windows_now() or []}
         with self._lock:
             self._games[uid] = (match, target, time.time(), seen)
             if self._last_home:
@@ -1085,7 +1091,7 @@ class WorkspaceMover:
         Windows open before the launch stay, and so does any while
         unwanted() is False (Steam asking the player something); it's
         followed until unwanted() gives None."""
-        seen = {wid for wid, _pid, _ws in self._windows_now() or []}
+        seen = {(wid, pid) for wid, pid, _ws in self._windows_now() or []}
         with self._lock:
             self._steam_quiet[uid] = (unwanted, seen)
             self._start_locked()
@@ -1109,9 +1115,9 @@ class WorkspaceMover:
                     self._steam_quiet.pop(uid, None)
                 continue
             for wid, pid, _ws in windows:
-                if wid in seen:
+                if (wid, pid) in seen:
                     continue
-                seen.add(wid)
+                seen.add((wid, pid))
                 if now and pid and is_steam_client(pid):
                     ok = self.compositor.close_window(wid)
                     logger.info(f"Steam opened its window during {uid}'s launch - back to the tray on "
@@ -1120,6 +1126,7 @@ class WorkspaceMover:
     def forget(self, uid: str):
         with self._lock:
             self._games.pop(uid, None)
+            self.__dict__.get("_fresh", {}).pop(uid, None)
             self._followed.discard(uid)
             self._homes.pop(uid, None)
             self._switched_from.pop(uid, None)
@@ -1217,12 +1224,28 @@ class WorkspaceMover:
                     return
             windows = self.compositor.windows() or []
             self._quiet_steam(windows)
+            now = time.time()
             for uid, (match, target, launched_at, seen) in games.items():
+                fresh = self.__dict__.setdefault("_fresh", {}).setdefault(uid, {})
                 for wid, pid, ws in windows:
-                    if wid in seen:
+                    key = (wid, pid)
+                    if key in seen:
                         continue
-                    seen.add(wid)
-                    if not pid or not window_belongs_to_game(pid, match, launched_at):
+                    # A new window is looked at for WINDOW_SETTLE seconds, not
+                    # once: a rule of the compositor's may move it after it
+                    # maps (Hyprland's content = "game" waits for the game's
+                    # content-type hint - Proton-GE's Wayland windows), and
+                    # its process may only be readable a moment later.
+                    first = fresh.setdefault(key, now)
+                    if now - first > WINDOW_SETTLE:
+                        seen.add(key)
+                        fresh.pop(key, None)
+                        continue
+                    ours = bool(pid) and window_belongs_to_game(pid, match, launched_at)
+                    if first == now:
+                        logger.info(f"New window during {uid}'s launch: pid {pid}, on {ws}, "
+                                    f"{'the game' if ours else 'not the game'}")
+                    if not ours:
                         continue
                     if ws != target:
                         with self._lock:

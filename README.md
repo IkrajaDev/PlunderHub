@@ -175,8 +175,10 @@
 - **Proton**: Proton-GE and Proton-CachyOS, downloaded once and used by every launcher, native or Flatpak. Proton-GE Latest updates itself.
 - **Ship inspection**: checks Vulkan drivers (AMD, NVIDIA, Intel, hybrid laptops), 32-bit libraries, the memory map limit, ntsync and fonts. Fixes them in one click.
 - **Shipwright**: installs launchers (native or Flathub) and tools like GameMode, MangoHud, gamescope and controller drivers.
-- **Game page**: store, ProtonDB and patch notes links. Launch options with a Recommended preset. winecfg, winetricks and running an .exe in the game's prefix.
+- **Bilge cleaning**: finds what launchers left behind after a game was removed: Wine prefixes, shader caches and unused Proton versions, with their size. You pick what goes, to the Trash or for good. Backs up the saves in them first and puts them back later, even when the game is installed again somewhere else; a restore can be undone (beta).
+- **Game page**: store, ProtonDB and patch notes links, and the game's ProtonDB rating for every launcher. Launch options with a Recommended preset. winecfg, winetricks and running an .exe in the game's prefix.
 - **Art**: covers, banners and icons from your launchers. Add a free SteamGridDB key for more.
+- **Steam Deck and Big Picture**: adds PlunderHub to Steam as a non-Steam game, with its own art (Settings > Library). Started from Big Picture or Game Mode it opens in Console Mode; from the desktop it asks.
 - **Controllers**: Xbox, PlayStation, Switch Pro, 8BitDo and more, with matching button icons. Hold View + Start to switch between a game and PlunderHub.
 - **Backup**: settings, playtime and art in one file.
 - **Tray**: close to the tray, start hidden at login.
@@ -254,6 +256,8 @@ Other distros:
 
 ## Uninstall
 
+If you added PlunderHub to Steam, remove it first in Settings > Library.
+
 Arch Linux:
 ```bash
 sudo pacman -R plunderhub
@@ -272,6 +276,7 @@ Other distros (in the PlunderHub folder):
 
 - **GNOME on Wayland** doesn't let apps move windows, so games open on the current workspace there.
 - **Plain GNOME** has no tray. Closing the window quits PlunderHub. Ubuntu's GNOME and the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support/) add one.
+- **Add to Steam** needs Steam closed for a moment, so PlunderHub restarts it. A Flatpak Steam asks for a permission to start PlunderHub. The Snap Steam can't start other programs.
 - **Read-only systems** (Bazzite, Silverblue): Shipwright installs launchers and tools as Flatpaks. System packages come through your system's own tools.
 
 ## Privacy
@@ -279,8 +284,9 @@ Other distros (in the PlunderHub folder):
 PlunderHub collects no data. It only connects to:
 
 - Steam and your launchers' image servers, for art
-- Steam's store, with a game's title, when you open its patch notes
+- Steam's store, with a game's title, when you open its patch notes, and with a Steam ID when Bilge cleaning finds a left folder of a game PlunderHub never saw
 - SteamGridDB, only with your key
+- ProtonDB, with a game's Steam ID, for its rating on the game page (a game not from Steam is first looked up by its title in Steam's store search; you can turn this off in Settings)
 - GitHub, for updates and Proton downloads
 - Your distro's repositories, the AUR, Flathub, Launchpad (Ubuntu PPAs) or RPM Fusion (Fedora), when you install something
 

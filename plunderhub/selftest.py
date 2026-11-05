@@ -197,6 +197,44 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
             sw.close()
     steps.append(_step("performance: Shipwright's Proton page", calm_proton_page))
 
+    def calm_bilge_page():
+        # made-up leftovers (folders in a temporary place, nothing is
+        # deleted): the tiles, a row with a pill and its buttons, the BETA note
+        import tempfile
+        from pathlib import Path
+        from gi.repository import Gtk
+        from plunderhub.core import bilge
+        from plunderhub.ui import bilge_page, shipwright
+        tmp = Path(tempfile.mkdtemp(prefix="plunderhub-selftest-bilge-"))
+        items = []
+        for kind, launcher, name, saves in (("steam_prefix", "Steam", "1091500", 3),
+                                            ("shader_cache", "Steam", "1091501", 0),
+                                            ("prefix", "Heroic", "Some Game", 2), ("proton", "PlunderHub",
+                                                                                   "GE-Proton10-1", 0)):
+            (tmp / name).mkdir()
+            items.append(bilge.Item(kind, launcher, tmp / name, title=name, appid=name, size=1 << 30,
+                                    changed=time.time(), saves=saves, saves_newest=time.time()))
+        real_scan = bilge_page.SCAN
+        bilge_page.SCAN = lambda app: bilge.Found(items=list(items))
+        sw = None
+        try:
+            sw = shipwright.show(window, focus="bilge")
+            page = sw.bilge_page
+            deadline = time.monotonic() + 10
+            while page.found is None and time.monotonic() < deadline:
+                Gtk.main_iteration_do(False)
+            assert page.found is not None and len(page.found.items) == 4, "the Bilge page didn't read its leftovers"
+            perf_guard.assert_calm(sw.dialog, "Shipwright's Bilge page")
+            page._pick_tab("prefix")
+            perf_guard.assert_calm(sw.dialog, "Shipwright's Bilge page (launcher prefixes)")
+        finally:
+            bilge_page.SCAN = real_scan
+            if sw is not None:
+                sw.close()
+            import shutil
+            shutil.rmtree(tmp, ignore_errors=True)
+    steps.append(_step("performance: Shipwright's Bilge page", calm_bilge_page))
+
     def calm_release_notes():
         from types import SimpleNamespace as R
         from plunderhub.ui.release_notes_window import SINCE, open_notes

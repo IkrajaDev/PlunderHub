@@ -360,7 +360,7 @@ class SettingsWindow:
             card.pack_start(sep, False, False, 0)
 
     def _version_text(self) -> str:
-        """1.0.2 - with "beta" after it while this is a beta."""
+        """1.0.3 - with "beta" after it while this is a beta."""
         return f"{APP_VERSION} {self._('beta_badge').lower()}" if APP_CHANNEL else APP_VERSION
 
     def row(self, card: Gtk.Box, title: str, subtitle=None, controls=(), icon=None,
@@ -697,6 +697,11 @@ class SettingsWindow:
                 self.theme_flow.select_child(child)
 
     def _page_library(self, col: Gtk.Box):
+        # first on the page: everyone comes here to switch on their launchers
+        from plunderhub.core.steam_shortcut import steam_users
+        if steam_users():
+            from plunderhub.ui import steam_shortcut_ui
+            steam_shortcut_ui.build(self, self.group(col, self._("ss_group")))
         self.launcher_card = self.group(col, self._("sources_header_launchers"))
         self.app.source_toggles = {}
 
@@ -716,6 +721,15 @@ class SettingsWindow:
         proton_auto.connect("notify::active", proton_auto_toggled)
         self.row(card, proton_texts["auto_title"], proton_texts["auto_sub"], [proton_btn, proton_auto],
                  icon="wine-symbolic")
+        protondb = self.switch(self.app.settings.get("protondb_enabled", True))
+
+        def protondb_toggled(switch, _pspec):
+            from plunderhub.core.persistence import save_settings
+            self.app.settings["protondb_enabled"] = switch.get_active()
+            save_settings(self.app.settings)
+        protondb.connect("notify::active", protondb_toggled)
+        self.row(card, self._("pdb_setting_title"), self._("pdb_setting_sub"), [protondb],
+                 icon="starred-symbolic")
 
         card = self.group(col, self._("tab_hidden"))
         hidden_any = False
@@ -840,9 +854,10 @@ class SettingsWindow:
                            icon=launcher_tasks.launcher_icon(self.app, name, 28), extra_lines=lines)
             new_rows.append(row)
         # The launcher rows come before the hidden-games rows.
+        first = [r for r in self.rows["library"] if getattr(r[0], "plunderhub_first", False)]
         launcher_entries = [r for r in self.rows["library"] if r[0] in new_rows]
-        others = [r for r in self.rows["library"] if r[0] not in new_rows]
-        self.rows["library"] = launcher_entries + others
+        others = [r for r in self.rows["library"] if r[0] not in new_rows and r not in first]
+        self.rows["library"] = first + launcher_entries + others
         card.show_all()
 
     def _start_task(self, name: str, action: str):
