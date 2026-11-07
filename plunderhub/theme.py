@@ -19,6 +19,7 @@
 
 import ctypes
 import ctypes.util
+import re
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -59,6 +60,99 @@ def _app_icon_file() -> Optional[Path]:
     except OSError:
         pass
     return None
+
+
+# --- the logo in the theme's colour --------------------------------------------------
+# The logo file is drawn in the Teal theme's colours; every other theme gets its
+# turquoise parts (hat rim, crossbones, circuits, the neon eye and its glow) in
+# its own accent. Gtk.Images showing it are named LOGO_MARKER:<px> so a theme
+# change repaints them.
+LOGO_MARKER = "plunderhub-logo"
+_LOGO_FILE_ACCENT = "#22d3ac"           # the accent the file's colours belong to
+_LOGO_NEON, _LOGO_DARK = "#3fe0c5", "#2e9e8d"
+_logo_accent = _LOGO_FILE_ACCENT
+_logo_svg_text: Optional[str] = None
+_logo_cache: Dict[Tuple[int, str, bool], object] = {}
+
+
+def set_logo_accent(accent_hex: str):
+    global _logo_accent
+    _logo_accent = (accent_hex or _LOGO_FILE_ACCENT).lower()
+
+
+def logo_accent() -> str:
+    return _logo_accent
+
+
+def _hex_rgb(h: str) -> Tuple[int, int, int]:
+    h = h.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def logo_svg(accent: Optional[str] = None, eye: bool = True) -> Optional[str]:
+    """The logo's SVG in accent's colours (None: the current theme's);
+    eye=False leaves the neon eye out (unlit)."""
+    global _logo_svg_text
+    if _logo_svg_text is None:
+        icon = _app_icon_file()
+        if icon is None:
+            return None
+        try:
+            _logo_svg_text = icon.read_text(encoding="utf-8")
+        except OSError as e:
+            logger.debug(f"Couldn't read the logo: {e}")
+            return None
+    svg = _logo_svg_text
+    accent = (accent or _logo_accent).lower()
+    if accent != _LOGO_FILE_ACCENT:
+        r, g, b = _hex_rgb(accent)
+        # the neon a touch lighter than the accent, the rim darker - as in the file
+        neon = tuple(round(c + (255 - c) * 0.13) for c in (r, g, b))
+        dark = tuple(round(c * 0.72) for c in neon)
+        svg = re.sub(_LOGO_NEON, "#%02x%02x%02x" % neon, svg, flags=re.I)
+        svg = re.sub(_LOGO_DARK, "#%02x%02x%02x" % dark, svg, flags=re.I)
+    if not eye:
+        svg = re.sub(r'(id="Neon_szem"[^>]*?fill=")#[0-9a-fA-F]{6}', r"\g<1>none", svg)
+        svg = svg.replace('flood-opacity="0.85"', 'flood-opacity="0"')
+    return svg
+
+
+def logo_pixbuf(px: int, accent: Optional[str] = None, eye: bool = True):
+    """The logo, px x px real pixels, in the theme's colours (cached)."""
+    from plunderhub.gi_setup import GdkPixbuf, GLib
+    key = (px, (accent or _logo_accent).lower(), eye)
+    if key not in _logo_cache:
+        pb = None
+        svg = logo_svg(accent, eye)
+        if svg is not None:
+            try:
+                loader = GdkPixbuf.PixbufLoader()
+                loader.connect("size-prepared", lambda ld, _w, _h: ld.set_size(px, px))
+                loader.write(svg.encode("utf-8"))
+                loader.close()
+                pb = loader.get_pixbuf()
+            except GLib.Error as e:
+                logger.debug(f"Couldn't draw the logo: {e}")
+        if len(_logo_cache) > 40:
+            _logo_cache.clear()
+        _logo_cache[key] = pb
+    return _logo_cache[key]
+
+
+def logo_at_size(px: int):
+    """logo_pixbuf for a Gtk.Image shown at px (logical), sharp on HiDPI."""
+    from plunderhub.gi_setup import hidpi_pixbuf, ui_scale
+    scale = ui_scale()
+    pb = logo_pixbuf(px * scale)
+    return hidpi_pixbuf(pb, scale) if pb is not None else None
+
+
+def mark_logo(image, px: int):
+    """A Gtk.Image showing the logo at px: drawn now, repainted on a theme change."""
+    image.set_name(f"{LOGO_MARKER}:{px}")
+    pb = logo_at_size(px)
+    if pb is not None:
+        image.set_from_pixbuf(pb)
 
 
 def _app_icon_spec() -> str:
@@ -202,6 +296,34 @@ THEME_PALETTES: Dict[str, Dict] = {
         "fg": "#ebdbb2", "fg_dim": "#a89984", "on_accent": "#282828",
         "dark": True,
     },
+    "horizon": {
+        "bg": "#1c1e26", "bg_alt": "#16161c", "bg_raised": "#2e303e",
+        "accent": "#e95678", "accent_rgb": "233, 86, 120",
+        "accent_hover": "#d24b6b", "accent_active": "#b9405d",
+        "fg": "#d5d8da", "fg_dim": "#8a8ca3", "on_accent": "#1c1e26",
+        "dark": True,
+    },
+    "everforest": {
+        "bg": "#2d353b", "bg_alt": "#232a2e", "bg_raised": "#3d484d",
+        "accent": "#a7c080", "accent_rgb": "167, 192, 128",
+        "accent_hover": "#93ab6d", "accent_active": "#80975c",
+        "fg": "#d3c6aa", "fg_dim": "#9da9a0", "on_accent": "#2d353b",
+        "dark": True,
+    },
+    "ayu_dark": {
+        "bg": "#0b0e14", "bg_alt": "#0d1017", "bg_raised": "#1c212b",
+        "accent": "#e6b450", "accent_rgb": "230, 180, 80",
+        "accent_hover": "#cfa045", "accent_active": "#b78c3a",
+        "fg": "#bfbdb6", "fg_dim": "#7a7f8a", "on_accent": "#0b0e14",
+        "dark": True,
+    },
+    "oxocarbon": {
+        "bg": "#161616", "bg_alt": "#0f0f0f", "bg_raised": "#262626",
+        "accent": "#ff7eb6", "accent_rgb": "255, 126, 182",
+        "accent_hover": "#ee5396", "accent_active": "#d6407f",
+        "fg": "#f2f4f8", "fg_dim": "#8d8d8d", "on_accent": "#161616",
+        "dark": True,
+    },
     "tokyo_night": {
         "bg": "#1a1b26", "bg_alt": "#16161e", "bg_raised": "#24283b",
         "accent": "#7aa2f7", "accent_rgb": "122, 162, 247",
@@ -213,8 +335,9 @@ THEME_PALETTES: Dict[str, Dict] = {
 
 THEME_ORDER: List[str] = [
     "system", "plunderhub",
-    # dark
-    "catppuccin_mocha", "rose_pine", "tokyo_night", "dracula", "kanagawa", "gruvbox_dark",
+    # dark, round the colour wheel: violet, blue, pink, red, orange, amber, green
+    "catppuccin_mocha", "dracula", "tokyo_night", "rose_pine", "oxocarbon", "horizon", "gruvbox_dark",
+    "ayu_dark", "kanagawa", "everforest",
     # light
     "catppuccin_latte", "rose_pine_dawn", "gruvbox", "github_light",
 ]
@@ -647,6 +770,11 @@ button.home-brand-btn {{ padding: 6px 8px; border-radius: 12px; }}
 button.lang-tile {{ padding: 12px 10px; }}
 button.lang-tile label {{ font-weight: 700; }}
 .welcome-title {{ font-size: 150%; }}
+/* the welcome tour (ui/welcome_tour.py) */
+.wt-ahoy {{ font-size: 210%; }}
+.wt-slogan {{ font-size: 125%; font-weight: 700; }}
+.wt-title {{ font-size: 150%; }}
+.wt-text {{ font-size: 108%; }}
 .welcome-small {{ font-size: 88%; }}
 /* Solid, not see-through: the bubbles pass behind the whole card, as
    they do behind its button - through a see-through one they showed
@@ -1703,13 +1831,21 @@ window, .background {{
    they meet. Keeping the window flat avoids that seam entirely - it's
    only visible in the narrow strip above the game list anyway, where a
    plain color reads as intentional rather than a mismatched patch. */
-dialog, messagedialog, filechooser,
-.dialog-vbox, notebook, stack {{
+dialog, messagedialog, filechooser {{
     background-color: {p['bg']};
     background-image: linear-gradient(120deg, {p['bg']} 0%, {p['bg_alt']} 55%, {p['bg']} 100%);
     background-repeat: no-repeat;
     background-size: 160% 160%;
     background-position: 20% 10%;
+    color: {p['fg']};
+}}
+/* Inside them the window's own sea shows through - these used to paint the
+   same 160 % gradient again, each over its own box: three gradient fills
+   under every redrawn spot, ~6 ms a frame scrolling Settings or Shipwright
+   (0.6 ms without; PlunderHubNotes/gtk3-performance.md). */
+.dialog-vbox, notebook, stack {{
+    background-color: transparent;
+    background-image: none;
     color: {p['fg']};
 }}
 /* Same gradient as above, but pinned to "0% 0%" instead of "20% 10%" -

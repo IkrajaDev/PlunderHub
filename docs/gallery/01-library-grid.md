@@ -1,9 +1,9 @@
 <h2 align="center">Library, grid view</h2>
 
 <p align="center">
-  <a href="10-settings-appearance.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 1 / 10 &nbsp;·&nbsp;
-  <a href="02-game-menu.md"><b>Next →</b></a>
+  <a href="17-report-bug.md"><b>← Previous</b></a>
+  &nbsp;·&nbsp; 1 / 17 &nbsp;·&nbsp;
+  <a href="02-treasure-map-card.md"><b>Next →</b></a>
 </p>
 
 <p align="center">

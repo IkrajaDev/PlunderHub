@@ -44,7 +44,9 @@ KEYBOARD = [
         (("F5",), "sc_refresh"),
     ]),
     ("sc_group_open", "app-window-symbolic", [
+        (("A",), "all_games_section"),
         (("S",), "sw_title"),
+        (("T",), "tm_title"),
         (("D",), "sc_dashboard"),
         (("O",), "sc_settings"),
         (("C",), "sc_console"),

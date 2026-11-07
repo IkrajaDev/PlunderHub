@@ -41,7 +41,7 @@ from plunderhub.i18n import LANGUAGE_NATIVE_NAMES, LANGUAGE_ORDER
 from plunderhub.icons import get_icon_pixbuf
 from plunderhub.launchers.registry import LAUNCHER_REGISTRY
 from plunderhub.logging_setup import logger
-from plunderhub.theme import DANGER, THEME_ORDER, THEME_PALETTES, _app_icon_file, system_swatch_colors
+from plunderhub.theme import DANGER, THEME_ORDER, THEME_PALETTES, _app_icon_file, mark_logo, system_swatch_colors
 from plunderhub.perf_guard import allow_hover_relayout
 from plunderhub.ui import launcher_tasks
 
@@ -227,12 +227,7 @@ class SettingsWindow:
         brand.set_margin_top(18)
         brand.set_margin_start(18)
         logo = Gtk.Image()
-        icon_file = _app_icon_file()
-        if icon_file is not None:
-            try:
-                logo.set_from_pixbuf(pixbuf_at_size(icon_file, 36, 36))
-            except Exception as e:
-                logger.debug(f"Settings: couldn't load the app icon: {e}")
+        mark_logo(logo, 36)
         brand.pack_start(logo, False, False, 0)
         titles = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         title = Gtk.Label(label=self._("options"), xalign=0)
@@ -360,7 +355,7 @@ class SettingsWindow:
             card.pack_start(sep, False, False, 0)
 
     def _version_text(self) -> str:
-        """1.0.3 - with "beta" after it while this is a beta."""
+        """1.0.4 - with "beta" after it while this is a beta."""
         return f"{APP_VERSION} {self._('beta_badge').lower()}" if APP_CHANNEL else APP_VERSION
 
     def row(self, card: Gtk.Box, title: str, subtitle=None, controls=(), icon=None,

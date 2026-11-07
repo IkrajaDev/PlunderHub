@@ -31,7 +31,7 @@ import cairo
 
 from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk
 from plunderhub.logging_setup import logger
-from plunderhub.theme import _app_icon_file
+from plunderhub.theme import logo_pixbuf
 
 UNIT_US = 450_000           # one piece fading in and moving into place
 SCRIM_US = 380_000          # the loading scrim fading away
@@ -94,15 +94,7 @@ class LoadingMark(Gtk.DrawingArea):
 
     def _logo_pixbuf(self, scale: int):
         if self._logo is None or self._logo[0] != scale:
-            pb = None
-            icon_file = _app_icon_file()
-            if icon_file is not None:
-                try:
-                    pb = GdkPixbuf.Pixbuf.new_from_file_at_size(str(icon_file), self.LOGO_PX * scale,
-                                                                self.LOGO_PX * scale)
-                except GLib.Error as e:
-                    logger.debug(f"Couldn't load the app icon: {e}")
-            self._logo = (scale, pb)
+            self._logo = (scale, logo_pixbuf(self.LOGO_PX * scale))
         return self._logo[1]
 
     def _draw(self, widget, cr) -> bool:

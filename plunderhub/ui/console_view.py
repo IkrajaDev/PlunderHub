@@ -41,7 +41,7 @@ from plunderhub.core.models import GameItem
 from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, image_surface
 from plunderhub.logging_setup import logger
 from plunderhub.ui.animated_hero import argb_surface
-from plunderhub.theme import THEME_PALETTES, _app_icon_file
+from plunderhub.theme import THEME_PALETTES, _app_icon_file, logo_accent, logo_pixbuf
 from plunderhub.ui.home_mixin import (
     _accent_rgb, _draw_hero_glyph, _on_accent_rgb, _paint_hero_light, _paint_name_plate, _pango_text, _rounded,
     _title_gradient, _title_hue,
@@ -772,13 +772,13 @@ class ConsoleView(Gtk.DrawingArea):
         """The app's logo at px, read from its file once per size (the view
         redraws every frame while something on it moves)."""
         d = self.get_scale_factor()
-        key = ("logo", px, d)
+        key = ("logo", px, d, logo_accent())
         if key not in self._art:
             pb = None
             icon_file = _app_icon_file()
             if icon_file is not None:
                 try:
-                    pb = argb_surface(GdkPixbuf.Pixbuf.new_from_file_at_size(str(icon_file), px * d, px * d))
+                    pb = argb_surface(logo_pixbuf(px * d))
                     pb.set_device_scale(d, d)
                 except Exception as e:
                     logger.debug(f"Console Mode couldn't load the logo: {e}")
@@ -994,7 +994,7 @@ class ConsoleView(Gtk.DrawingArea):
         animated hero's frames sped the glides up."""
         app = self.app
         ch = int(min(H * 0.3, app.console_cover_size * 4 / 3 * 0.8))
-        cw = int(ch * 2 / 3)
+        cw = int(ch * 3 / 4)                     # the cards' 3:4, as in the library
         if not app.show_covers:
             # name plates: wide and low, as in the library
             cw = int(ch * 1.05)

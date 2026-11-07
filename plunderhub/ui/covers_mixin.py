@@ -551,7 +551,9 @@ class CoversMixin:
 
     _COVER_CORNER_RADIUS = 8  # matches .game-cover's own border-radius in app.py
 
-    _TYPICAL_COVER_ASPECT = 2 / 3  # SteamGridDB's portrait grid covers (600x900)
+    # the cards' own 3:4 (cover_size x cover_size * 4/3): every cover fills it,
+    # cut around its middle (11-07: the Treasure Map's fuller cards everywhere)
+    _TYPICAL_COVER_ASPECT = 3 / 4
 
     def _fit_cover_aspect(self, w: int, h: int) -> Tuple[int, int]:
         """Scales a (w, h) box down to a typical 2:3 cover aspect ratio,
@@ -633,15 +635,14 @@ class CoversMixin:
         return self._round_pixbuf_corners(self._make_no_cover_placeholder(ph_w, ph_h, game_title=game_title))
 
     def _load_cropped_cover(self, path: Path, w: int, h: int, scale: int) -> Optional[GdkPixbuf.Pixbuf]:
-        """A cover wider than 2:3 (an Epic / GOG 3:4 portrait), cut to the
-        2:3 every other card has, around its middle - fitted whole it came
-        out as wide as the 3:4 box and the card stood out of the grid.
-        None when it isn't wider (then it's fitted as it is)."""
+        """A cover of another shape than the cards' 3:4 (a 2:3 Steam /
+        SteamGridDB portrait, a wider Epic one), cut to it around its middle
+        so every card is the same and full. None when it already fits."""
         info = GdkPixbuf.Pixbuf.get_file_info(str(path))
         if not info or info[0] is None or not info[1] or not info[2]:
             return None
         iw, ih = info[1], info[2]
-        if iw / ih <= self._TYPICAL_COVER_ASPECT * 1.02:
+        if abs(iw / ih / self._TYPICAL_COVER_ASPECT - 1) <= 0.02:
             return None
         bw, bh = self._fit_cover_aspect(w, h)
         bw, bh = bw * scale, bh * scale
@@ -931,6 +932,15 @@ class CoversMixin:
             missing = self._missing_art_kinds(game)
             if not missing:
                 continue
+            if self.api_key:
+                # a reinstalled game: the art picked for it before comes back
+                # first - the launcher's own would overwrite what's noted
+                missing -= self._restore_chosen_art(game, missing)
+                if not missing:
+                    GLib.idle_add(self.update_cover_image, game.uid)
+                    GLib.idle_add(self.update_game_icon_image, game.uid)
+                    GLib.idle_add(self.update_hero_image, game.uid)
+                    continue
             got = self._fetch_launcher_art(game, missing)
             launcher += bool(got)
             missing -= got
@@ -946,6 +956,32 @@ class CoversMixin:
         if launcher or sgdb:
             logger.info(f"Missing art filled: {launcher} game(s) from their launcher, {sgdb} from SteamGridDB.")
         return launcher, sgdb
+
+    def _restore_chosen_art(self, game: GameItem, kinds: set) -> set:
+        """The kinds whose art was picked from SteamGridDB (or found there)
+        before - its address noted, its file dropped at the uninstall -
+        downloaded again. The launcher's own art isn't one of them. The
+        kinds that came. Blocks: a worker thread."""
+        got = set()
+        for kind in kinds:
+            folder, art_map = {"cover": (self.covers_dir, "cover_map"), "hero": (self.heroes_dir, "hero_map"),
+                               "icon": (self.game_icons_dir, "game_icon_map")}[kind]
+            with self._cover_map_lock:
+                entry = getattr(self, art_map).get(game.uid)
+            if not isinstance(entry, dict) or not entry.get("url") or entry.get("style") == "launcher":
+                continue
+            url = entry["url"]
+            target = folder / f"{game.uid}{_safe_image_ext(entry.get('ext'), default=_ext_from_url(url))}"
+            try:
+                ok = self.download_cover_from_url(url, target)
+            except Exception as e:
+                logger.info(f"Picked {kind} for '{game.title}' not restored: {e}")
+                ok = False
+            if ok:
+                got.add(kind)
+        if got:
+            logger.info(f"Art picked before restored for '{game.title}': {', '.join(sorted(got))}")
+        return got
 
     def _missing_art_kinds(self, game: GameItem) -> set:
         return {kind for kind, folder in (("cover", self.covers_dir), ("icon", self.game_icons_dir),
@@ -1175,8 +1211,12 @@ class CoversMixin:
                 entry = {"launcher": True}      # a local file: nothing to fetch again
             _remove_other_art(folder, game.uid, keep=target)
             with self._cover_map_lock:
-                getattr(self, art_map)[game.uid] = entry
-                save(getattr(self, art_map))
+                old = getattr(self, art_map).get(game.uid)
+                # art picked before (SteamGridDB) stays noted: with a key it
+                # comes back at the next reinstall (_restore_chosen_art)
+                if not (isinstance(old, dict) and old.get("url") and old.get("style") != "launcher"):
+                    getattr(self, art_map)[game.uid] = entry
+                    save(getattr(self, art_map))
             got.add(kind)
         if got:
             logger.info(f"Art from {game.launcher} itself for '{game.title}': {', '.join(sorted(got))}")
@@ -1514,7 +1554,7 @@ class CoversMixin:
     def _show_first_frame(self, widgets, path: Path, width: int, height: int,
                            game_title: Optional[str] = None) -> None:
         pixbuf = self._resolve_cover_pixbuf(width, height, path, log_context=f"Couldn't read first frame of {path}",
-                                             game_title=game_title, crop=False)
+                                             game_title=game_title)
         for widget in widgets:
             widget.set_from_pixbuf(pixbuf)
 

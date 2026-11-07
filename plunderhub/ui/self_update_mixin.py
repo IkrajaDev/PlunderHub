@@ -29,7 +29,7 @@ from plunderhub.core import self_update
 from plunderhub.core.update_check import release_page_url
 from plunderhub.gi_setup import GdkPixbuf, GLib, Gtk
 from plunderhub.logging_setup import logger
-from plunderhub.theme import _app_icon_file
+from plunderhub.theme import _app_icon_file, logo_pixbuf
 from plunderhub.ui.progress_card import (
     RING_ICON, LogPanel, ProgressRing, Stepper, card_dialog, pill_buttons, show_final, status_label,
 )
@@ -166,7 +166,7 @@ class _UpdateWindow:
         path = _app_icon_file()
         try:
             if path is not None:
-                return GdkPixbuf.Pixbuf.new_from_file_at_size(str(path), size, size)
+                return logo_pixbuf(size)
             return Gtk.IconTheme.get_default().load_icon(APP_ICON_NAME, size, Gtk.IconLookupFlags.FORCE_SIZE)
         except Exception as e:
             logger.debug(f"Update dialog: couldn't load the app icon: {e}")

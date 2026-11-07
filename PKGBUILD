@@ -1,11 +1,11 @@
 # Maintainer: Ikraja
 pkgname=plunderhub
-pkgver=1.0.3
+pkgver=1.0.4
 pkgrel=1
 # The upstream git tag. pacman versions can't contain "-" and the tag
 # does, so the two are spelled out separately rather than translated
 # back and forth.
-_tag="v1.0.3"
+_tag="v1.0.4"
 pkgdesc="PlunderHub (Beta) - Unified game launcher"
 arch=('any')
 url="https://github.com/IkrajaDev/PlunderHub"
@@ -88,12 +88,13 @@ package() {
 
     # The plunderhub/ package: code plus bundled assets. The file types
     # cover the Lucide icon set (assets/icons), the Inter font
-    # (assets/fonts) and their LICENSE files - without them the app runs
+    # (assets/fonts), the welcome tour's pictures (assets/tour, .jpg)
+    # and their LICENSE files - without them the app runs
     # but falls back to the system icon theme and font. Keep in sync
     # with what those folders actually contain.
     find plunderhub -type f \
         \( -name "*.py" -o -name "*.png" -o -name "*.svg" \
-           -o -name "*.ttf" -o -name "*.txt" \) -print0 |
+           -o -name "*.ttf" -o -name "*.txt" -o -name "*.jpg" \) -print0 |
     while IFS= read -r -d '' pyfile; do
         install -Dm644 "$pyfile" "$pkgdir/usr/lib/plunderhub/$pyfile"
     done

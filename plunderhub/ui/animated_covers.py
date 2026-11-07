@@ -271,6 +271,15 @@ class AnimatedCoverPlayer:
                                              0xFFFFFF, 0xFFFFFF)
         return on_black.read_pixel_bytes().equal(on_white.read_pixel_bytes())
 
+    @staticmethod
+    def _cut(pb, w: int, h: int):
+        """The frame's middle in the card's w:h shape (a view, no copy)."""
+        pw, ph = pb.get_width(), pb.get_height()
+        cw, ch = min(pw, round(ph * w / h)), min(ph, round(pw * h / w))
+        if (cw, ch) == (pw, ph) or cw < 1 or ch < 1:
+            return pb
+        return pb.new_subpixbuf((pw - cw) // 2, (ph - ch) // 2, cw, ch)
+
     def _render(self, pb) -> cairo.ImageSurface:
         """A frame, rounded - or, with nothing see-through in it, in 16 bits
         a pixel, dithered, its corners cut when drawn (_draw_frame)."""
@@ -291,7 +300,14 @@ class AnimatedCoverPlayer:
 
     def _decode(self, track: _Track, count: int, keep: bool):
         if track.decoder is None:
-            animation = _decode_at_size(track.path, track.w, track.h)
+            # decoded big enough to fill the card, then cut to its shape
+            # around the middle (like the stills, covers_mixin._load_cropped_cover)
+            bw, bh = track.w, track.h
+            info = GdkPixbuf.Pixbuf.get_file_info(str(track.path))
+            if info and info[0] is not None and info[1] and info[2]:
+                k = max(track.w / info[1], track.h / info[2])
+                bw, bh = max(1, math.ceil(info[1] * k)), max(1, math.ceil(info[2] * k))
+            animation = _decode_at_size(track.path, bw, bh)
             if animation is None or animation.is_static_image():
                 return None, False
             tv = GLib.TimeVal()
@@ -311,7 +327,7 @@ class AnimatedCoverPlayer:
                 break
             delay = it.get_delay_time()
             delay = delay if delay > 0 else 100
-            out.append((self._render(pb), delay))
+            out.append((self._render(self._cut(pb, track.w, track.h)), delay))
             # Stepping a clock of our own, not the real one, so frames come
             # out in order however long the work takes.
             tv.tv_usec += delay * 1000

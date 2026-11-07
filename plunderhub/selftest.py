@@ -235,6 +235,51 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
             shutil.rmtree(tmp, ignore_errors=True)
     steps.append(_step("performance: Shipwright's Bilge page", calm_bilge_page))
 
+    def calm_treasure_map():
+        # T opens the map over the library page and closes it back onto it;
+        # the arrows / Home / End move the tile cursor; hovering lays nothing out
+        from types import SimpleNamespace
+        from gi.repository import Gdk, Gtk
+        from plunderhub.ui import treasure_map
+        deadline = time.monotonic() + 10
+        while getattr(window, "_tm_view", None) is None and time.monotonic() < deadline:
+            Gtk.main_iteration_do(False)
+        view = getattr(window, "_tm_view", None)
+        assert view is not None, "the Treasure Map wasn't set up"
+
+        def key(keyval):
+            window._on_window_key_press(window, SimpleNamespace(keyval=keyval, state=0, is_modifier=False))
+            perf_guard.settle(window, frames=2)
+
+        nav = window.home_nav
+        window.set_focus(None)
+        try:
+            key(Gdk.KEY_t)
+            assert treasure_map.shown(window) is view, "T didn't open the Treasure Map"
+            assert not window.scroller.get_visible(), "the library still shows under the map"
+            assert window.home_nav == nav, "the map changed the page the app starts on"
+            assert window.home_nav_main.get_selected_row() is window._tm_row, "the map's sidebar row isn't selected"
+            perf_guard.assert_calm(window, "Treasure Map", idle=False)
+            if view.grid.items:
+                window._main_move_focus("right")
+                assert view.grid.has_focus() and view.grid.hover in view.grid.items, "the arrows don't reach the tiles"
+                key(Gdk.KEY_End)
+                assert view.grid.hover is view.grid.items[-1], "End doesn't go to the last tile"
+                window._main_move_focus("up")
+                key(Gdk.KEY_Home)
+                assert view.grid.hover is view.grid.items[0], "Home doesn't go to the first tile"
+                window._main_move_focus("left")
+                assert not view.grid.has_focus(), "left from the first tile doesn't go to the sidebar"
+            window.set_focus(None)
+            key(Gdk.KEY_t)
+            assert treasure_map.shown(window) is None and window.scroller.get_visible(), "T didn't close the map"
+            assert window.home_nav == nav, "closing the map didn't go back to the library page"
+        finally:
+            if treasure_map.shown(window) is not None:
+                window._set_home_nav(nav)
+            window._home_select_nav_row()
+    steps.append(_step("performance: the Treasure Map", calm_treasure_map))
+
     def calm_release_notes():
         from types import SimpleNamespace as R
         from plunderhub.ui.release_notes_window import SINCE, open_notes
@@ -378,7 +423,7 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
                 if seen:
                     window.settings[captains_log.SEEN_KEY] = seen
                 if not welcome_shown:
-                    window._show_welcome, real_welcome = (lambda: None), window._show_welcome
+                    window._show_welcome, real_welcome = (lambda **_k: None), window._show_welcome
                 try:
                     window._maybe_show_first_run_tip()
                 finally:

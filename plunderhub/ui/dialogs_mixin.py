@@ -32,7 +32,7 @@ from plunderhub.core.models import GameItem
 from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, logical_size
 from plunderhub.icons import get_icon_pixbuf
 from plunderhub.logging_setup import logger
-from plunderhub.theme import _app_icon_file
+from plunderhub.theme import _app_icon_file, logo_pixbuf as theme_logo_pixbuf
 from plunderhub.ui.home_mixin import _accent_rgb
 
 
@@ -387,10 +387,7 @@ class DialogsMixin:
                 if picture is not None:
                     pb, icon_file = picture(logo_px * scale), None
                 if icon_file is not None:
-                    try:
-                        pb = GdkPixbuf.Pixbuf.new_from_file_at_size(str(icon_file), logo_px * scale, logo_px * scale)
-                    except GLib.Error as e:
-                        logger.debug(f"Couldn't load the app icon: {e}")
+                    pb = theme_logo_pixbuf(logo_px * scale)
                 have = state["logo"] = (scale, pb)
             return have[1]
 

@@ -45,7 +45,7 @@ from plunderhub.core.persistence import save_settings  # noqa: E402
 from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, image_surface, logical_size, pixbuf_at_size, pixbuf_surface  # noqa: E402
 from plunderhub.icons import get_icon_pixbuf  # noqa: E402
 from plunderhub.logging_setup import logger  # noqa: E402
-from plunderhub.theme import _app_icon_file  # noqa: E402
+from plunderhub.theme import _app_icon_file, mark_logo  # noqa: E402
 
 DANGER_RGB = (0xe5 / 255, 0x53 / 255, 0x4b / 255)
 WARNING_RGB = (0xe8 / 255, 0xa3 / 255, 0x3d / 255)
@@ -427,6 +427,12 @@ def _row_shadow(w: int, h: int, accent: Tuple[float, float, float], focused: boo
     it stood on - as the row's box-shadow was."""
     return _soft_shadow(w, h, 14, ((22, 0, (*accent, 0.32 if focused else 0.28)), (26, 12, (0, 0, 0, 0.5))))
 
+
+
+def _treasure_map():
+    """ui/treasure_map (imported on first use: it draws with this module's helpers)."""
+    from plunderhub.ui import treasure_map
+    return treasure_map
 
 class _CappedBox(Gtk.Box):
     """A box that would like to be `natural` wide, but makes do with what
@@ -1359,7 +1365,7 @@ class HomeMixin:
                 return
             logo.plunderhub_px = px
             try:
-                logo.set_from_pixbuf(pixbuf_at_size(icon_file, px, px))
+                mark_logo(logo, px)
             except Exception as e:
                 logger.debug(f"Couldn't load the app icon for the sidebar: {e}")
         first = word.get_children()[0]
@@ -1517,6 +1523,18 @@ class HomeMixin:
                     if ok and key in FLATPAK_PARTS and launchers:
                         layer = flatpak_layers.LAYERS_BY_ID[FLATPAK_PARTS[key].split(":", 1)[1]]
                         ok = all(r in have for r in flatpak_layers.needed_refs(layer, launchers))
+                    if not ok and tool.name not in here and not launcher_tasks._flatpak_ids(tool.name):
+                        # what can't be had here isn't asked for (GameMode, Wine's
+                        # dependencies on Bazzite's read-only system): Shipwright's
+                        # tile says "can't be installed here", there's nothing to do
+                        try:
+                            plan = launcher_tasks.native_plan(tool.name)
+                        except Exception:
+                            plan = None
+                        if isinstance(plan, launcher_tasks.Unavailable) and plan.reason.startswith(
+                                ("task_native_not_in_repos", "task_native_not_in_components",
+                                 "task_native_immutable")):
+                            continue
                     if not ok:
                         missing.append(self._(f"sw_name_{key}") if f"sw_name_{key}" in self.strings else tool.name)
             except Exception as e:
@@ -1851,6 +1869,16 @@ class HomeMixin:
         self._refresh_home_counts()
 
     def _home_select_nav_row(self):
+        if _treasure_map().shown(self) is not None:
+            # the map: its own row in the main list, nothing among the launchers
+            self._home_nav_updating = True
+            try:
+                self.home_nav_launchers.unselect_all()
+                if getattr(self, "_tm_row", None) is not None:
+                    self.home_nav_main.select_row(self._tm_row)
+            finally:
+                self._home_nav_updating = False
+            return
         for row in self.home_nav_launchers.get_children():
             update = getattr(row, "plunderhub_update", None)
             if update is not None:
@@ -1881,6 +1909,7 @@ class HomeMixin:
             if g.launcher == "Heroic":
                 key = f"s:{g.store_platform or 'epic'}"
                 counts[key] = counts.get(key, 0) + 1
+        counts["map"] = _treasure_map().map_count(self)
         for key, label in self._home_count_labels.items():
             n = counts.get(key, 0)
             label.set_text(str(n) if n else "")
@@ -1896,6 +1925,16 @@ class HomeMixin:
         self._set_home_nav(row.home_key)
 
     def _set_home_nav(self, key: str):
+        # the Treasure Map is shown over the page picked last (home_nav is
+        # never "map": the app still starts on a library page)
+        if key == "map":
+            _treasure_map().show_map(self, True)
+            return
+        if _treasure_map().shown(self) is not None:
+            _treasure_map().show_map(self, False)
+            if key == self.home_nav:
+                self._home_select_nav_row()
+                return
         if key == self.home_nav:
             return
         self.home_nav = key
@@ -1925,6 +1964,9 @@ class HomeMixin:
         return True
 
     def _home_focus_content(self) -> bool:
+        view = _treasure_map().shown(self)
+        if view is not None:
+            return view.grid.kb_enter()
         grid = getattr(self, "_reorder_grid", None)
         if self.reorder_mode and grid is not None and grid.get_mapped():
             self._grab_keyboard_focus(grid)
@@ -2312,9 +2354,21 @@ class HomeMixin:
 
     def _update_sort_btn_label(self):
         if hasattr(self, "sort_btn_label"):
-            self.sort_btn_label.set_text(self._(f"sort_{self.sort_mode}"))
+            view = _treasure_map().shown(self)
+            self.sort_btn_label.set_text(view.sort_label() if view is not None else self._(f"sort_{self.sort_mode}"))
+
+    def _toggle_treasure_map(self):
+        """T: the Treasure Map, and back to the library page it was over."""
+        if getattr(self, "_tm_view", None) is None:
+            return
+        self._set_home_nav(self.home_nav if _treasure_map().shown(self) is not None else "map")
+        self._home_select_nav_row()
 
     def _launch_first_search_hit(self):
+        view = _treasure_map().shown(self)
+        if view is not None:
+            view.open_first()
+            return
         if not self.search_entry.get_text().strip():
             return
         games = self._home_filtered_games()
@@ -3032,6 +3086,7 @@ class HomeMixin:
     # --- rendering --------------------------------------------------------
 
     def _render_launchers(self, animate: bool = False):
+        _treasure_map().follow_library_look(self)        # cover size / text size: the map's tiles too
         if getattr(self, "_library_dropped", False) and not self.get_visible():
             # in the tray with its cards let go (App._drop_hidden_library):
             # the games are noted, the cards wait till the window's back
@@ -3113,6 +3168,10 @@ class HomeMixin:
             rows_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             self._home_list_cols = {k: Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
                                     for k in ("title", "launcher", "time", "button")}
+            if not self.search_entry.get_text().strip():
+                # games being installed from the Treasure Map, first
+                for row in _treasure_map().installing_rows(self, self.home_nav):
+                    rows_box.pack_start(row, False, False, 0)
             for game in games:
                 row = self._build_home_list_row(game)
                 rows_box.pack_start(row, False, False, 0)
@@ -3123,6 +3182,10 @@ class HomeMixin:
         else:
             self.content.pack_start(heading, False, False, 0)
             flow = self._home_flow()
+            if not self.search_entry.get_text().strip():
+                # games being installed from the Treasure Map, first
+                for card in _treasure_map().installing_cards(self, self.home_nav, cover_w, cover_h):
+                    flow.add(card)
             for game in games:
                 card = GameCard(self, game, cover_w, cover_h)
                 flow.add(card)
@@ -3182,7 +3245,7 @@ class HomeMixin:
         self.content.pack_start(banner, False, False, 0)
 
         card_h = cover_h
-        card_w = max(1, round(card_h * 2 / 3))
+        card_w = max(1, round(card_h * 3 / 4))     # the cards' own 3:4
         if not self.show_covers:
             # the library's name plates: a cover's width, about half as tall
             card_w = round(cover_h * 3 / 4)

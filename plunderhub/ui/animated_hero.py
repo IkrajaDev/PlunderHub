@@ -196,7 +196,7 @@ def _fill(src: cairo.ImageSurface, w: int, h: int, crop: bool) -> cairo.ImageSur
     scale = max(w / sw, h / sh) if crop else min(w / sw, h / sh)
     out = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
     cr = cairo.Context(out)
-    cr.translate((w - sw * scale) / 2, (h - sh * scale) * (0.3 if crop else 0.5))
+    cr.translate((w - sw * scale) / 2, (h - sh * scale) * (0.3 if crop and w >= h else 0.5))
     cr.scale(scale, scale)
     cr.set_source_surface(src, 0, 0)
     # GOOD only where it shows: down to half size bilinear looks the same

@@ -119,7 +119,7 @@ class _FileTile(Gtk.Box):
             if generation == self.picker.generation:
                 _fmt, w, h = GdkPixbuf.Pixbuf.get_file_info(str(self.path))
                 size = (w, h) if w and h else None
-                frames, _still = _decode_preview(self.path, self.w, self.h, self.kind == "hero", self.radius, False)
+                frames, _still = _decode_preview(self.path, self.w, self.h, self.kind in ("hero", "cover"), self.radius, False)
                 surface = frames[0][0] if frames else None
         except Exception as e:
             logger.debug(f"Image picker couldn't read {self.path}: {e}")

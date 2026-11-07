@@ -4766,6 +4766,10 @@ msgstr "O SteamGridDB aceitou – as capas podem subir a bordo."
 msgid "test_success_heading"
 msgstr "A chave funciona"
 
+#. English: Ayu Dark
+msgid "theme_ayu_dark"
+msgstr "Ayu Dark"
+
 #. English: Catppuccin Latte
 msgid "theme_catppuccin_latte"
 msgstr "Catppuccin Latte"
@@ -4777,6 +4781,10 @@ msgstr "Catppuccin Mocha"
 #. English: Dracula
 msgid "theme_dracula"
 msgstr "Dracula"
+
+#. English: Everforest
+msgid "theme_everforest"
+msgstr "Everforest"
 
 #. English: GitHub Light
 msgid "theme_github_light"
@@ -4790,6 +4798,10 @@ msgstr "Gruvbox Light"
 msgid "theme_gruvbox_dark"
 msgstr "Gruvbox Dark"
 
+#. English: Horizon
+msgid "theme_horizon"
+msgstr "Horizon"
+
 #. English: Kanagawa
 msgid "theme_kanagawa"
 msgstr "Kanagawa"
@@ -4797,6 +4809,10 @@ msgstr "Kanagawa"
 #. English: Theme:
 msgid "theme_label"
 msgstr "Tema:"
+
+#. English: Oxocarbon
+msgid "theme_oxocarbon"
+msgstr "Oxocarbon"
 
 #. English: PlunderHub
 msgid "theme_plunderhub"
@@ -4825,6 +4841,394 @@ msgstr "Entendi, Capitão!"
 #. English: Ahoy! Welcome to PlunderHub!
 msgid "tip_title"
 msgstr "Ahoy! Bem-vindo ao PlunderHub!"
+
+#. English: Aboard
+msgid "tm_aboard"
+msgstr "A bordo"
+
+#. English: installed - ready to set sail
+msgid "tm_aboard_note"
+msgstr "instalado - pronto para zarpar"
+
+#. English: Buried
+msgid "tm_buried"
+msgstr "Enterrado"
+
+#. English: yours, not installed yet
+msgid "tm_buried_note"
+msgstr "seu, ainda não instalado"
+
+#. English: Close Heroic
+msgid "tm_close_heroic"
+msgstr "Fechar o Heroic"
+
+#. English: Installed with Heroic's own tools while Heroic stays closed - it shows up in Heroic afterwards
+msgid "tm_dig_tooltip_heroic"
+msgstr "Instalado com as ferramentas do próprio Heroic enquanto o Heroic fica fechado - depois aparece no Heroic"
+
+#. English: Steam installs it in the background, without its window - Steam is restarted for it
+msgid "tm_dig_tooltip_steam"
+msgstr "O Steam instala em segundo plano, sem a janela dele - o Steam é reiniciado para isso"
+
+#. English: Dig up
+msgid "tm_dig_up"
+msgstr "Desenterrar"
+
+#. English: Dig up with {launcher}
+msgid "tm_dig_up_with"
+msgstr "Desenterrar com {launcher}"
+
+#. English: Waiting for {launcher}'s install window - {game}
+msgid "tm_dock_asked"
+msgstr "Aguardando a janela de instalação do {launcher} - {game}"
+
+#. English: Pick the folder there and press Install - the download shows here.
+msgid "tm_dock_asked_sub"
+msgstr "Escolha a pasta lá e aperte Install - o download aparece aqui."
+
+#. English: {launcher} is digging up {game}
+msgid "tm_dock_digging"
+msgstr "{launcher} está desenterrando {game}"
+
+#. English: {game} waits in {launcher}'s queue
+msgid "tm_dock_queued"
+msgstr "{game} aguarda na fila do {launcher}"
+
+#. English: It starts when the one before it is done.
+msgid "tm_dock_queued_sub"
+msgstr "Começa quando o anterior terminar."
+
+#. English: {launcher} is unpacking {game}
+msgid "tm_dock_unpacking"
+msgstr "{launcher} está descompactando {game}"
+
+#. English: Heroic (Flatpak) only sees its own folders - it installs there. You can change them in Heroic's settings.
+msgid "tm_flatpak_fixed_paths"
+msgstr "O Heroic (Flatpak) só vê as próprias pastas - instala lá. Você pode mudá-las nas configurações do Heroic."
+
+#. English: Free
+msgid "tm_free"
+msgstr "Livre"
+
+#. English: Free now
+msgid "tm_free_now"
+msgstr "Livre agora"
+
+#. English: {size} free
+msgid "tm_free_space"
+msgstr "{size} livres"
+
+#. English: Frees {size}
+msgid "tm_frees"
+msgstr "Libera {size}"
+
+#. English: {game}: {launcher} didn't start the install
+msgid "tm_gave_up"
+msgstr "{game}: o {launcher} não iniciou a instalação"
+
+#. English: Going overboard…
+msgid "tm_going_overboard"
+msgstr "Indo ao mar…"
+
+#. English: It's open - while the game is removed it would write it back.
+msgid "tm_heroic_close_s"
+msgstr "Ele está aberto - enquanto o jogo é removido, ele o escreveria de volta."
+
+#. English: Heroic closes for a moment
+msgid "tm_heroic_close_t"
+msgstr "O Heroic fecha por um momento"
+
+#. English: {game}: Heroic stopped ({why})
+msgid "tm_heroic_stopped"
+msgstr "{game}: o Heroic parou ({why})"
+
+#. English: In {launcher}
+msgid "tm_in_launcher"
+msgstr "No {launcher}"
+
+#. English: {game} couldn't be installed
+msgid "tm_install_failed"
+msgstr "Não foi possível instalar {game}"
+
+#. English: Install {launcher}
+msgid "tm_install_launcher"
+msgstr "Instalar {launcher}"
+
+#. English: Install to
+msgid "tm_install_to"
+msgstr "Instalar em"
+
+#. English: Being installed - the Treasure Map shows more
+msgid "tm_installing_tooltip"
+msgstr "Sendo instalado - o Mapa do tesouro mostra mais"
+
+#. English: Keep it
+msgid "tm_keep_it"
+msgstr "Manter"
+
+#. English: Prefix & settings stay
+msgid "tm_keeps_prefix"
+msgstr "Prefixo e ajustes ficam"
+
+#. English: Beta
+msgid "tm_kind_beta"
+msgstr "Beta"
+
+#. English: Demo
+msgid "tm_kind_demo"
+msgstr "Demo"
+
+#. English: Mod
+msgid "tm_kind_mod"
+msgstr "Mod"
+
+#. English: Software
+msgid "tm_kind_software"
+msgstr "Software"
+
+#. English: {m} min {s} s left
+msgid "tm_left"
+msgstr "faltam {m} min {s} s"
+
+#. English: Left after
+msgid "tm_left_after"
+msgstr "Sobra depois"
+
+#. English: Swab the bilge
+msgid "tm_left_go"
+msgstr "Esfregar o porão"
+
+#. English: Wine prefix
+msgid "tm_left_kind_prefix"
+msgstr "Prefixo do Wine"
+
+#. English: Shader cache
+msgid "tm_left_kind_shader_cache"
+msgstr "Cache de shaders"
+
+#. English: Proton prefix
+msgid "tm_left_kind_steam_prefix"
+msgstr "Prefixo do Proton"
+
+#. English: Leave them be
+msgid "tm_left_no"
+msgstr "Deixa estar"
+
+#. English: {game} left these behind - {size}
+msgid "tm_left_s"
+msgstr "{game} deixou isto para trás - {size}"
+
+#. English: There are saves inside - Bilge cleaning can back them up first
+msgid "tm_left_saves"
+msgstr "Há saves dentro - a limpeza do porão pode fazer backup antes"
+
+#. English: Barnacles left in the bilge
+msgid "tm_left_t"
+msgstr "Cracas ficaram no porão"
+
+#. English: Looking it up…
+msgid "tm_looking"
+msgstr "Procurando…"
+
+#. English: Measuring the room aboard…
+msgid "tm_measuring"
+msgstr "Medindo o espaço a bordo…"
+
+#. English: Native
+msgid "tm_native"
+msgstr "Nativo"
+
+#. English: Needs
+msgid "tm_needs"
+msgstr "Precisa"
+
+#. English: Next: {names}
+msgid "tm_next"
+msgstr "Próximo: {names}"
+
+#. English: {launcher} didn't answer
+msgid "tm_no_answer"
+msgstr "{launcher} não respondeu"
+
+#. English: Its link couldn't be opened on this desktop.
+msgid "tm_no_answer_sub"
+msgstr "O link dele não pôde ser aberto neste desktop."
+
+#. English: Your {store} games come aboard through {launcher}.\nInstall it and sign in once - your games show up here by themselves.
+msgid "tm_no_launcher_s"
+msgstr "Seus jogos da {store} chegam a bordo pelo {launcher}.\nInstale e entre uma vez - seus jogos aparecem aqui sozinhos."
+
+#. English: {launcher} isn't installed
+msgid "tm_no_launcher_t"
+msgstr "{launcher} não está instalado"
+
+#. English: No treasure matches “{q}”
+msgid "tm_no_match"
+msgstr "Nenhum tesouro corresponde a “{q}”"
+
+#. English: {game} isn't in your library yet - it shows up after the next scan.
+msgid "tm_not_in_library"
+msgstr "{game} ainda não está na sua biblioteca - aparece depois da próxima busca."
+
+#. English: Not now
+msgid "tm_not_now"
+msgstr "Agora não"
+
+#. English: Not yet
+msgid "tm_not_yet"
+msgstr "Ainda não"
+
+#. English: Nothing here
+msgid "tm_nothing"
+msgstr "Nada aqui"
+
+#. English: {done} of {total}
+msgid "tm_of"
+msgstr "{done} de {total}"
+
+#. English: On disk
+msgid "tm_on_disk"
+msgstr "No disco"
+
+#. English: Open {launcher}
+msgid "tm_open_launcher"
+msgstr "Abrir {launcher}"
+
+#. English: Opening {launcher}…
+msgid "tm_opening"
+msgstr "Abrindo {launcher}…"
+
+#. English: Throw it overboard?
+msgid "tm_overboard_q"
+msgstr "Jogar ao mar?"
+
+#. English: Pending
+msgid "tm_pdb_pending"
+msgstr "Pendente"
+
+#. English: Putting the files in place
+msgid "tm_phase_commit"
+msgstr "Colocando os arquivos no lugar"
+
+#. English: Game files
+msgid "tm_phase_game"
+msgstr "Arquivos do jogo"
+
+#. English: Shader pre-caching
+msgid "tm_phase_shaders"
+msgstr "Pré-cache de shaders"
+
+#. English: Played
+msgid "tm_played"
+msgstr "Jogado"
+
+#. English: Positive
+msgid "tm_positive"
+msgstr "Positivo"
+
+#. English: Open {launcher} and sign in to {store} there.\nYour games show up here by themselves - PlunderHub never sees your password.
+msgid "tm_signin_s"
+msgstr "Abra o {launcher} e entre na {store} lá.\nSeus jogos aparecem aqui sozinhos - o PlunderHub nunca vê sua senha."
+
+#. English: Open {launcher} and sign in there.\nYour games show up here by themselves - PlunderHub never sees your password.
+msgid "tm_signin_self_s"
+msgstr "Abra o {launcher} e entre lá.\nSeus jogos aparecem aqui sozinhos - o PlunderHub nunca vê sua senha."
+
+#. English: Sign in to {launcher}
+msgid "tm_signin_self_t"
+msgstr "Entre no {launcher}"
+
+#. English: Sign in to {store} in {launcher}
+msgid "tm_signin_t"
+msgstr "Entre na {store} pelo {launcher}"
+
+#. English: Freshest loot
+msgid "tm_sort_newest"
+msgstr "Saque mais fresco"
+
+#. English: Ancient relics
+msgid "tm_sort_oldest"
+msgstr "Relíquias antigas"
+
+#. English: Steam reviews
+msgid "tm_steam_reviews"
+msgstr "Avaliações da Steam"
+
+#. English: Stop
+msgid "tm_stop"
+msgstr "Parar"
+
+#. English: Every game you own, in one place.  <b>Aboard</b>: installed.  <b>Buried</b>: not installed yet - <b>Dig up</b> installs it with its own launcher.
+msgid "tm_sub"
+msgstr "Todos os seus jogos, em um só lugar.  <b>A bordo</b>: instalado.  <b>Enterrado</b>: ainda não instalado - <b>Desenterrar</b> instala com o próprio launcher."
+
+#. English: Treasure Map
+msgid "tm_title"
+msgstr "Mapa do tesouro"
+
+#. English: {game} is aboard - ready to set sail
+msgid "tm_toast_aboard"
+msgstr "{game} está a bordo - pronto para zarpar"
+
+#. English: Find it under Aboard - and in your library.
+msgid "tm_toast_aboard_sub"
+msgstr "Está em A bordo - e na sua biblioteca."
+
+#. English: {game} went overboard - it's buried again
+msgid "tm_toast_overboard"
+msgstr "{game} foi ao mar - está enterrado de novo"
+
+#. English: Find it under Buried - Dig up installs it again.
+msgid "tm_toast_overboard_sub"
+msgstr "Está em Enterrado - Desenterrar instala de novo."
+
+#. English: Uninstall
+msgid "tm_uninstall"
+msgstr "Desinstalar"
+
+#. English: {game} couldn't be removed
+msgid "tm_uninstall_failed"
+msgstr "Não foi possível remover {game}"
+
+#. English: With {launcher}
+msgid "tm_uninstall_sub"
+msgstr "Com {launcher}"
+
+#. English: Steam changed its files - only the installed Steam games show until PlunderHub catches up.
+msgid "tm_unreadable"
+msgstr "A Steam mudou seus arquivos - só os jogos da Steam instalados aparecem até o PlunderHub se atualizar."
+
+#. English: {store} via Heroic
+msgid "tm_via_heroic"
+msgstr "{store} via Heroic"
+
+#. English: Waiting
+msgid "tm_waiting"
+msgstr "Aguardando"
+
+#. English: Waiting · #{n}
+msgid "tm_waiting_n"
+msgstr "Aguardando · #{n}"
+
+#. English: Sign in there if you haven't yet - your games show up here as soon as {launcher} has them.
+msgid "tm_waiting_s"
+msgstr "Entre lá se ainda não entrou - seus jogos aparecem aqui assim que o {launcher} os tiver."
+
+#. English: Waiting for {launcher}…
+msgid "tm_waiting_t"
+msgstr "Aguardando o {launcher}…"
+
+#. English: Wine prefix
+msgid "tm_wine_prefix"
+msgstr "Prefixo do Wine"
+
+#. English: Wine / Proton
+msgid "tm_wine_version"
+msgstr "Wine / Proton"
+
+#. English: Won't fit
+msgid "tm_wont_fit"
+msgstr "Não cabe"
 
 #. English: Installed - Launch options can switch it on now.
 msgid "tool_ready_text"
@@ -5217,3 +5621,119 @@ msgstr "Você pode mudar isso a qualquer momento em {settings}."
 #. English: Where should your games open?
 msgid "ws_ask_title"
 msgstr "Onde seus jogos devem abrir?"
+
+#. English: Ahoy! Welcome to PlunderHub!
+msgid "wt_ahoy"
+msgstr "Ahoy! Bem-vindo ao PlunderHub!"
+
+#. English: Back
+msgid "wt_back"
+msgstr "Voltar"
+
+#. English: Finds what uninstalled games left behind and frees the space. Before anything goes, it can back up your saves, settings, profiles and registry keys - and put them back later.
+msgid "wt_bilge_s"
+msgstr "Encontra o que os jogos desinstalados deixaram para trás e libera o espaço. Antes de apagar qualquer coisa, pode fazer backup dos seus saves, configurações, perfis e chaves de registro - e devolvê-los depois."
+
+#. English: Bilge cleaning
+msgid "wt_bilge_t"
+msgstr "Limpeza do porão"
+
+#. English: Close
+msgid "wt_close"
+msgstr "Fechar"
+
+#. English: The big screen, made for controllers. Hold View + Start to switch between a game and PlunderHub.
+msgid "wt_console_s"
+msgstr "A tela grande, feita para controles. Segure View + Start para alternar entre um jogo e o PlunderHub."
+
+#. English: Console Mode
+msgid "wt_console_t"
+msgstr "Modo console"
+
+#. English: Your playtime and storage at a glance.
+msgid "wt_dash_s"
+msgstr "Seu tempo de jogo e seu armazenamento num relance."
+
+#. English: Captain's Dashboard
+msgid "wt_dash_t"
+msgstr "Painel do Capitão"
+
+#. English: All shortcuts
+msgid "wt_key_all"
+msgstr "Todos os atalhos"
+
+#. English: Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles and Faugus - found on their own, native or Flatpak.
+msgid "wt_library_s"
+msgstr "Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles e Faugus - encontrados sozinhos, nativos ou Flatpak."
+
+#. English: One harbour for every game
+msgid "wt_library_t"
+msgstr "Um porto para cada jogo"
+
+#. English: Every game you own, installed or not. Dig one up and it installs - no launcher window needed.
+msgid "wt_map_s"
+msgstr "Todos os jogos que você tem, instalados ou não. Desenterre um e ele é instalado - sem janela de lançador."
+
+#. English: Treasure Map
+msgid "wt_map_t"
+msgstr "Mapa do tesouro"
+
+#. English: Next
+msgid "wt_next"
+msgstr "Próximo"
+
+#. English: A few keys worth knowing - F1 shows them all.
+msgid "wt_ready_s"
+msgstr "Algumas teclas úteis - F1 mostra todas."
+
+#. English: Ready to sail
+msgid "wt_ready_t"
+msgstr "Pronto para zarpar"
+
+#. English: Click a cover to play. PlunderHub shows what's starting, running or syncing, and can stop a game that hangs.
+msgid "wt_sail_s"
+msgstr "Clique em uma capa para jogar. O PlunderHub mostra o que está iniciando, rodando ou sincronizando, e pode parar um jogo travado."
+
+#. English: Set sail
+msgid "wt_sail_t"
+msgstr "Zarpar"
+
+#. English: Set sail!
+msgid "wt_set_sail"
+msgstr "Zarpar!"
+
+#. English: Launchers, tools and Proton-GE / Proton-CachyOS in one place. Ship inspection finds missing drivers and libraries and fixes them.
+msgid "wt_shipwright_s"
+msgstr "Lançadores, ferramentas e Proton-GE / Proton-CachyOS em um só lugar. A inspeção do navio encontra drivers e bibliotecas que faltam e os corrige."
+
+#. English: Shipwright
+msgid "wt_shipwright_t"
+msgstr "Estaleiro"
+
+#. English: Show me around
+msgid "wt_show_around"
+msgstr "Me mostre tudo"
+
+#. English: One ship for all your plunder.
+msgid "wt_slogan"
+msgstr "Um navio para todo o seu butim."
+
+#. English: A Linux game launcher for your Steam, Heroic, Lutris, Bottles and Faugus games.
+msgid "wt_tagline"
+msgstr "Um lançador de jogos para Linux para seus jogos da Steam, Heroic, Lutris, Bottles e Faugus."
+
+#. English: Proton, gamescope, MangoHud, performance tweaks, anti-cheat fixes, environment variables and much more, for each game on its own - with a Recommended preset and the game's ProtonDB rating.
+msgid "wt_tune_s"
+msgstr "Proton, gamescope, MangoHud, ajustes de desempenho, correções de anti-cheat, variáveis de ambiente e muito mais, para cada jogo separadamente - com uma predefinição recomendada e a nota do jogo no ProtonDB."
+
+#. English: Tune each game
+msgid "wt_tune_t"
+msgstr "Ajuste cada jogo"
+
+#. English: 15 themes, covers from your launchers or SteamGridDB - even animated ones.
+msgid "wt_yours_s"
+msgstr "15 temas, capas dos seus lançadores ou do SteamGridDB - até animadas."
+
+#. English: Make it yours
+msgid "wt_yours_t"
+msgstr "Deixe com a sua cara"

@@ -96,7 +96,7 @@ from plunderhub.logging_setup import install_exception_logging, logger
 from plunderhub.theme import (
     DEFAULT_ACCENT, DEFAULT_ACCENT_CHECK, DEFAULT_ACCENT_RGB, DEFAULT_ACCENT_SOFT,
     DEFAULT_ACCENT_SOFT_HOVER, FONT_FAMILY, THEME_ORDER, THEME_PALETTES, THEME_RENAMES, _accent_css,
-    _app_icon_file, _app_icon_name, _app_icon_spec, _build_theme_css,
+    LOGO_MARKER, _app_icon_file, _app_icon_name, _app_icon_spec, _build_theme_css, mark_logo, set_logo_accent,
     DANGER_FG, _capture_original_theme_preference, accent_text_color, settings_css_for_system,
     register_bundled_fonts,
 )
@@ -110,7 +110,7 @@ from plunderhub.ui.bubbles import BubbleField
 from plunderhub.ui import memory
 from plunderhub.ui.dialogs_mixin import DialogsMixin
 from plunderhub.ui.playtime_mixin import PlaytimeMixin
-from plunderhub.ui.home_mixin import HomeMixin
+from plunderhub.ui.home_mixin import HomeMixin, _treasure_map
 from plunderhub.ui.progress_card import card_dialog
 from plunderhub.ui.rendering_mixin import RenderingMixin
 from plunderhub.ui.self_update_mixin import SelfUpdateMixin
@@ -568,6 +568,16 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._maybe_show_soft_deps_banner()
 
         self.reload(is_startup=True)
+        # Treasure Map: a sidebar page under Recently sailed (ui/treasure_map.py)
+        GLib.idle_add(self._attach_treasure_map)
+
+    def _attach_treasure_map(self) -> bool:
+        from plunderhub.constants import CACHE_DIR
+        try:
+            _treasure_map().attach(self, {"cache": str(CACHE_DIR / "treasure-map"), "tab": "all"})
+        except Exception as e:
+            logger.warning(f"Treasure Map couldn't be set up: {e}")
+        return False
 
     _STARTUP_OVERLAY_MAX_WAIT = 30.0
     _STARTUP_INTRO_DELAY = 0.5
@@ -753,6 +763,13 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 if not isinstance(widget, Gtk.Image):
                     continue
                 marker = widget.get_name() or ""
+                if marker.startswith(LOGO_MARKER + ":"):
+                    # the logo, in the new theme's colour
+                    try:
+                        mark_logo(widget, int(marker.split(":", 1)[1]))
+                    except Exception as e:
+                        logger.debug(f"Couldn't repaint the logo: {e}")
+                    continue
                 if not marker.startswith(prefix):
                     continue
                 try:
@@ -1101,6 +1118,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
     _SEARCH_DEBOUNCE_MS = 150
 
     def _on_search_changed(self):
+        view = _treasure_map().shown(self)
+        if view is not None:
+            view.set_query(self.search_entry.get_text())
+            return
         # Collapses rapid typing into a single re-render instead of one
         # full _render_launchers() (which tears down and rebuilds every
         # card in the whole grid) per keystroke - noticeable as typing
@@ -1226,6 +1247,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         if event.keyval == Gdk.KEY_F5:
             self.reload(manual=True)
             return True
+        view = _treasure_map().shown(self)
+        if view is not None and view.on_key(event):
+            return True
         if self.reorder_mode and not isinstance(self.get_focus(), Gtk.Entry):
             action = self.ARROW_KEY_DIRECTIONS.get(event.keyval) or self.REORDER_KEY_ACTIONS.get(event.keyval)
             if action is not None and not event.state & (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.MOD1_MASK) \
@@ -1256,6 +1280,14 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return True
         if event.keyval in (Gdk.KEY_s, Gdk.KEY_S):
             self.show_shipwright()
+            return True
+        if event.keyval in (Gdk.KEY_t, Gdk.KEY_T):
+            self._toggle_treasure_map()
+            return True
+        if event.keyval in (Gdk.KEY_a, Gdk.KEY_A) and not self.reorder_mode:
+            # All Plunder (from the map too)
+            self._set_home_nav("all")
+            self._home_select_nav_row()
             return True
         if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_ISO_Enter) and self._launch_focused_launcher():
             return True
@@ -1498,6 +1530,14 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         focused = self.get_focus()
         if self._home_move_focus(focused, direction):
             return
+        view = _treasure_map().shown(self)
+        if view is not None:
+            # the map's tiles; off their left edge back to the sidebar
+            if focused is not view.grid:
+                view.grid.kb_enter()
+            elif not view.grid.kb_move(direction) and direction == "left":
+                self._home_focus_sidebar()
+            return
         if not self._nav_groups:
             if direction == "left":
                 self._home_focus_sidebar()
@@ -1542,6 +1582,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
 
     def _populate_sort_popover(self):
         box = self._home_menu_box(self.sort_popover, heading=self._("sort_by"))
+        view = _treasure_map().shown(self)
+        if view is not None:
+            view.fill_sort_menu(box, self.sort_popover)
+            box.show_all()
+            return
         for value, label in (("custom", self._("sort_custom")), ("alpha", self._("sort_alpha")),
                              ("newest", self._("sort_newest")), ("recent", self._("sort_recent")),
                              ("playtime", self._("sort_playtime"))):
@@ -1742,11 +1787,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         dlg, column = card_dialog(None, "Language")
         column.set_spacing(8)
         icon = Gtk.Image()
-        if _app_icon_file() is not None:
-            try:
-                icon.set_from_pixbuf(pixbuf_at_size(_app_icon_file(), 72, 72))
-            except GLib.Error as e:
-                logger.debug(f"Couldn't load the app icon: {e}")
+        mark_logo(icon, 72)
         column.pack_start(icon, False, False, 0)
         title = Gtk.Label()
         title.get_style_context().add_class("home-dialog-title")
@@ -1822,176 +1863,21 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             # started before: after an update, the Captain's Log (once)
             captains_log.after_start(self)
             return
-        self.settings["welcome_shown"] = True
-        # a first install: the welcome card greets - no log of changes
+        # a first install: the welcome tour greets - no log of changes
         # for it, now or at the next start
         self.settings[captains_log.SEEN_KEY] = APP_VERSION
         save_settings(self.settings)
-        self._show_welcome()
+        # seen only once watched through (Set sail!): closed by force, it
+        # comes again at the next start
+        if self._show_welcome(forced=True):
+            self.settings["welcome_shown"] = True
+            save_settings(self.settings)
 
-    def _show_welcome(self):
-        """The welcome card: the logo beside who PlunderHub is in a line,
-        what it does in six small cards, the note that the ship is still
-        being built, and the project's links beside Got it."""
-        _ = self._
-        dlg, column = card_dialog(self._dialog_transient_parent(), _("tip_title"))
-        column.set_size_request(760, -1)
-        column.set_spacing(8)
-        accent = self._home_accent_hex()
-        # the wordmark as in the sidebar: "Hub" in the theme's accent
-        title = Gtk.Label(xalign=0)
-        heading = _("tip_title")
-        if "PlunderHub" in heading:
-            before, _sep, after = heading.partition("PlunderHub")
-            title.set_markup(GLib.markup_escape_text(before) + "Plunder"
-                             + f"<span foreground='{accent}'>Hub</span>"
-                             + GLib.markup_escape_text(after))
-        else:
-            title.set_text(heading)
-        title.get_style_context().add_class("home-dialog-title")
-        title.get_style_context().add_class("welcome-title")
-        intro = Gtk.Label(label=_("welcome_intro"), xalign=0)
-        intro.set_line_wrap(True)
-        intro.set_max_width_chars(52)
-        intro.get_style_context().add_class("dim-label")
-        words = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        words.set_valign(Gtk.Align.CENTER)
-        words.pack_start(title, False, False, 0)
-        words.pack_start(intro, False, False, 0)
-        fading = [words]
-
-        grid = Gtk.Grid(column_spacing=8, row_spacing=8, column_homogeneous=True, row_homogeneous=True)
-        grid.set_margin_top(6)
-        for i, (icon_name, title_key, sub_key) in enumerate((
-                ("image-x-generic-symbolic", "wf_covers_t", "wf_covers_s"),
-                ("applications-games-symbolic", "wf_console_t", "wf_console_s"),
-                ("hammer-symbolic", "wf_shipwright_t", "wf_shipwright_s"),
-                ("stethoscope-symbolic", "insp_title", "wf_inspection_s"),
-                ("rocket-symbolic", "gp_tab_launch", "wf_launch_s"),
-                ("office-chart-bar-symbolic", "wf_dash_t", "wf_dash_s"))):
-            # the icon beside its words: half the height of one above them
-            card = Gtk.Box(spacing=12)
-            card.get_style_context().add_class("welcome-feature")
-            pb = get_icon_pixbuf(icon_name, 26, accent)
-            image = Gtk.Image.new_from_pixbuf(pb) if pb is not None else Gtk.Image()
-            image.set_valign(Gtk.Align.CENTER)
-            card.pack_start(image, False, False, 0)
-            texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-            texts.set_valign(Gtk.Align.CENTER)
-            head = Gtk.Label(label=_(title_key), xalign=0)
-            head.get_style_context().add_class("home-update-title")
-            texts.pack_start(head, False, False, 0)
-            text = Gtk.Label(label=_(sub_key), xalign=0)
-            text.set_line_wrap(True)
-            text.set_max_width_chars(20)
-            text.get_style_context().add_class("dim-label")
-            text.get_style_context().add_class("welcome-small")
-            texts.pack_start(text, False, False, 0)
-            card.pack_start(texts, True, True, 0)
-            grid.attach(card, i % 3, i // 3, 1, 1)
-            # the cards come in one by one, in reading order
-            fading.append(card)
-
-        leaks = Gtk.Box(spacing=12)
-        leaks.get_style_context().add_class("welcome-note")
-        leaks.set_margin_top(4)
-        # the same BETA badge as beside the name in the sidebar, a size up
-        beta = Gtk.Label(label=_("beta_badge").upper())
-        beta.get_style_context().add_class("beta-pill")
-        beta.get_style_context().add_class("welcome-beta")
-        beta.set_valign(Gtk.Align.CENTER)
-        leaks.pack_start(beta, False, False, 0)
-        leaks_text = Gtk.Label(label=_("welcome_leaks"), xalign=0)
-        leaks_text.set_line_wrap(True)
-        # wraps in the longer languages rather than widening the card
-        leaks_text.set_max_width_chars(56)
-        leaks.pack_start(leaks_text, True, True, 0)
-        bug = Gtk.Button(label=_("about_report_bug"))
-        bug.set_relief(Gtk.ReliefStyle.NONE)
-        bug.set_can_focus(False)
-        bug.set_valign(Gtk.Align.CENTER)
-        bug.get_style_context().add_class("welcome-bug")
-        bug.connect("clicked", lambda b: self._show_bug_report(b))
-        leaks.pack_end(bug, False, False, 0)
-        fading.append(leaks)
-
-        # the project's links (what the About card had) beside Got it:
-        # GitHub and Ko-fi as their own pills, the version and the
-        # licence quietly under them
-        foot = Gtk.Box(spacing=12)
-        foot.set_margin_top(10)
-        links = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        pills = Gtk.Box(spacing=8)
-        for css, icon_name, glyph, text, url in (
-                ("github-btn", "github-symbolic", None, _("about_view_github"),
-                 "https://github.com/IkrajaDev/PlunderHub"),
-                ("kofi-btn", None, "🍻", _("about_support_kofi"), KOFI_URL)):
-            btn = Gtk.Button()
-            btn.get_style_context().add_class(css)
-            btn.get_style_context().add_class("about-link")
-            btn.get_style_context().add_class("welcome-link")
-            btn.set_can_focus(False)
-            btn.set_tooltip_text(url)
-            row = Gtk.Box(spacing=7)
-            pb = get_icon_pixbuf(icon_name, 15, "#ffffff") if icon_name else None
-            if pb is not None:
-                row.pack_start(Gtk.Image.new_from_pixbuf(pb), False, False, 0)
-            elif glyph:
-                row.pack_start(Gtk.Label(label=glyph), False, False, 0)
-            row.pack_start(Gtk.Label(label=text), False, False, 0)
-            btn.add(row)
-            btn.connect("clicked", lambda _b, u=url: webbrowser.open(u))
-            pills.pack_start(btn, False, False, 0)
-        links.pack_start(pills, False, False, 0)
-        quiet = Gtk.Box(spacing=2)
-        version = Gtk.Label(label=_("about_version").format(version=APP_VERSION))
-        version.get_style_context().add_class("dim-label")
-        version.get_style_context().add_class("welcome-small")
-        version.set_margin_start(10)
-        quiet.pack_start(version, False, False, 0)
-        dot = Gtk.Label(label="·")
-        dot.get_style_context().add_class("dim-label")
-        dot.set_margin_start(4)
-        quiet.pack_start(dot, False, False, 0)
-        # the project's own LICENSE file on GitHub, not the GNU site
-        license_url = "https://github.com/IkrajaDev/PlunderHub/blob/main/LICENSE"
-        license_btn = Gtk.Button(label=_("about_license"))
-        license_btn.get_style_context().add_class("about-quiet")
-        license_btn.get_style_context().add_class("welcome-quiet")
-        license_btn.set_can_focus(False)
-        license_btn.set_tooltip_text(license_url)
-        license_btn.connect("clicked", lambda *_a: webbrowser.open(license_url))
-        quiet.pack_start(license_btn, False, False, 0)
-        links.pack_start(quiet, False, False, 0)
-        foot.pack_start(links, False, False, 0)
-        got_it = self._dialog_button(_("tip_got_it"), "accent", "activate", "Enter")
-        got_it.set_valign(Gtk.Align.CENTER)
-        got_it.connect("clicked", lambda *_a: dlg.response(Gtk.ResponseType.OK))
-        foot.pack_end(got_it, False, False, 0)
-        fading.append(foot)
-
-        # the logo pops in with its glow beside the words, then the rest
-        # follows it
-        top = Gtk.Box(spacing=8)
-        top.pack_start(self._popping_logo(120, glow=True, then=fading, glow_room=(56, 40)), False, False, 0)
-        top.pack_start(words, True, True, 0)
-        for widget in (top, grid, leaks, foot):
-            column.pack_start(widget, False, False, 0)
-
-        def on_key(_w, event) -> bool:
-            if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_Escape):
-                dlg.response(Gtk.ResponseType.OK)
-                return True
-            return False
-        dlg.connect("key-press-event", on_key)
-        dlg.plunderhub_nav = lambda action: action in ("activate", "back") and dlg.response(Gtk.ResponseType.OK)
-        dlg.get_content_area().show_all()
-        self._enter_dimmed_dialog()
-        try:
-            dlg.run()
-        finally:
-            self._exit_dimmed_dialog()
-        dlg.destroy()
+    def _show_welcome(self, forced: bool = False) -> bool:
+        """The welcome tour (ui/welcome_tour.py); forced: the first
+        start's, watched through. True once Set sail! closed it."""
+        from plunderhub.ui import welcome_tour
+        return welcome_tour.Tour(self, forced).run()
 
     def _apply_theme(self, theme: str):
         gtk_settings = Gtk.Settings.get_default()
@@ -2040,6 +1926,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             except Exception as e:
                 logger.warning(f"Failed to load theme CSS: {e}")
 
+        set_logo_accent(palette["accent"] if palette is not None else DEFAULT_ACCENT)
         self._refresh_icon_tints(theme)
         self._set_bubble_colours(palette)
 
@@ -6308,6 +6195,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                     # A on a cover or a list row: its menu, Set sail
                     # first in it - a pad has few buttons to spare
                     self._menu_for_focus()
+                elif hasattr(focused, "kb_activate"):
+                    focused.kb_activate()               # a Treasure Map tile: its card
                 elif focused is not None:
                     focused.activate()
             elif action in ("up", "down", "left", "right"):

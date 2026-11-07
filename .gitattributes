@@ -1,0 +1,4 @@
+# The README's pictures, tour and icons stay on GitHub only: the source tarball
+# (GitHub's "Source code" archive and the release asset Auto update downloads,
+# both made by git archive) doesn't need them - the app never reads docs/.
+docs/ export-ignore

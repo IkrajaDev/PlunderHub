@@ -4766,6 +4766,10 @@ msgstr "A SteamGridDB elfogadta – jöhetnek a borítók a fedélzetre."
 msgid "test_success_heading"
 msgstr "A kulcs működik"
 
+#. English: Ayu Dark
+msgid "theme_ayu_dark"
+msgstr "Ayu Dark"
+
 #. English: Catppuccin Latte
 msgid "theme_catppuccin_latte"
 msgstr "Catppuccin Latte"
@@ -4777,6 +4781,10 @@ msgstr "Catppuccin Mocha"
 #. English: Dracula
 msgid "theme_dracula"
 msgstr "Dracula"
+
+#. English: Everforest
+msgid "theme_everforest"
+msgstr "Everforest"
 
 #. English: GitHub Light
 msgid "theme_github_light"
@@ -4790,6 +4798,10 @@ msgstr "Gruvbox Light"
 msgid "theme_gruvbox_dark"
 msgstr "Gruvbox Dark"
 
+#. English: Horizon
+msgid "theme_horizon"
+msgstr "Horizon"
+
 #. English: Kanagawa
 msgid "theme_kanagawa"
 msgstr "Kanagawa"
@@ -4797,6 +4809,10 @@ msgstr "Kanagawa"
 #. English: Theme:
 msgid "theme_label"
 msgstr "Téma:"
+
+#. English: Oxocarbon
+msgid "theme_oxocarbon"
+msgstr "Oxocarbon"
 
 #. English: PlunderHub
 msgid "theme_plunderhub"
@@ -4825,6 +4841,394 @@ msgstr "Rendben, kapitány!"
 #. English: Ahoy! Welcome to PlunderHub!
 msgid "tip_title"
 msgstr "Ahoj! Üdvözlünk a PlunderHubon!"
+
+#. English: Aboard
+msgid "tm_aboard"
+msgstr "Fedélzeten"
+
+#. English: installed - ready to set sail
+msgid "tm_aboard_note"
+msgstr "telepítve - indulhat a hajó"
+
+#. English: Buried
+msgid "tm_buried"
+msgstr "Elásva"
+
+#. English: yours, not installed yet
+msgid "tm_buried_note"
+msgstr "a tiéd, még nincs telepítve"
+
+#. English: Close Heroic
+msgid "tm_close_heroic"
+msgstr "Heroic bezárása"
+
+#. English: Installed with Heroic's own tools while Heroic stays closed - it shows up in Heroic afterwards
+msgid "tm_dig_tooltip_heroic"
+msgstr "A Heroic saját eszközeivel települ, a Heroic közben zárva marad - utána a Heroicban is ott lesz"
+
+#. English: Steam installs it in the background, without its window - Steam is restarted for it
+msgid "tm_dig_tooltip_steam"
+msgstr "A Steam a háttérben telepíti, az ablaka nélkül - ehhez a Steam újraindul"
+
+#. English: Dig up
+msgid "tm_dig_up"
+msgstr "Kiásás"
+
+#. English: Dig up with {launcher}
+msgid "tm_dig_up_with"
+msgstr "Kiásás: {launcher}"
+
+#. English: Waiting for {launcher}'s install window - {game}
+msgid "tm_dock_asked"
+msgstr "A {launcher} telepítő ablakára várunk - {game}"
+
+#. English: Pick the folder there and press Install - the download shows here.
+msgid "tm_dock_asked_sub"
+msgstr "Ott válaszd ki a mappát, és nyomd meg az Install gombot - a letöltés itt látszik."
+
+#. English: {launcher} is digging up {game}
+msgid "tm_dock_digging"
+msgstr "A {launcher} kiássa: {game}"
+
+#. English: {game} waits in {launcher}'s queue
+msgid "tm_dock_queued"
+msgstr "{game} a {launcher} sorában vár"
+
+#. English: It starts when the one before it is done.
+msgid "tm_dock_queued_sub"
+msgstr "Akkor indul, ha az előtte lévő elkészült."
+
+#. English: {launcher} is unpacking {game}
+msgid "tm_dock_unpacking"
+msgstr "A {launcher} kicsomagolja: {game}"
+
+#. English: Heroic (Flatpak) only sees its own folders - it installs there. You can change them in Heroic's settings.
+msgid "tm_flatpak_fixed_paths"
+msgstr "A Heroic (Flatpak) csak a saját mappáit látja - oda települ. Ezeket a Heroic beállításaiban tudod módosítani."
+
+#. English: Free
+msgid "tm_free"
+msgstr "Szabad"
+
+#. English: Free now
+msgid "tm_free_now"
+msgstr "Szabad most"
+
+#. English: {size} free
+msgid "tm_free_space"
+msgstr "{size} szabad"
+
+#. English: Frees {size}
+msgid "tm_frees"
+msgstr "{size} szabadul fel"
+
+#. English: {game}: {launcher} didn't start the install
+msgid "tm_gave_up"
+msgstr "{game}: a {launcher} nem indította el a telepítést"
+
+#. English: Going overboard…
+msgid "tm_going_overboard"
+msgstr "Megy a vízbe…"
+
+#. English: It's open - while the game is removed it would write it back.
+msgid "tm_heroic_close_s"
+msgstr "Nyitva van - a játék törlése közben visszaírná."
+
+#. English: Heroic closes for a moment
+msgid "tm_heroic_close_t"
+msgstr "A Heroic egy időre bezárul"
+
+#. English: {game}: Heroic stopped ({why})
+msgid "tm_heroic_stopped"
+msgstr "{game}: a Heroic leállt ({why})"
+
+#. English: In {launcher}
+msgid "tm_in_launcher"
+msgstr "A {launcher} mutatja"
+
+#. English: {game} couldn't be installed
+msgid "tm_install_failed"
+msgstr "{game} nem telepíthető"
+
+#. English: Install {launcher}
+msgid "tm_install_launcher"
+msgstr "{launcher} telepítése"
+
+#. English: Install to
+msgid "tm_install_to"
+msgstr "Telepítés ide"
+
+#. English: Being installed - the Treasure Map shows more
+msgid "tm_installing_tooltip"
+msgstr "Éppen települ - a Kincses térképen többet látsz"
+
+#. English: Keep it
+msgid "tm_keep_it"
+msgstr "Maradjon"
+
+#. English: Prefix & settings stay
+msgid "tm_keeps_prefix"
+msgstr "A prefix és a beállítások maradnak"
+
+#. English: Beta
+msgid "tm_kind_beta"
+msgstr "Béta"
+
+#. English: Demo
+msgid "tm_kind_demo"
+msgstr "Demó"
+
+#. English: Mod
+msgid "tm_kind_mod"
+msgstr "Mod"
+
+#. English: Software
+msgid "tm_kind_software"
+msgstr "Szoftver"
+
+#. English: {m} min {s} s left
+msgid "tm_left"
+msgstr "még {m} perc {s} mp"
+
+#. English: Left after
+msgid "tm_left_after"
+msgstr "Marad utána"
+
+#. English: Swab the bilge
+msgid "tm_left_go"
+msgstr "Irány a hajófenék"
+
+#. English: Wine prefix
+msgid "tm_left_kind_prefix"
+msgstr "Wine-prefix"
+
+#. English: Shader cache
+msgid "tm_left_kind_shader_cache"
+msgstr "Shader cache"
+
+#. English: Proton prefix
+msgid "tm_left_kind_steam_prefix"
+msgstr "Proton-prefix"
+
+#. English: Leave them be
+msgid "tm_left_no"
+msgstr "Maradjanak"
+
+#. English: {game} left these behind - {size}
+msgid "tm_left_s"
+msgstr "Ezeket hagyta maga után: {game} - {size}"
+
+#. English: There are saves inside - Bilge cleaning can back them up first
+msgid "tm_left_saves"
+msgstr "Mentések is vannak benne - a Hajófenék-takarítás előbb el tudja menteni őket"
+
+#. English: Barnacles left in the bilge
+msgid "tm_left_t"
+msgstr "Kagylók maradtak a hajófenéken"
+
+#. English: Looking it up…
+msgid "tm_looking"
+msgstr "Utánanézek…"
+
+#. English: Measuring the room aboard…
+msgid "tm_measuring"
+msgstr "A hely felmérése…"
+
+#. English: Native
+msgid "tm_native"
+msgstr "Natív"
+
+#. English: Needs
+msgid "tm_needs"
+msgstr "Kell"
+
+#. English: Next: {names}
+msgid "tm_next"
+msgstr "Következik: {names}"
+
+#. English: {launcher} didn't answer
+msgid "tm_no_answer"
+msgstr "A {launcher} nem válaszolt"
+
+#. English: Its link couldn't be opened on this desktop.
+msgid "tm_no_answer_sub"
+msgstr "A linkjét ezen az asztali környezeten nem sikerült megnyitni."
+
+#. English: Your {store} games come aboard through {launcher}.\nInstall it and sign in once - your games show up here by themselves.
+msgid "tm_no_launcher_s"
+msgstr "A {store}-játékaid a {launcher} révén kerülnek a fedélzetre.\nTelepítsd és jelentkezz be egyszer - a játékaid maguktól megjelennek itt."
+
+#. English: {launcher} isn't installed
+msgid "tm_no_launcher_t"
+msgstr "A {launcher} nincs telepítve"
+
+#. English: No treasure matches “{q}”
+msgid "tm_no_match"
+msgstr "Egy kincs sem illik erre: „{q}”"
+
+#. English: {game} isn't in your library yet - it shows up after the next scan.
+msgid "tm_not_in_library"
+msgstr "{game} még nincs a könyvtáradban - a következő keresés után megjelenik."
+
+#. English: Not now
+msgid "tm_not_now"
+msgstr "Most nem"
+
+#. English: Not yet
+msgid "tm_not_yet"
+msgstr "Még nem"
+
+#. English: Nothing here
+msgid "tm_nothing"
+msgstr "Itt nincs semmi"
+
+#. English: {done} of {total}
+msgid "tm_of"
+msgstr "{done} / {total}"
+
+#. English: On disk
+msgid "tm_on_disk"
+msgstr "Lemezen"
+
+#. English: Open {launcher}
+msgid "tm_open_launcher"
+msgstr "{launcher} megnyitása"
+
+#. English: Opening {launcher}…
+msgid "tm_opening"
+msgstr "{launcher} nyílik…"
+
+#. English: Throw it overboard?
+msgid "tm_overboard_q"
+msgstr "A vízbe dobod?"
+
+#. English: Pending
+msgid "tm_pdb_pending"
+msgstr "Kevés jelentés"
+
+#. English: Putting the files in place
+msgid "tm_phase_commit"
+msgstr "Fájlok a helyükre"
+
+#. English: Game files
+msgid "tm_phase_game"
+msgstr "Játékfájlok"
+
+#. English: Shader pre-caching
+msgid "tm_phase_shaders"
+msgstr "Shader-előtöltés"
+
+#. English: Played
+msgid "tm_played"
+msgstr "Játszva"
+
+#. English: Positive
+msgid "tm_positive"
+msgstr "Pozitív"
+
+#. English: Open {launcher} and sign in to {store} there.\nYour games show up here by themselves - PlunderHub never sees your password.
+msgid "tm_signin_s"
+msgstr "Nyisd meg a {launcher}t, és ott jelentkezz be a {store} fiókodba.\nA játékaid maguktól megjelennek itt - a PlunderHub sosem látja a jelszavad."
+
+#. English: Open {launcher} and sign in there.\nYour games show up here by themselves - PlunderHub never sees your password.
+msgid "tm_signin_self_s"
+msgstr "Nyisd meg a {launcher}t, és jelentkezz be.\nA játékaid maguktól megjelennek itt - a PlunderHub sosem látja a jelszavad."
+
+#. English: Sign in to {launcher}
+msgid "tm_signin_self_t"
+msgstr "Jelentkezz be a {launcher} fiókodba"
+
+#. English: Sign in to {store} in {launcher}
+msgid "tm_signin_t"
+msgstr "Jelentkezz be a {store} fiókodba a {launcher}ban"
+
+#. English: Freshest loot
+msgid "tm_sort_newest"
+msgstr "Legfrissebb zsákmány"
+
+#. English: Ancient relics
+msgid "tm_sort_oldest"
+msgstr "Ősi kincsek"
+
+#. English: Steam reviews
+msgid "tm_steam_reviews"
+msgstr "Steam-értékelés"
+
+#. English: Stop
+msgid "tm_stop"
+msgstr "Leállítás"
+
+#. English: Every game you own, in one place.  <b>Aboard</b>: installed.  <b>Buried</b>: not installed yet - <b>Dig up</b> installs it with its own launcher.
+msgid "tm_sub"
+msgstr "Minden játékod egy helyen.  <b>Fedélzeten</b>: telepítve.  <b>Elásva</b>: még nincs telepítve - a <b>Kiásás</b> a saját launcherével telepíti."
+
+#. English: Treasure Map
+msgid "tm_title"
+msgstr "Kincses térkép"
+
+#. English: {game} is aboard - ready to set sail
+msgid "tm_toast_aboard"
+msgstr "{game} a fedélzeten - indulhat a hajó"
+
+#. English: Find it under Aboard - and in your library.
+msgid "tm_toast_aboard_sub"
+msgstr "A Fedélzeten részben találod - és a könyvtáradban."
+
+#. English: {game} went overboard - it's buried again
+msgid "tm_toast_overboard"
+msgstr "{game} a vízbe került - újra el van ásva"
+
+#. English: Find it under Buried - Dig up installs it again.
+msgid "tm_toast_overboard_sub"
+msgstr "Az Elásva részben találod - a Kiásás újra telepíti."
+
+#. English: Uninstall
+msgid "tm_uninstall"
+msgstr "Eltávolítás"
+
+#. English: {game} couldn't be removed
+msgid "tm_uninstall_failed"
+msgstr "{game} nem törölhető"
+
+#. English: With {launcher}
+msgid "tm_uninstall_sub"
+msgstr "{launcher} segítségével"
+
+#. English: Steam changed its files - only the installed Steam games show until PlunderHub catches up.
+msgid "tm_unreadable"
+msgstr "A Steam megváltoztatta a fájljait - amíg a PlunderHub utol nem éri, csak a telepített Steam-játékok látszanak."
+
+#. English: {store} via Heroic
+msgid "tm_via_heroic"
+msgstr "{store} a Heroicon át"
+
+#. English: Waiting
+msgid "tm_waiting"
+msgstr "Vár"
+
+#. English: Waiting · #{n}
+msgid "tm_waiting_n"
+msgstr "Vár · {n}."
+
+#. English: Sign in there if you haven't yet - your games show up here as soon as {launcher} has them.
+msgid "tm_waiting_s"
+msgstr "Ha még nem tetted meg, jelentkezz be benne - a játékaid itt jelennek meg, amint a {launcher} kiírta őket."
+
+#. English: Waiting for {launcher}…
+msgid "tm_waiting_t"
+msgstr "A {launcher} fut…"
+
+#. English: Wine prefix
+msgid "tm_wine_prefix"
+msgstr "Wine-prefix"
+
+#. English: Wine / Proton
+msgid "tm_wine_version"
+msgstr "Wine / Proton"
+
+#. English: Won't fit
+msgid "tm_wont_fit"
+msgstr "Nem fér el"
 
 #. English: Installed - Launch options can switch it on now.
 msgid "tool_ready_text"
@@ -5217,3 +5621,119 @@ msgstr "Ezt bármikor módosíthatod itt: {settings}."
 #. English: Where should your games open?
 msgid "ws_ask_title"
 msgstr "Hol nyíljanak meg a játékok?"
+
+#. English: Ahoy! Welcome to PlunderHub!
+msgid "wt_ahoy"
+msgstr "Ahoj! Üdv a PlunderHub fedélzetén!"
+
+#. English: Back
+msgid "wt_back"
+msgstr "Vissza"
+
+#. English: Finds what uninstalled games left behind and frees the space. Before anything goes, it can back up your saves, settings, profiles and registry keys - and put them back later.
+msgid "wt_bilge_s"
+msgstr "Megtalálja, mit hagytak maguk után a törölt játékok, és felszabadítja a helyet. Előtte el tudja menteni a mentéseidet, beállításaidat, profiljaidat és registry kulcsaidat - és később vissza is teszi őket."
+
+#. English: Bilge cleaning
+msgid "wt_bilge_t"
+msgstr "Hajófenék-takarítás"
+
+#. English: Close
+msgid "wt_close"
+msgstr "Bezárás"
+
+#. English: The big screen, made for controllers. Hold View + Start to switch between a game and PlunderHub.
+msgid "wt_console_s"
+msgstr "A nagy képernyő, kontrollerre szabva. A View + Start nyomva tartásával válthatsz a játék és a PlunderHub között."
+
+#. English: Console Mode
+msgid "wt_console_t"
+msgstr "Konzol mód"
+
+#. English: Your playtime and storage at a glance.
+msgid "wt_dash_s"
+msgstr "A játékidőd és a tárhelyed egy pillantásra."
+
+#. English: Captain's Dashboard
+msgid "wt_dash_t"
+msgstr "Kapitányi műszerfal"
+
+#. English: All shortcuts
+msgid "wt_key_all"
+msgstr "Összes gyorsbillentyű"
+
+#. English: Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles and Faugus - found on their own, native or Flatpak.
+msgid "wt_library_s"
+msgstr "Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles és Faugus - magától megtalálja őket, natívan vagy Flatpakként."
+
+#. English: One harbour for every game
+msgid "wt_library_t"
+msgstr "Egy kikötő minden játéknak"
+
+#. English: Every game you own, installed or not. Dig one up and it installs - no launcher window needed.
+msgid "wt_map_s"
+msgstr "Minden játékod, telepítve vagy sem. Áss ki egyet, és már települ is - launcher ablak nélkül."
+
+#. English: Treasure Map
+msgid "wt_map_t"
+msgstr "Kincses térkép"
+
+#. English: Next
+msgid "wt_next"
+msgstr "Tovább"
+
+#. English: A few keys worth knowing - F1 shows them all.
+msgid "wt_ready_s"
+msgstr "Néhány hasznos billentyű - az F1 mindet megmutatja."
+
+#. English: Ready to sail
+msgid "wt_ready_t"
+msgstr "Indulásra kész"
+
+#. English: Click a cover to play. PlunderHub shows what's starting, running or syncing, and can stop a game that hangs.
+msgid "wt_sail_s"
+msgstr "Kattints egy borítóra, és indul a játék. A PlunderHub mutatja, mi indul, mi fut vagy szinkronizál, és le tudja állítani a lefagyott játékot."
+
+#. English: Set sail
+msgid "wt_sail_t"
+msgstr "Kihajózás"
+
+#. English: Set sail!
+msgid "wt_set_sail"
+msgstr "Kihajózás!"
+
+#. English: Launchers, tools and Proton-GE / Proton-CachyOS in one place. Ship inspection finds missing drivers and libraries and fixes them.
+msgid "wt_shipwright_s"
+msgstr "Launcherek, eszközök és Proton-GE / Proton-CachyOS egy helyen. A Hajószemle megtalálja és pótolja a hiányzó drivereket és könyvtárakat."
+
+#. English: Shipwright
+msgid "wt_shipwright_t"
+msgstr "Hajóács"
+
+#. English: Show me around
+msgid "wt_show_around"
+msgstr "Mutasd körbe"
+
+#. English: One ship for all your plunder.
+msgid "wt_slogan"
+msgstr "Egy hajó minden zsákmányodnak."
+
+#. English: A Linux game launcher for your Steam, Heroic, Lutris, Bottles and Faugus games.
+msgid "wt_tagline"
+msgstr "Linuxos játékindító a Steam, Heroic, Lutris, Bottles és Faugus játékaidhoz."
+
+#. English: Proton, gamescope, MangoHud, performance tweaks, anti-cheat fixes, environment variables and much more, for each game on its own - with a Recommended preset and the game's ProtonDB rating.
+msgid "wt_tune_s"
+msgstr "Proton, gamescope, MangoHud, teljesítményhangolás, anti-cheat javítások, környezeti változók és még sok más, minden játékra külön - ajánlott beállításokkal és a játék ProtonDB értékelésével."
+
+#. English: Tune each game
+msgid "wt_tune_t"
+msgstr "Hangold minden játékra"
+
+#. English: 15 themes, covers from your launchers or SteamGridDB - even animated ones.
+msgid "wt_yours_s"
+msgstr "15 téma, borítók a launcherekből vagy a SteamGridDB-ről - akár animáltak is."
+
+#. English: Make it yours
+msgid "wt_yours_t"
+msgstr "Legyen a tiéd"

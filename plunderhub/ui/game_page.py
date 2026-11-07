@@ -76,7 +76,7 @@ from plunderhub.ui.home_mixin import _accent_rgb, _on_accent_rgb, _rounded  # no
 from plunderhub.ui.progress_card import card_dialog  # noqa: E402
 
 HERO_H = 300
-COVER_W, COVER_H = 168, 252
+COVER_W, COVER_H = 189, 252                      # the cards' 3:4
 ICON = 56
 COVER_X, COVER_Y = 28, HERO_H - 150
 TEXT_X = COVER_X + COVER_W + 24
@@ -127,7 +127,8 @@ def _load_scaled(path: Optional[Path], w: int, h: int, crop: bool = False) -> Op
     nw, nh = max(1, int(pw * scale)), max(1, int(ph * scale))
     pb = pb.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
     if crop:
-        x, y = max(0, (nw - w) // 2), max(0, int((nh - h) * 0.3))
+        # a wide picture keeps its upper part, a portrait (a cover) its middle
+        x, y = max(0, (nw - w) // 2), max(0, int((nh - h) * (0.5 if h > w else 0.3)))
         pb = pb.new_subpixbuf(x, y, min(w, nw - x), min(h, nh - y)).copy()
     return hidpi_pixbuf(pb, hidpi)
 
@@ -382,6 +383,8 @@ class GameMenu(Gtk.Popover):
             b.connect("clicked", lambda *_a, f=action: (self.popdown(), f()))
             split.pack_start(b, True, True, 0)
         page.pack_start(split, False, False, 0)
+        from plunderhub.ui import treasure_map
+        treasure_map.add_uninstall_row(self, page)
         return page
 
     @staticmethod
@@ -1229,13 +1232,15 @@ class GamePage(Gtk.Dialog):
         version_card, self.version_val = self._card(_("gp_version"), "…")
         runner_card, self.runner_val = self._card(_("gp_runs_with"), "…")
         size_card, self.size_val = self._card(_("gp_size"), _("gp_measuring"))
-        grid.attach(version_card, 0, 0, 1, 1)
-        grid.attach(runner_card, 1, 0, 1, 1)
-        grid.attach(size_card, 2, 0, 1, 1)
+        # rows: 0 the Proton hint, 1 version / runner / size, 2 where it
+        # lives, 3 the facts, 4 a note (one row each - the places once sat
+        # in row 1 under the version cards after the hint pushed them down)
+        grid.attach(version_card, 0, 1, 1, 1)
+        grid.attach(runner_card, 1, 1, 1, 1)
+        grid.attach(size_card, 2, 1, 1, 1)
         # a newer Proton release mentions this game (ui/proton_hints.py)
         from plunderhub.ui.proton_hints import hint_strip
         hint = self._hint_strip = hint_strip(app, game, lambda: self, on_switched=self._proton_switched)
-        grid.insert_row(0)
         grid.attach(hint, 0, 0, 3, 1)
 
         # where it lives - each one opens on a click
@@ -1255,7 +1260,7 @@ class GamePage(Gtk.Dialog):
             for i, (label, value, action) in enumerate(places):
                 card, _v = self._card(label, value, action)
                 inner.attach(card, i * span, 0, span, 1)
-            grid.attach(inner, 0, 1, 3, 1)
+            grid.attach(inner, 0, 2, 3, 1)
 
         last = app.recent.get(game.uid)
         launcher = game.launcher + (f" · {_('store_' + game.store_platform)}"
@@ -1269,14 +1274,14 @@ class GamePage(Gtk.Dialog):
                               else _("home_never_played_short"))):
             card, _v = self._card(label, value)
             self._facts_row.pack_start(card, True, True, 0)
-        grid.attach(self._facts_row, 0, 2, 3, 1)
+        grid.attach(self._facts_row, 0, 3, 3, 1)
         if app.settings.get("protondb_enabled", True):
             threading.Thread(target=self._fetch_protondb, daemon=True).start()
         if runner_of(game.uid) is not None and not updates_before_launch(game.uid):
             note = Gtk.Label(label=_("heroic_update_auto_off_text"), xalign=0)
             note.set_line_wrap(True)
             note.get_style_context().add_class("gp-note")
-            grid.attach(note, 0, 3, 3, 1)
+            grid.attach(note, 0, 4, 3, 1)
         threading.Thread(target=self._measure, daemon=True).start()
         return grid
 
@@ -2328,7 +2333,7 @@ class LaunchOptionsTab(Gtk.Box):
 # most PICK_FPS, and their loops share a memory budget; a tile that falls
 # out of it keeps its first frame.
 
-_THUMB = {"cover": (150, 225), "hero": (330, 106), "icon": (96, 96)}
+_THUMB = {"cover": (168, 224), "hero": (330, 106), "icon": (96, 96)}
 _PREVIEW_POOL = ThreadPoolExecutor(max_workers=6, thread_name_prefix="plunderhub-preview")
 # Decoding is CPU work: two stills at a time at most, one on small
 # machines.
@@ -2394,7 +2399,7 @@ def _fitted(pb, w: int, h: int, crop: bool):
     if (nw, nh) != (pw, ph):
         pb = pb.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
     if crop and (nw > w or nh > h):
-        x, y = max(0, (nw - w) // 2), max(0, int((nh - h) * 0.3))
+        x, y = max(0, (nw - w) // 2), max(0, int((nh - h) * (0.5 if h > w else 0.3)))
         pb = pb.new_subpixbuf(x, y, min(w, nw - x), min(h, nh - y))
     return pb
 
@@ -2900,7 +2905,7 @@ class _Tile(Gtk.DrawingArea):
             # Its first frame at once (a few hundredths of a second) - the
             # loop, a few seconds for a big animation, comes after, for
             # what's in view (see wants_loop).
-            frames, still = _decode_preview(target, self.w, self.h, self.kind == "hero", self.radius, False)
+            frames, still = _decode_preview(target, self.w, self.h, self.kind in ("hero", "cover"), self.radius, False)
         except Exception as e:
             logger.debug(f"Couldn't load a SteamGridDB preview ({url}): {e}")
             target = None
@@ -2910,7 +2915,7 @@ class _Tile(Gtk.DrawingArea):
         frames = None
         try:
             if generation == self.picker.generation and not self.dropped:
-                frames, _still = _decode_preview(self.path, self.w, self.h, self.kind == "hero", self.radius, True)
+                frames, _still = _decode_preview(self.path, self.w, self.h, self.kind in ("hero", "cover"), self.radius, True)
         except Exception as e:
             logger.debug(f"Couldn't decode the animated preview {self.path}: {e}")
         GLib.idle_add(self._loop_made, generation, frames)

@@ -17,6 +17,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
+import os
 import re
 import shutil
 from pathlib import Path
@@ -34,10 +35,29 @@ FAUGUS_DATA_DIR_CANDIDATES: List[Path] = [
 # folder on the host.
 FLATPAK_STEAM_HOME = Path.home() / ".var/app/com.valvesoftware.Steam"
 
+def _xdg(var: str, default: str) -> Path:
+    """An XDG base folder: the variable when it holds an absolute path
+    (the spec ignores a relative one), else its default under home."""
+    value = os.environ.get(var, "")
+    return Path(value) if value.startswith("/") else Path.home() / default
+
+
+# Ubuntu's Steam snap runs with HOME=~/snap/steam/common - its paths are
+# plain host paths, nothing to map.
+SNAP_STEAM_HOME = Path.home() / "snap/steam/common"
+
 STEAM_CANDIDATES = [
+    # the bootstrapper installs to $XDG_DATA_HOME/Steam and links
+    # ~/.steam/steam and ~/.steam/root to it
+    _xdg("XDG_DATA_HOME", ".local/share") / "Steam",
     Path.home() / ".local/share/Steam",
     Path.home() / ".steam/steam",
     Path.home() / ".steam/root",
+    # Debian's and Ubuntu's steam-installer package (its ~/.steam/steam
+    # link is the usual way in; this too in case the link is gone)
+    Path.home() / ".steam/debian-installation",
+    SNAP_STEAM_HOME / ".local/share/Steam",
+    SNAP_STEAM_HOME / ".steam/steam",
     # Where Flathub's Steam actually keeps its data (older builds used
     # data/Steam, now a symlink to it). Its .steam/steam link, below, holds
     # a sandbox path - on the host it dangles, or points at native Steam.
@@ -61,11 +81,14 @@ STEAM_SOUNDTRACK_NAME_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-HEROIC_CONFIG_ROOTS = [
+# Heroic's folder is Electron's appData/heroic = $XDG_CONFIG_HOME/heroic
+# (native package, AppImage, AUR, deb, rpm) or the Flatpak's own config.
+HEROIC_CONFIG_ROOTS = list(dict.fromkeys([
+    _xdg("XDG_CONFIG_HOME", ".config"),
     Path.home() / ".config",
     Path.home() / ".var/app/com.heroicgameslauncher.hgl/config",
     Path.home() / ".var/app/io.github.heroicgameslauncher.hgl/config",
-]
+]))
 
 LUTRIS_DATA_DIR_CANDIDATES: List[Path] = [
     Path.home() / ".local/share/lutris",

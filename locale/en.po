@@ -3579,6 +3579,9 @@ msgstr "SteamGridDB accepted it - covers can come aboard."
 msgid "test_success_heading"
 msgstr "The key works"
 
+msgid "theme_ayu_dark"
+msgstr "Ayu Dark"
+
 msgid "theme_catppuccin_latte"
 msgstr "Catppuccin Latte"
 
@@ -3587,6 +3590,9 @@ msgstr "Catppuccin Mocha"
 
 msgid "theme_dracula"
 msgstr "Dracula"
+
+msgid "theme_everforest"
+msgstr "Everforest"
 
 msgid "theme_github_light"
 msgstr "GitHub Light"
@@ -3597,11 +3603,17 @@ msgstr "Gruvbox Light"
 msgid "theme_gruvbox_dark"
 msgstr "Gruvbox Dark"
 
+msgid "theme_horizon"
+msgstr "Horizon"
+
 msgid "theme_kanagawa"
 msgstr "Kanagawa"
 
 msgid "theme_label"
 msgstr "Theme:"
+
+msgid "theme_oxocarbon"
+msgstr "Oxocarbon"
 
 msgid "theme_plunderhub"
 msgstr "PlunderHub"
@@ -3623,6 +3635,297 @@ msgstr "Got it, Captain!"
 
 msgid "tip_title"
 msgstr "Ahoy! Welcome to PlunderHub!"
+
+msgid "tm_aboard"
+msgstr "Aboard"
+
+msgid "tm_aboard_note"
+msgstr "installed - ready to set sail"
+
+msgid "tm_buried"
+msgstr "Buried"
+
+msgid "tm_buried_note"
+msgstr "yours, not installed yet"
+
+msgid "tm_close_heroic"
+msgstr "Close Heroic"
+
+msgid "tm_dig_tooltip_heroic"
+msgstr "Installed with Heroic's own tools while Heroic stays closed - it shows up in Heroic afterwards"
+
+msgid "tm_dig_tooltip_steam"
+msgstr "Steam installs it in the background, without its window - Steam is restarted for it"
+
+msgid "tm_dig_up"
+msgstr "Dig up"
+
+msgid "tm_dig_up_with"
+msgstr "Dig up with {launcher}"
+
+msgid "tm_dock_asked"
+msgstr "Waiting for {launcher}'s install window - {game}"
+
+msgid "tm_dock_asked_sub"
+msgstr "Pick the folder there and press Install - the download shows here."
+
+msgid "tm_dock_digging"
+msgstr "{launcher} is digging up {game}"
+
+msgid "tm_dock_queued"
+msgstr "{game} waits in {launcher}'s queue"
+
+msgid "tm_dock_queued_sub"
+msgstr "It starts when the one before it is done."
+
+msgid "tm_dock_unpacking"
+msgstr "{launcher} is unpacking {game}"
+
+msgid "tm_flatpak_fixed_paths"
+msgstr "Heroic (Flatpak) only sees its own folders - it installs there. You can change them in Heroic's settings."
+
+msgid "tm_free"
+msgstr "Free"
+
+msgid "tm_free_now"
+msgstr "Free now"
+
+msgid "tm_free_space"
+msgstr "{size} free"
+
+msgid "tm_frees"
+msgstr "Frees {size}"
+
+msgid "tm_gave_up"
+msgstr "{game}: {launcher} didn't start the install"
+
+msgid "tm_going_overboard"
+msgstr "Going overboard…"
+
+msgid "tm_heroic_close_s"
+msgstr "It's open - while the game is removed it would write it back."
+
+msgid "tm_heroic_close_t"
+msgstr "Heroic closes for a moment"
+
+msgid "tm_heroic_stopped"
+msgstr "{game}: Heroic stopped ({why})"
+
+msgid "tm_in_launcher"
+msgstr "In {launcher}"
+
+msgid "tm_install_failed"
+msgstr "{game} couldn't be installed"
+
+msgid "tm_install_launcher"
+msgstr "Install {launcher}"
+
+msgid "tm_install_to"
+msgstr "Install to"
+
+msgid "tm_installing_tooltip"
+msgstr "Being installed - the Treasure Map shows more"
+
+msgid "tm_keep_it"
+msgstr "Keep it"
+
+msgid "tm_keeps_prefix"
+msgstr "Prefix & settings stay"
+
+msgid "tm_kind_beta"
+msgstr "Beta"
+
+msgid "tm_kind_demo"
+msgstr "Demo"
+
+msgid "tm_kind_mod"
+msgstr "Mod"
+
+msgid "tm_kind_software"
+msgstr "Software"
+
+msgid "tm_left"
+msgstr "{m} min {s} s left"
+
+msgid "tm_left_after"
+msgstr "Left after"
+
+msgid "tm_left_go"
+msgstr "Swab the bilge"
+
+msgid "tm_left_kind_prefix"
+msgstr "Wine prefix"
+
+msgid "tm_left_kind_shader_cache"
+msgstr "Shader cache"
+
+msgid "tm_left_kind_steam_prefix"
+msgstr "Proton prefix"
+
+msgid "tm_left_no"
+msgstr "Leave them be"
+
+msgid "tm_left_s"
+msgstr "{game} left these behind - {size}"
+
+msgid "tm_left_saves"
+msgstr "There are saves inside - Bilge cleaning can back them up first"
+
+msgid "tm_left_t"
+msgstr "Barnacles left in the bilge"
+
+msgid "tm_looking"
+msgstr "Looking it up…"
+
+msgid "tm_measuring"
+msgstr "Measuring the room aboard…"
+
+msgid "tm_native"
+msgstr "Native"
+
+msgid "tm_needs"
+msgstr "Needs"
+
+msgid "tm_next"
+msgstr "Next: {names}"
+
+msgid "tm_no_answer"
+msgstr "{launcher} didn't answer"
+
+msgid "tm_no_answer_sub"
+msgstr "Its link couldn't be opened on this desktop."
+
+msgid "tm_no_launcher_s"
+msgstr "Your {store} games come aboard through {launcher}.\nInstall it and sign in once - your games show up here by themselves."
+
+msgid "tm_no_launcher_t"
+msgstr "{launcher} isn't installed"
+
+msgid "tm_no_match"
+msgstr "No treasure matches “{q}”"
+
+msgid "tm_not_in_library"
+msgstr "{game} isn't in your library yet - it shows up after the next scan."
+
+msgid "tm_not_now"
+msgstr "Not now"
+
+msgid "tm_not_yet"
+msgstr "Not yet"
+
+msgid "tm_nothing"
+msgstr "Nothing here"
+
+msgid "tm_of"
+msgstr "{done} of {total}"
+
+msgid "tm_on_disk"
+msgstr "On disk"
+
+msgid "tm_open_launcher"
+msgstr "Open {launcher}"
+
+msgid "tm_opening"
+msgstr "Opening {launcher}…"
+
+msgid "tm_overboard_q"
+msgstr "Throw it overboard?"
+
+msgid "tm_pdb_pending"
+msgstr "Pending"
+
+msgid "tm_phase_commit"
+msgstr "Putting the files in place"
+
+msgid "tm_phase_game"
+msgstr "Game files"
+
+msgid "tm_phase_shaders"
+msgstr "Shader pre-caching"
+
+msgid "tm_played"
+msgstr "Played"
+
+msgid "tm_positive"
+msgstr "Positive"
+
+msgid "tm_signin_s"
+msgstr "Open {launcher} and sign in to {store} there.\nYour games show up here by themselves - PlunderHub never sees your password."
+
+msgid "tm_signin_self_s"
+msgstr "Open {launcher} and sign in there.\nYour games show up here by themselves - PlunderHub never sees your password."
+
+msgid "tm_signin_self_t"
+msgstr "Sign in to {launcher}"
+
+msgid "tm_signin_t"
+msgstr "Sign in to {store} in {launcher}"
+
+msgid "tm_sort_newest"
+msgstr "Freshest loot"
+
+msgid "tm_sort_oldest"
+msgstr "Ancient relics"
+
+msgid "tm_steam_reviews"
+msgstr "Steam reviews"
+
+msgid "tm_stop"
+msgstr "Stop"
+
+msgid "tm_sub"
+msgstr "Every game you own, in one place.  <b>Aboard</b>: installed.  <b>Buried</b>: not installed yet - <b>Dig up</b> installs it with its own launcher."
+
+msgid "tm_title"
+msgstr "Treasure Map"
+
+msgid "tm_toast_aboard"
+msgstr "{game} is aboard - ready to set sail"
+
+msgid "tm_toast_aboard_sub"
+msgstr "Find it under Aboard - and in your library."
+
+msgid "tm_toast_overboard"
+msgstr "{game} went overboard - it's buried again"
+
+msgid "tm_toast_overboard_sub"
+msgstr "Find it under Buried - Dig up installs it again."
+
+msgid "tm_uninstall"
+msgstr "Uninstall"
+
+msgid "tm_uninstall_failed"
+msgstr "{game} couldn't be removed"
+
+msgid "tm_uninstall_sub"
+msgstr "With {launcher}"
+
+msgid "tm_unreadable"
+msgstr "Steam changed its files - only the installed Steam games show until PlunderHub catches up."
+
+msgid "tm_via_heroic"
+msgstr "{store} via Heroic"
+
+msgid "tm_waiting"
+msgstr "Waiting"
+
+msgid "tm_waiting_n"
+msgstr "Waiting · #{n}"
+
+msgid "tm_waiting_s"
+msgstr "Sign in there if you haven't yet - your games show up here as soon as {launcher} has them."
+
+msgid "tm_waiting_t"
+msgstr "Waiting for {launcher}…"
+
+msgid "tm_wine_prefix"
+msgstr "Wine prefix"
+
+msgid "tm_wine_version"
+msgstr "Wine / Proton"
+
+msgid "tm_wont_fit"
+msgstr "Won't fit"
 
 msgid "tool_ready_text"
 msgstr "Installed - Launch options can switch it on now."
@@ -3917,3 +4220,90 @@ msgstr "You can change this any time in {settings}."
 
 msgid "ws_ask_title"
 msgstr "Where should your games open?"
+
+msgid "wt_ahoy"
+msgstr "Ahoy! Welcome to PlunderHub!"
+
+msgid "wt_back"
+msgstr "Back"
+
+msgid "wt_bilge_s"
+msgstr "Finds what uninstalled games left behind and frees the space. Before anything goes, it can back up your saves, settings, profiles and registry keys - and put them back later."
+
+msgid "wt_bilge_t"
+msgstr "Bilge cleaning"
+
+msgid "wt_close"
+msgstr "Close"
+
+msgid "wt_console_s"
+msgstr "The big screen, made for controllers. Hold View + Start to switch between a game and PlunderHub."
+
+msgid "wt_console_t"
+msgstr "Console Mode"
+
+msgid "wt_dash_s"
+msgstr "Your playtime and storage at a glance."
+
+msgid "wt_dash_t"
+msgstr "Captain's Dashboard"
+
+msgid "wt_key_all"
+msgstr "All shortcuts"
+
+msgid "wt_library_s"
+msgstr "Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles and Faugus - found on their own, native or Flatpak."
+
+msgid "wt_library_t"
+msgstr "One harbour for every game"
+
+msgid "wt_map_s"
+msgstr "Every game you own, installed or not. Dig one up and it installs - no launcher window needed."
+
+msgid "wt_map_t"
+msgstr "Treasure Map"
+
+msgid "wt_next"
+msgstr "Next"
+
+msgid "wt_ready_s"
+msgstr "A few keys worth knowing - F1 shows them all."
+
+msgid "wt_ready_t"
+msgstr "Ready to sail"
+
+msgid "wt_sail_s"
+msgstr "Click a cover to play. PlunderHub shows what's starting, running or syncing, and can stop a game that hangs."
+
+msgid "wt_sail_t"
+msgstr "Set sail"
+
+msgid "wt_set_sail"
+msgstr "Set sail!"
+
+msgid "wt_shipwright_s"
+msgstr "Launchers, tools and Proton-GE / Proton-CachyOS in one place. Ship inspection finds missing drivers and libraries and fixes them."
+
+msgid "wt_shipwright_t"
+msgstr "Shipwright"
+
+msgid "wt_show_around"
+msgstr "Show me around"
+
+msgid "wt_slogan"
+msgstr "One ship for all your plunder."
+
+msgid "wt_tagline"
+msgstr "A Linux game launcher for your Steam, Heroic, Lutris, Bottles and Faugus games."
+
+msgid "wt_tune_s"
+msgstr "Proton, gamescope, MangoHud, performance tweaks, anti-cheat fixes, environment variables and much more, for each game on its own - with a Recommended preset and the game's ProtonDB rating."
+
+msgid "wt_tune_t"
+msgstr "Tune each game"
+
+msgid "wt_yours_s"
+msgstr "15 themes, covers from your launchers or SteamGridDB - even animated ones."
+
+msgid "wt_yours_t"
+msgstr "Make it yours"
