@@ -80,6 +80,12 @@ def _drop_version_heading(blocks, version: str):
     if blocks and blocks[0].kind == "h":
         text = re.sub(r"<[^>]+>", "", blocks[0].markup)
         if version.lstrip("v") in text and len(text) < 40:
+            # kept when an older version's own section follows (a hotfix
+            # repeating the release before it): both read alike then
+            later = [re.sub(r"<[^>]+>", "", b.markup) for b in blocks[1:]
+                     if b.kind == "h" and b.level == blocks[0].level]
+            if any(re.search(r"\d+\.\d+\.\d+", t) and len(t) < 40 for t in later):
+                return blocks
             return blocks[1:]
     return blocks
 

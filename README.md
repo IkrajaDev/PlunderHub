@@ -336,7 +336,7 @@ Settings are stored in <code>~/.config/plunderhub</code>. The SteamGridDB key go
 
 ## Reporting bugs
 
-<p align="center"><img src="docs/screenshots/11-report-bug.png" alt="The Report bug window" width="620"></p>
+<p align="center"><img src="docs/screenshots/17-report-bug.png" alt="The Report bug window" width="620"></p>
 
 1. Open **Report bug** in PlunderHub.
 2. **Report on GitHub** opens the [bug form](https://github.com/IkrajaDev/PlunderHub/issues/new?template=bug_report.yml) with your system filled in.

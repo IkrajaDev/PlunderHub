@@ -355,7 +355,7 @@ class SettingsWindow:
             card.pack_start(sep, False, False, 0)
 
     def _version_text(self) -> str:
-        """1.0.4 - with "beta" after it while this is a beta."""
+        """1.0.5 - with "beta" after it while this is a beta."""
         return f"{APP_VERSION} {self._('beta_badge').lower()}" if APP_CHANNEL else APP_VERSION
 
     def row(self, card: Gtk.Box, title: str, subtitle=None, controls=(), icon=None,

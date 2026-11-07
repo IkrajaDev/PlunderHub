@@ -659,7 +659,8 @@ def _download(url: str, cache_dir: Path) -> Optional[Path]:
         return ours if ours.stat().st_size else None
     import urllib.request
     fetch = url
-    if "cdn1.epicgames.com" in url or "cdn2.unrealengine.com" in url:
+    from urllib.parse import urlsplit
+    if (urlsplit(url).hostname or "") in ("cdn1.epicgames.com", "cdn2.unrealengine.com"):   # Epic's resizing CDN
         fetch = url + ("&" if "?" in url else "?") + "h=480&quality=medium&resize=1&w=360"
     req = urllib.request.Request(fetch, headers={"User-Agent": "PlunderHub"})
     try:

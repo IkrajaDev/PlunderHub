@@ -1,11 +1,11 @@
 # Maintainer: Ikraja
 pkgname=plunderhub
-pkgver=1.0.4
+pkgver=1.0.5
 pkgrel=1
 # The upstream git tag. pacman versions can't contain "-" and the tag
 # does, so the two are spelled out separately rather than translated
 # back and forth.
-_tag="v1.0.4"
+_tag="v1.0.5"
 pkgdesc="PlunderHub (Beta) - Unified game launcher"
 arch=('any')
 url="https://github.com/IkrajaDev/PlunderHub"
