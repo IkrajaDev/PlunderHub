@@ -186,6 +186,24 @@ def _write_atomically(target: Path, write) -> None:
         raise
 
 
+def _plain_title(title: str) -> str:
+    return re.sub(r"[^\w]+", " ", re.sub(r"[™®©]", "", title).lower()).strip()
+
+
+def best_title_match(title: str, results: List[Dict]) -> Optional[int]:
+    """The id of the SteamGridDB result that is this game, None if none
+    is close enough."""
+    from difflib import SequenceMatcher
+    wanted = _plain_title(title)
+    best, score = None, 0.0
+    for entry in results:
+        name = _plain_title(str(entry.get("name", "")))
+        ratio = 1.0 if name == wanted else SequenceMatcher(None, wanted, name).ratio()
+        if ratio > score:
+            best, score = entry.get("id"), ratio
+    return best if score >= 0.6 else None
+
+
 def _copy_art_file(src: str, target: Path) -> Optional[Exception]:
     """Copies a user-picked image into the cache; returns the error (and
     leaves the current art untouched) if it couldn't be copied - or
@@ -740,7 +758,10 @@ class CoversMixin:
         cr.paint()
         return hidpi_pixbuf(Gdk.pixbuf_get_from_surface(surface, 0, 0, width, height), hidpi)
 
-    def _steamgrid_search(self, title: str) -> Optional[int]:
+    def _steamgrid_search(self, title: str, strict: bool = False) -> Optional[int]:
+        """The game's SteamGridDB id. strict (art fetched unasked): only a
+        result that is really this game - the first one of a search for an
+        odd name is some other game's art on the card."""
         safe_title = urllib.parse.quote(title, safe="")
         url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{safe_title}"
         data = http_get_json(url, {"Authorization": f"Bearer {self.api_key}", **HEADERS})
@@ -751,6 +772,8 @@ class CoversMixin:
         for entry in results:
             if str(entry.get("name", "")).strip().lower() == lowered:
                 return entry["id"]
+        if strict:
+            return best_title_match(title, results)
         return results[0]["id"]
 
     _SGDB_PATHS = {"cover": "grids", "hero": "heroes", "icon": "icons"}
@@ -902,7 +925,7 @@ class CoversMixin:
         existing_icons = {p.stem for p in self.game_icons_dir.iterdir() if p.is_file()}
         existing_heroes = {p.stem for p in self.heroes_dir.iterdir() if p.is_file()}
         return [g for g in games if g.uid not in existing_covers or g.uid not in existing_icons
-                or g.uid not in existing_heroes]
+                or g.uid not in existing_heroes or self._outdated_store_art(g)]
 
     def _auto_download_missing_covers(self, games: List[GameItem]):
         # without a SteamGridDB key, the art the launchers themselves show
@@ -986,14 +1009,41 @@ class CoversMixin:
     def _missing_art_kinds(self, game: GameItem) -> set:
         return {kind for kind, folder in (("cover", self.covers_dir), ("icon", self.game_icons_dir),
                                           ("hero", self.heroes_dir))
-                if not art_files_for(folder, game.uid)}
+                if not art_files_for(folder, game.uid)} | self._outdated_store_art(game)
+
+    def _outdated_store_art(self, game: GameItem) -> set:
+        """The kinds of a store launcher's art (the cards PlunderHub draws
+        into Faugus' folders) redrawn since the library copied them - art
+        the player picked themselves isn't touched."""
+        if game.store_platform != "store-launcher":
+            return set()
+        from plunderhub.core.launcher_art import art_for
+        found = art_for(game)
+        outdated = set()
+        for kind, folder, art_map in (("cover", self.covers_dir, self.cover_map), ("hero", self.heroes_dir, self.hero_map),
+                                      ("icon", self.game_icons_dir, self.game_icon_map)):
+            files = art_files_for(folder, game.uid)
+            source = found.get(kind)
+            if not source or not files or art_map.get(game.uid) != {"launcher": True}:
+                continue
+            try:
+                if Path(source).stat().st_mtime > max(f.stat().st_mtime for f in files):
+                    outdated.add(kind)
+            except OSError:
+                continue
+        return outdated
 
     def _fetch_sgdb_art(self, game: GameItem, kinds: set) -> set:
         """The kinds given, from SteamGridDB: the official art first (Steam's
         own, an icon of SteamGridDB's official style), else the first still
         one in its own (most popular first) order. The kinds that came.
         Blocks: a worker thread."""
-        game_id = self._steamgrid_search(game.title)
+        if game.store_platform == "store-launcher":
+            # a store's launcher (Faugus): a search by its name finds a game called
+            # alike ("Wargaming Game Center" -> General Staff: Black Powder) - its
+            # own art comes from Faugus' folders, drawn by the Treasure Map
+            return set()
+        game_id = self._steamgrid_search(game.title, strict=True)
         if game_id is None:
             return set()
         got = set()
@@ -1377,6 +1427,10 @@ class CoversMixin:
 
     def update_cover_image(self, uid: str):
         self._update_cover_widgets(uid)
+        from plunderhub.ui.home_mixin import _treasure_map
+        view = _treasure_map().shown(self)
+        if view is not None:
+            view.library_art_changed(uid)
         self._notify_game_page(uid, "cover")
         self._home_hero_wanted = None
         cache = getattr(self, "_home_hero_cache", None)
@@ -1670,6 +1724,24 @@ class CoversMixin:
         if ok and (wanted is None or wanted()):
             _remove_other_art(self.game_icons_dir, uid, keep=target)
             GLib.idle_add(self.update_game_icon_image, uid)
+
+    def forget_art(self, uid: str):
+        """A game that's gone for good: its covers, banners and icons here,
+        and what the maps remember of them."""
+        self.__dict__.setdefault("_auto_art_tried", set()).discard(uid)     # installed again: looked up again
+        view = getattr(self, "_tm_view", None)
+        if view is not None:
+            view.loader.forget(uid)
+        with self._cover_map_lock:
+            kept = [(self.covers_dir, self.cover_map, save_cover_map),
+                    (self.heroes_dir, self.hero_map, save_hero_map),
+                    (self.game_icons_dir, self.game_icon_map, save_game_icon_map)]
+            for folder, art_map, save in kept:
+                for path in art_files_for(folder, uid):
+                    animation_sidecar(path).unlink(missing_ok=True)
+                    path.unlink(missing_ok=True)
+                if art_map.pop(uid, None) is not None:
+                    save(art_map)
 
     def _create_cover_image(self, game: GameItem, size: Tuple[int, int]) -> Gtk.Image:
         img = Gtk.Image()

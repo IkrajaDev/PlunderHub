@@ -507,6 +507,12 @@ msgstr "Undone - the files are as before"
 msgid "bg_unknown_game"
 msgstr "Unknown game (Steam app {appid})"
 
+msgid "bottles_launch_failed"
+msgstr "Couldn't start {title}"
+
+msgid "bottles_launch_failed_text"
+msgstr "Bottles couldn't start the program. Do the bottle and the program still exist?"
+
 msgid "bug_close"
 msgstr "Close"
 
@@ -1656,6 +1662,45 @@ msgstr "{launcher} didn't close."
 msgid "lo_mangohud"
 msgstr "MangoHud"
 
+msgid "lo_new_apply"
+msgstr "Apply"
+
+msgid "lo_new_apply_restart"
+msgstr "Apply & restart"
+
+msgid "lo_new_auto_sub"
+msgstr "On: new games get them without asking. Off: PlunderHub asks you."
+
+msgid "lo_new_auto_title"
+msgstr "Recommended launch options for new games"
+
+msgid "lo_new_proton"
+msgstr "Use Proton-GE Latest"
+
+msgid "lo_new_proton_sub"
+msgstr "Runs this game on the newest Proton-GE"
+
+msgid "lo_new_recommended"
+msgstr "Recommended launch options"
+
+msgid "lo_new_recommended_tip"
+msgstr "GameMode, FPS limit, Esync and Fsync, fullscreen and more"
+
+msgid "lo_new_restart_note"
+msgstr "{launcher} is running and has to restart for this."
+
+msgid "lo_new_skip"
+msgstr "Leave as is"
+
+msgid "lo_new_text"
+msgstr "Want to set this up now? You can change it any time on the game page."
+
+msgid "lo_new_title_many"
+msgstr "{n} new games"
+
+msgid "lo_new_title_one"
+msgstr "New game: {title}"
+
 msgid "lo_no_wrappers"
 msgstr "This launcher can't store wrapper commands, so these can't be saved: {words}"
 
@@ -1727,6 +1772,9 @@ msgstr "Steam uses these automatically when they're installed. You can install t
 
 msgid "lo_steam_still_running"
 msgstr "Steam didn't close, so the launch options weren't saved."
+
+msgid "lo_store_launcher_note"
+msgstr "A store's own launcher: game options (window mode, FPS limit, Wayland, Recommended) don't apply to it - Faugus' own settings for it are kept."
 
 msgid "lo_stored_in"
 msgstr "Stored in: {where}"
@@ -1847,6 +1895,9 @@ msgstr "No launchers aboard yet.\nSwitch on at least one on the Library page, th
 
 msgid "options"
 msgstr "Ship's Controls"
+
+msgid "other_launch_failed_text"
+msgstr "{launcher} couldn't start the game."
 
 msgid "patch_notes_loading"
 msgstr "Looking for patch notes…"
@@ -2097,6 +2148,9 @@ msgstr "Playtime history sent to the depths."
 msgid "playtime_top_games"
 msgstr "Most Sailed Voyages"
 
+msgid "playtime_under_minute"
+msgstr "Under a minute"
+
 msgid "pm_all"
 msgstr "All"
 
@@ -2104,10 +2158,10 @@ msgid "pm_all_releases"
 msgstr "All {n} releases  ›"
 
 msgid "pm_auto_sub"
-msgstr "When PlunderHub starts it downloads the newest Proton-GE, for every launcher. Games on it wait while it downloads."
+msgstr "Off: a new Proton-GE shows up at the bottom left and waits for you to press Download."
 
 msgid "pm_auto_title"
-msgstr "Keep Proton-GE Latest up to date"
+msgstr "Update Proton-GE Latest automatically"
 
 msgid "pm_cachyos_note"
 msgstr "By CachyOS: Proton tuned for speed. The build for your processor ({level}) is picked by itself. Never downloaded on its own - only when you ask."
@@ -2254,7 +2308,16 @@ msgid "pm_nothing"
 msgstr "Nothing yet"
 
 msgid "pm_nothing_ge"
-msgstr "Nothing yet - Proton-GE Latest downloads by itself"
+msgstr "Nothing yet - download Proton-GE Latest to use it"
+
+msgid "pm_offer_download"
+msgstr "Download"
+
+msgid "pm_offer_missing"
+msgstr "{tag} - not downloaded yet"
+
+msgid "pm_offer_title"
+msgstr "New Proton-GE"
 
 msgid "pm_on_computer"
 msgstr "On this computer"
@@ -2553,6 +2616,9 @@ msgstr "Open"
 msgid "sc_group_views"
 msgstr "Views and search"
 
+msgid "sc_harbors"
+msgstr "Harbors and back"
+
 msgid "sc_launch"
 msgstr "Launch game"
 
@@ -2621,6 +2687,12 @@ msgstr "Treacherous Waters"
 
 msgid "section_font_size"
 msgstr "Font size"
+
+msgid "section_harbors"
+msgstr "Harbors"
+
+msgid "section_harbors_note"
+msgstr "the stores' own launchers"
 
 msgid "section_icon_size"
 msgstr "Icon size (List view only)"
@@ -3680,6 +3752,309 @@ msgstr "It starts when the one before it is done."
 
 msgid "tm_dock_unpacking"
 msgstr "{launcher} is unpacking {game}"
+
+msgid "tm_fg_already_s"
+msgstr "One is enough: its games install from inside it. Open that one instead?"
+
+msgid "tm_fg_already_t"
+msgstr "{name} is already aboard"
+
+msgid "tm_fg_app_menu"
+msgstr "Show it in the app menu"
+
+msgid "tm_fg_app_menu_why"
+msgstr "Adds it to your desktop's app list (start menu, app launcher), so it starts from there without opening PlunderHub."
+
+msgid "tm_fg_bring"
+msgstr "Bring aboard"
+
+msgid "tm_fg_bring_sub"
+msgstr "Launcher · installer · game"
+
+msgid "tm_fg_choose_file"
+msgstr "Choose the file"
+
+msgid "tm_fg_choose_prefix"
+msgstr "Choose another folder"
+
+msgid "tm_fg_close"
+msgstr "Close"
+
+msgid "tm_fg_close_btn"
+msgstr "Close Faugus"
+
+msgid "tm_fg_close_game_s"
+msgstr "Its window and everything running in its prefix closes. A download in it stops too."
+
+msgid "tm_fg_close_game_t"
+msgstr "Close {name}?"
+
+msgid "tm_fg_close_it"
+msgstr "Close it"
+
+msgid "tm_fg_close_s"
+msgstr "Faugus writes its own game list back when it closes - so it has to be closed while {game} is written in. It opens fine afterwards."
+
+msgid "tm_fg_close_t"
+msgstr "Close Faugus to save it?"
+
+msgid "tm_fg_empty_s"
+msgstr "A store launcher, a game's installer or a game already on disk - it goes into a Faugus prefix, and both Faugus and PlunderHub list it."
+
+msgid "tm_fg_empty_t"
+msgstr "No Faugus games yet"
+
+msgid "tm_fg_failed_no_exe"
+msgstr "The installer finished, but no game .exe turned up in the prefix. Its log: {log}"
+
+msgid "tm_fg_failed_not_installed"
+msgstr "The installer finished, but {name} isn't in the prefix. Its log: {log}"
+
+msgid "tm_fg_failed_other"
+msgstr "Something went wrong: {why}. The log: {log}"
+
+msgid "tm_fg_file_missing"
+msgstr "That file isn't there."
+
+msgid "tm_fg_flatpak_cant_see"
+msgstr "Faugus (Flatpak) can't reach this folder - pick one in your home, /mnt or /run/media."
+
+msgid "tm_fg_free"
+msgstr "FREE NOW"
+
+msgid "tm_fg_game_exe"
+msgstr "THE GAME'S .EXE"
+
+msgid "tm_fg_go"
+msgstr "Hoist aboard"
+
+msgid "tm_fg_group_game"
+msgstr "A GAME"
+
+msgid "tm_fg_group_store"
+msgstr "A STORE'S LAUNCHER"
+
+msgid "tm_fg_heroic"
+msgstr "For {store}, I'd suggest Heroic Games Launcher"
+
+msgid "tm_fg_heroic_go"
+msgstr "Show my {store} games on the map"
+
+msgid "tm_fg_installer"
+msgstr "INSTALLER (.exe / .msi)"
+
+msgid "tm_fg_installer_tells"
+msgstr "the installer tells"
+
+msgid "tm_fg_kind_exe"
+msgstr "Windows game already on disk"
+
+msgid "tm_fg_kind_exe_sub"
+msgstr "point at its .exe"
+
+msgid "tm_fg_kind_linux"
+msgstr "Linux game"
+
+msgid "tm_fg_kind_linux_sub"
+msgstr "runs natively, no Wine"
+
+msgid "tm_fg_kind_setup"
+msgstr "Windows game from its installer"
+
+msgid "tm_fg_kind_setup_sub"
+msgstr "setup.exe, a GOG offline installer, itch.io, a disc"
+
+msgid "tm_fg_left_out"
+msgstr "Left out: {names}"
+
+msgid "tm_fg_likeliest"
+msgstr "likeliest"
+
+msgid "tm_fg_name"
+msgstr "NAME"
+
+msgid "tm_fg_need_file"
+msgstr "Choose the file."
+
+msgid "tm_fg_need_name"
+msgstr "Give it a name."
+
+msgid "tm_fg_need_prefix"
+msgstr "Choose a prefix folder."
+
+msgid "tm_fg_needs"
+msgstr "NEEDS"
+
+msgid "tm_fg_needs_launcher"
+msgstr "the launcher itself"
+
+msgid "tm_fg_needs_runtime"
+msgstr "+ {size} game runtime, first time only"
+
+msgid "tm_fg_no_launcher_s"
+msgstr "Install Faugus - then store launchers, installers and games can come aboard from here."
+
+msgid "tm_fg_open"
+msgstr "Open Faugus"
+
+msgid "tm_fg_open_it"
+msgstr "Open it"
+
+msgid "tm_fg_other_file"
+msgstr "Another file…"
+
+msgid "tm_fg_phase_close_it"
+msgstr "Close its window to finish"
+
+msgid "tm_fg_phase_download"
+msgstr "Downloading the installer"
+
+msgid "tm_fg_phase_find"
+msgstr "Looking for the game's .exe"
+
+msgid "tm_fg_phase_install"
+msgstr "Installing into the prefix"
+
+msgid "tm_fg_phase_prepare"
+msgstr "Getting ready"
+
+msgid "tm_fg_phase_runtime"
+msgstr "Fetching the game runtime (first time only)"
+
+msgid "tm_fg_phase_save"
+msgstr "Waiting for Faugus to close"
+
+msgid "tm_fg_phase_signin"
+msgstr "Sign in, then close its window"
+
+msgid "tm_fg_pick_s"
+msgstr "The installer of {name} left these. The likeliest is picked."
+
+msgid "tm_fg_pick_t"
+msgstr "Which one starts the game?"
+
+msgid "tm_fg_prefix"
+msgstr "PREFIX  ·  Faugus' default folder + the name"
+
+msgid "tm_fg_preview"
+msgstr "PREVIEW"
+
+msgid "tm_fg_proton"
+msgstr "PROTON"
+
+msgid "tm_fg_proton_ours"
+msgstr "{name}  (PlunderHub's)"
+
+msgid "tm_fg_rm_prefix"
+msgstr "Delete its Wine prefix too"
+
+msgid "tm_fg_rm_prefix_sub"
+msgstr "Saves in it and everything installed in it, including this launcher's games, go with it."
+
+msgid "tm_fg_rm_s"
+msgstr "It goes from Faugus and your library."
+
+msgid "tm_fg_rm_t"
+msgstr "Remove {game}?"
+
+msgid "tm_fg_running"
+msgstr "Running"
+
+msgid "tm_fg_running_note"
+msgstr "Faugus is closed for a moment while its list is written - it opens fine afterwards."
+
+msgid "tm_fg_runs_with"
+msgstr "RUNS WITH"
+
+msgid "tm_fg_runs_with_sub"
+msgstr "PlunderHub's recommended options"
+
+msgid "tm_fg_setup_failed"
+msgstr "The download didn't work - GitHub isn't answering right now. Try again in a few minutes."
+
+msgid "tm_fg_start_file"
+msgstr "THE GAME'S START FILE"
+
+msgid "tm_fg_step_aboard"
+msgstr "Aboard, in Faugus and in your library"
+
+msgid "tm_fg_step_close"
+msgstr "It opens when done - close it to finish"
+
+msgid "tm_fg_step_dl"
+msgstr "Downloads {name}'s installer from its maker"
+
+msgid "tm_fg_step_find"
+msgstr "Finds the game's .exe from the shortcuts it made"
+
+msgid "tm_fg_step_keep_path"
+msgstr "Keep the install folder it offers"
+
+msgid "tm_fg_step_launcher_done"
+msgstr "Aboard: your games install from inside it"
+
+msgid "tm_fg_step_native"
+msgstr "Aboard - runs without Wine"
+
+msgid "tm_fg_step_pick"
+msgstr "You check it's the right one"
+
+msgid "tm_fg_step_prefix_first"
+msgstr "The prefix is made on the first launch"
+
+msgid "tm_fg_step_quiet"
+msgstr "Installs it quietly into the prefix"
+
+msgid "tm_fg_step_run_setup"
+msgstr "Runs the installer in the prefix - click through it as usual"
+
+msgid "tm_fg_step_runtime"
+msgstr "First time only: the game runtime (~700 MB) is fetched"
+
+msgid "tm_fg_step_signin"
+msgstr "Its sign-in window opens - sign in, then close it"
+
+msgid "tm_fg_store_launcher"
+msgstr "Store launcher"
+
+msgid "tm_fg_sub"
+msgstr "It goes into a Faugus prefix: Faugus and PlunderHub both list it."
+
+msgid "tm_fg_sub_battle"
+msgstr "Blizzard: Diablo, Overwatch, WoW"
+
+msgid "tm_fg_sub_ea"
+msgstr "EA's games"
+
+msgid "tm_fg_sub_heroic"
+msgstr "Heroic is suggested"
+
+msgid "tm_fg_sub_rockstar"
+msgstr "GTA, Red Dead"
+
+msgid "tm_fg_sub_ubisoft"
+msgstr "Ubisoft's games"
+
+msgid "tm_fg_sub_wargaming"
+msgstr "World of Tanks, Warships"
+
+msgid "tm_fg_taken"
+msgstr "Faugus already has a game called {name}."
+
+msgid "tm_fg_thats_it"
+msgstr "That's it"
+
+msgid "tm_fg_title"
+msgstr "Bring it aboard with Faugus"
+
+msgid "tm_fg_uninstall_in_launcher"
+msgstr "{game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone."
+
+msgid "tm_fg_what"
+msgstr "WHAT ARE YOU BRINGING?"
+
+msgid "tm_fg_what_happens"
+msgstr "WHAT HAPPENS"
 
 msgid "tm_flatpak_fixed_paths"
 msgstr "Heroic (Flatpak) only sees its own folders - it installs there. You can change them in Heroic's settings."

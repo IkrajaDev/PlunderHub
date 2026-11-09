@@ -88,6 +88,7 @@ ICON_MAP: Dict[str, Tuple[str, str]] = {
     "document-save-as-symbolic": ("file-down.svg", "stroke"),
     "document-open-symbolic": ("file-up.svg", "stroke"),
     "folder-symbolic": ("folder.svg", "stroke"),
+    "anchor-symbolic": ("anchor.svg", "stroke"),
     "user-trash-symbolic": ("trash-2.svg", "stroke"),
     "drive-harddisk-symbolic": ("database.svg", "stroke"),
     "system-software-install-symbolic": ("download.svg", "stroke"),

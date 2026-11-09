@@ -294,6 +294,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self.running_time_widgets: Dict[str, List[Gtk.Label]] = {}
         self.launching_uids: Dict[str, float] = {}
         # Heroic launches being followed in its log (see heroic_launch)
+        self._gone_since: Dict[str, float] = {}     # when a running game was last missed
         self._heroic_launches: Dict[str, HeroicLaunch] = {}
         self._heroic_stages: Dict[str, HeroicLaunchStage] = {}
         # Quit chose to wait for the work still running (request_quit)
@@ -434,6 +435,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._match_compositor_corners()
         self._running_detector = RunningDetector(interval=3.0, steam_running=is_steam_appid_running)
         self._running_detector.start()
+        GLib.timeout_add_seconds(8, self._sync_store_games)
+        GLib.timeout_add_seconds(60, self._sync_store_games)
         if self.settings.get("bilge_waiting"):
             GLib.timeout_add_seconds(20, self._bilge_check_waiting)
         GLib.timeout_add(1000, self._poll_running_games)
@@ -1268,6 +1271,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return False
         if event.keyval in self.ARROW_KEY_DIRECTIONS:
             self._main_move_focus(self.ARROW_KEY_DIRECTIONS[event.keyval])
+            return True
+        if event.keyval in (Gdk.KEY_h, Gdk.KEY_H) and self._toggle_harbors():
             return True
         if event.keyval in (Gdk.KEY_c, Gdk.KEY_C):
             self._toggle_console_mode()
@@ -2747,8 +2752,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             box-shadow: none;
         }
         .window-close-btn:hover {
-            background-color: #c0392b;
-            color: #ffffff;
+            background-color: #c0392b;  /* no colour change: it would relayout the window */
         }
 
         /* "Danger zone" frame (e.g. Delete config on the Settings -> Data
@@ -3354,7 +3358,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             # A Heroic launch may start Heroic alone first, or wait for
             # its update without starting anything yet.
             run_cmd = cmd if heroic is None else heroic[1]
-            proc = run(run_cmd, env) if run_cmd else None
+            # Faugus starts a game from its folder; a game finding its files
+            # by a relative path doesn't start from anywhere else
+            cwd = install_dir if uid and uid.startswith("faugus:") and install_dir and os.path.isdir(install_dir) else None
+            proc = run(run_cmd, env, cwd) if run_cmd else None
         except Exception as exc:
             md = Gtk.MessageDialog(transient_for=self._dialog_transient_parent(), flags=0,
                                    message_type=Gtk.MessageType.ERROR,
@@ -3394,7 +3401,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             else:
                 self._running_process_match.pop(uid, None)
             if workspace is not None:
-                mover.watch(uid, process_match or GameProcessMatch(directory=install_dir), workspace)
+                # a store launcher in Faugus runs from anywhere in its prefix
+                prefix = install_dir.split("/drive_c/")[0] if install_dir and "/drive_c/" in install_dir \
+                    and getattr(self.game_index.get(uid), "store_platform", None) in ("store-launcher", "launcher-game") else None
+                mover.watch(uid, process_match or GameProcessMatch(directory=install_dir, wineprefix=prefix),
+                            workspace)
             self._render_launchers()
         if self.console_mode_active:
             self._console_hidden_for_game = True
@@ -3577,7 +3588,22 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         except OSError:
             return False
 
-    def _unconfirmed_run_timed_out(self, uid: str, proc: subprocess.Popen) -> bool:
+    # A game that disappears isn't over at once: a launcher or installer
+    # handing over to the game (first start: redistributables, an EA /
+    # Rockstar / Ubisoft launcher) leaves a gap with nothing to see.
+    _FAILED_START_SECONDS = 15.0     # ended with an error this soon: it didn't start
+    _GONE_GRACE_SECONDS = 6.0
+    _GONE_GRACE_EARLY_SECONDS = 30.0
+    _GONE_EARLY_RUN_SECONDS = 180.0
+
+    def _gone_for_good(self, uid: str) -> bool:
+        now = time.monotonic()
+        first_missed = self._gone_since.setdefault(uid, now)
+        started = self.running_since.get(uid)
+        early = started is None or now - started < self._GONE_EARLY_RUN_SECONDS
+        return now - first_missed >= (self._GONE_GRACE_EARLY_SECONDS if early else self._GONE_GRACE_SECONDS)
+
+    def _unconfirmed_run_timed_out(self, uid: str, proc: subprocess.Popen, launcher_holds_group: bool = False) -> bool:
         if uid in self._directory_confirmed_running:
             return False
         started_at = self.running_since.get(uid)
@@ -3585,7 +3611,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return False
         if time.monotonic() - started_at < self._UNCONFIRMED_RUNNING_TIMEOUT_SECONDS:
             return False
-        if proc.poll() is None or self._process_group_alive(proc):
+        # a launcher started for the game stays open in its process group,
+        # game or no game: that says nothing
+        if not launcher_holds_group and (proc.poll() is None or self._process_group_alive(proc)):
             return False
         logger.info(
             f"Giving up on the running-state of {uid}: nothing confirmed it actually "
@@ -3637,11 +3665,25 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 # The launchers record their own playtime - resync it.
                 self.reload()
 
+    def _sync_store_games(self) -> bool:
+        """Games a store launcher in Faugus installed or removed: their
+        cards follow (off the GTK thread; again every minute)."""
+        def work():
+            try:
+                from plunderhub.core import faugus_add, faugus_store
+                _status, site = faugus_add.faugus_status()
+                if site is not None and faugus_store.sync(site):
+                    GLib.idle_add(lambda: self.reload() and False)
+            except Exception as e:
+                logger.info(f"Faugus store games not checked: {e}")
+        threading.Thread(target=work, name="plunderhub-store-games", daemon=True).start()
+        return True
+
     def _end_detected_session(self, uid: str) -> None:
         started_at = self.running_since.pop(uid, None)
         # Only Bottles keeps no playtime of its own; the rest are synced
         # from the launcher, so crediting here would count them twice.
-        if started_at is not None and uid.startswith("bottles:"):
+        if started_at is not None and (uid.startswith("bottles:") or self._is_launcher_game(uid)):
             self._credit_session_playtime(uid, started_at)
 
     # Steam launch steps that can take minutes, and do say so in its logs
@@ -3757,8 +3799,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
     def _show_launch_failed(self, uid: str, error: str) -> bool:
         game = self.game_index.get(uid)
         title = game.title if game is not None else uid
-        which = "heroic" if uid.startswith("heroic:") else "steam"
-        text = self._(f"{which}_launch_failed_text")
+        which = "heroic" if uid.startswith("heroic:") else "bottles" if uid.startswith("bottles:") else "steam"
+        text = self._(f"{which}_launch_failed_text") if uid.startswith(("heroic:", "bottles:", "steam:")) \
+            else self._("other_launch_failed_text").format(launcher=game.launcher if game is not None else "")
         if error:
             text += f"\n\n{error}"
         self._show_info_dialog(text, Gtk.MessageType.ERROR,
@@ -4040,6 +4083,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                      if uid.startswith("steam:")})
 
         finished = []
+        failed_launches = []
         detected = self._running_detector.snapshot()
         for uid, proc in self.running_procs.items():
             if uid.startswith("steam:"):
@@ -4048,29 +4092,46 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                     self._directory_confirmed_running.add(uid)
                 elif steam_running is False and uid in self._directory_confirmed_running:
                     finished.append(uid)
-                elif self._unconfirmed_run_timed_out(uid, proc):
+                elif self._unconfirmed_run_timed_out(uid, proc, launcher_holds_group=steam_running is False):
                     finished.append(uid)
                 continue
             if uid.startswith("bottles:"):
                 bottles_running = self._process_probe.reading(uid)
                 if bottles_running is True:
                     self._directory_confirmed_running.add(uid)
+                    self._gone_since.pop(uid, None)
                 elif bottles_running is False and uid in self._directory_confirmed_running:
+                    if self._gone_for_good(uid):
+                        finished.append(uid)
+                elif uid not in self._directory_confirmed_running and proc.poll() not in (None, 0) \
+                        and not self._process_group_alive(proc):
+                    # bottles-cli said no: no such bottle or program, Bottles broken
                     finished.append(uid)
+                    failed_launches.append((uid, ""))
                 elif self._unconfirmed_run_timed_out(uid, proc):
                     finished.append(uid)
                 continue
-            if uid.startswith(("heroic:", "lutris:")):
+            if uid.startswith(("heroic:", "lutris:")) or self._is_launcher_game(uid):
                 # What PlunderHub ran only hands the launch to the launcher
                 # (often one already open: the forwarder exits at once; or
                 # Heroic itself, staying in its tray) - the game's own
                 # processes, as the running detector finds them (Wine ones
                 # by their command line too), say whether it runs.
                 if uid in detected:
+                    if uid not in self._directory_confirmed_running and self._is_launcher_game(uid):
+                        # its time starts with the game, not with its launcher opening
+                        self.running_since[uid] = time.monotonic()
+                        self.launching_uids.pop(uid, None)
                     self._directory_confirmed_running.add(uid)
+                    self._gone_since.pop(uid, None)
                 elif uid in self._directory_confirmed_running:
-                    finished.append(uid)
-                elif uid not in self._heroic_launches and self._unconfirmed_run_timed_out(uid, proc):
+                    if self._gone_for_good(uid):
+                        finished.append(uid)
+                elif uid.startswith("lutris:") and proc.poll() not in (None, 0) and not self._process_group_alive(proc):
+                    finished.append(uid)        # Lutris said no at once
+                    failed_launches.append((uid, ""))
+                elif uid not in self._heroic_launches and self._unconfirmed_run_timed_out(
+                        uid, proc, launcher_holds_group=uid.startswith("heroic:") or self._is_launcher_game(uid)):
                     finished.append(uid)
                 continue
             if uid in self._heroic_launches:
@@ -4078,7 +4139,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 continue
             if proc.poll() is not None and not self._process_group_alive(proc):
                 finished.append(uid)
-        failed_launches = []
+                ran = time.monotonic() - self.running_since.get(uid, time.monotonic())
+                if proc.returncode != 0 and ran < self._FAILED_START_SECONDS:
+                    failed_launches.append((uid, ""))
         for uid in self.launching_uids:
             stage = self._process_probe.stage(uid)
             if stage is not None and stage.stage == "failed" and uid not in finished:
@@ -4105,6 +4168,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             self.running_since[uid] = time.monotonic()
         if finished or expired_launching:
             for uid in finished:
+                self._gone_since.pop(uid, None)
                 self._ignore_detection_briefly(uid)
                 self.running_procs.pop(uid, None)
                 self._end_heroic_launch(uid)
@@ -4112,6 +4176,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                     # it quit by itself: back to PlunderHub's workspace
                     self._workspace_mover.back_home(uid)
                 started_at = self.running_since.pop(uid, None)
+                if self._is_launcher_game(uid) and uid not in self._directory_confirmed_running:
+                    started_at = None       # its launcher was open, the game never ran
                 self._directory_confirmed_running.discard(uid)
                 self._running_process_match.pop(uid, None)
                 if started_at is not None and not uid.startswith("steam:"):
@@ -4158,7 +4224,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         if uid in self.launching_uids:
             return self._("game_launching_badge")
         started_at = self.running_since.get(uid)
-        if started_at is None:
+        if started_at is None or self._is_store_launcher(uid):
             return self._("game_running_badge")
         elapsed = self._format_elapsed_time(time.monotonic() - started_at)
         return f"{self._('game_running_badge')} · {elapsed}"
@@ -4198,7 +4264,12 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         if process_match is not None:
             self._terminate_game_processes(process_match, resync_playtime=True)
         else:
-            self._terminate_process(proc, resync_playtime=True)
+            # Faugus' runner starts the game in a session of its own
+            seen = self._running_detector.snapshot().get(game.uid) if game.uid.startswith("faugus:") else None
+            if seen is not None:
+                self._terminate_pids(seen.pids)
+            if game.store_platform != "launcher-game":      # its launcher stays open
+                self._terminate_process(proc, resync_playtime=True)
         self._render_launchers()
 
     def _terminate_game_processes(self, process_match: GameProcessMatch, resync_playtime: bool = False):
@@ -4234,6 +4305,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         GLib.timeout_add(4000, _force_kill)
 
     def _credit_session_playtime(self, uid: str, started_at: float):
+        if self._is_store_launcher(uid):
+            return
         # started_at is time.monotonic() - see running_since.
         per_day = split_minutes_by_day(datetime.now(), time.monotonic() - started_at)
         if not per_day:
@@ -6506,7 +6579,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._report_scan_errors(scanner)
         if getattr(self, "_proton_upkeep", None) is not None:
             self._proton_upkeep.after_scan()
-        self._give_new_games_recommended([g for section in launchers for g in section.get("games", [])])
+        self._ask_about_new_games([g for section in launchers for g in section.get("games", [])])
         if getattr(self, "startup_overlay", None) is not None:
             self._startup_overlay_deadline = time.monotonic() + self._STARTUP_OVERLAY_MAX_WAIT
             GLib.timeout_add(150, self._poll_startup_ready)
@@ -6550,6 +6623,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         }
         self._prune_uninstalled_covers(installed_uids, prunable_prefixes)
         self._prune_uninstalled_game_icons(installed_uids, prunable_prefixes)
+        # art is looked up once a run per game - per install: one uninstalled
+        # and installed again in the same run has none till it's looked up again
+        self.__dict__.setdefault("_auto_art_tried", set()).intersection_update(installed_uids)
         added, removed = self._diff_library(launchers, installed_uids)
         # Only the very first scan builds the page with the reveal; later
         # ones swap it in place, and just the newly found games fade in.
@@ -6650,6 +6726,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         known_steam_appids: set = set()
         heroic_uid_by_gameid: Dict[str, str] = {}
         known_faugus_gameids: set = set()
+        launchers_counted: set = set()
         known_lutris_gameids: set = set()
         for section in self._cached_launchers:
             if section["name"] not in self.enabled_launchers:
@@ -6662,7 +6739,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                     if len(parts) == 3:
                         heroic_uid_by_gameid[parts[2]] = game.uid
                 elif game.launcher == "Faugus" and game.uid.startswith("faugus:"):
-                    known_faugus_gameids.add(game.uid.split(":", 1)[1])
+                    if game.store_platform == "store-launcher":
+                        launchers_counted.add(game.uid)
+                    elif game.store_platform != "launcher-game":     # Faugus counts its launcher's time
+                        known_faugus_gameids.add(game.uid.split(":", 1)[1])
                 elif game.launcher == "Lutris" and game.uid.startswith("lutris:"):
                     known_lutris_gameids.add(game.uid.split(":", 1)[1])
 
@@ -6752,6 +6832,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 f"matched {matched}/{len(known_lutris_gameids)} installed games."
             )
 
+        # time counted for a store's launcher before: only its games have playtime
+        for uid in launchers_counted:
+            changed = self.playtime.pop(uid, None) is not None or changed
+            for day in self.playtime_history.values():
+                history_changed = day.pop(uid, None) is not None or history_changed
         if changed:
             save_playtime(self.playtime)
             save_recent(self.recent)

@@ -129,7 +129,8 @@ class ConsoleView(Gtk.DrawingArea):
             if self.tab is None or section["name"] == self.tab:
                 games.extend(self._visible(section["games"]))
         shelves = []
-        recent = sorted((g for g in games if app.recent.get(g.uid)), key=lambda g: -app.recent.get(g.uid, 0))
+        recent = sorted((g for g in games if app.recent.get(g.uid) and g.store_platform != "store-launcher"),
+                        key=lambda g: -app.recent.get(g.uid, 0))
         if recent:
             shelves.append((app._("home_nav_recent"), recent[:RECENT_SHELF]))
         # a launcher's tab in its own order, all of them in All Plunder's
@@ -137,8 +138,12 @@ class ConsoleView(Gtk.DrawingArea):
         favorites = app._sort_games([g for g in games if g.uid in app.favorites], per_launcher)
         if favorites:
             shelves.append((app._("home_nav_favorites"), favorites))
-        if games:
-            shelves.append((self.tab or app._("all_games_section"), app._sort_games(games, per_launcher)))
+        harbors = [g for g in games if g.store_platform == "store-launcher"]
+        plunder = [g for g in games if g.store_platform != "store-launcher"]
+        if plunder:
+            shelves.append((self.tab or app._("all_games_section"), app._sort_games(plunder, per_launcher)))
+        if harbors:
+            shelves.append((app._("section_harbors"), app._sort_games(harbors, per_launcher)))
         self._shelves = shelves
         if keep_uid:
             # stay on the same game - on the shelf the cursor was on, if it's still there
@@ -352,7 +357,7 @@ class ConsoleView(Gtk.DrawingArea):
     def _paint_cover(self, cr, game: GameItem, w: int, h: int, alpha: float = 1.0, d: float = 1.0):
         if not self.app.show_covers:
             # the library's name plate
-            meta = self.app._home_playtime_text(game.uid) if self.app.show_playtime else None
+            meta = (self.app._home_playtime_text(game.uid) or None) if self.app.show_playtime else None
             _paint_name_plate(cr, self, game.title, meta, w, h, alpha)
             return
         surface = self._cover(game, w, h, d)
@@ -908,10 +913,12 @@ class ConsoleView(Gtk.DrawingArea):
         items = [(None, game.launcher)]
         playtime = app._home_playtime_text(game.uid)
         if phase == "running":
-            items.append(("clock", app._("home_played_total").format(time=playtime)
-                          if app.playtime.get(game.uid) else playtime))
+            if playtime:
+                items.append(("clock", app._("home_played_total").format(time=playtime)
+                              if app.playtime.get(game.uid) else playtime))
         else:
-            items.append(("clock", playtime))
+            if playtime:
+                items.append(("clock", playtime))
             if app.recent.get(game.uid):
                 items.append(("calendar", app._("home_last_played").format(
                     when=app._home_ago_text(app.recent[game.uid]))))

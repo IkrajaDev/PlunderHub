@@ -1061,7 +1061,104 @@ class ProtonPage(Gtk.Box):
             GLib.idle_add(lambda: self._show_restart_notices() and False)
 
 
+def latest_choice(game) -> str:
+    """Proton-GE Latest's id in the game's Proton list - "" when it isn't
+    downloaded, the game runs natively or is already on it."""
+    from plunderhub.core import proton_store
+    latest = proton_store.FAMILIES["ge"].latest_name
+    if proton_store.find(latest) is None:
+        return ""
+    entry = _game_proton(game)
+    if entry is None or entry.native:
+        return ""
+    target = next((i for i, label in entry.choices if _proton_name(i if "/" in i else label) == latest), "")
+    return "" if target == entry.choice else target
+
+
+class HomeOfferCard(Gtk.Revealer):
+    """In the main window's sidebar, like the app's own update card: a newer
+    Proton-GE is out. Downloads only when Download is pressed; Later hides
+    it until an even newer one."""
+
+    def __init__(self, app, data: "RealProtonData"):
+        super().__init__()
+        self.app, self.data = app, data
+        self.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
+        self.set_transition_duration(260)
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        card.get_style_context().add_class("home-update-card")
+        top = Gtk.Box(spacing=10)
+        top.pack_start(_Ring(36), False, False, 0)
+        texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        texts.set_valign(Gtk.Align.CENTER)
+        self.title = Gtk.Label(xalign=0)
+        self.title.get_style_context().add_class("home-update-title")
+        self.line = Gtk.Label(xalign=0)
+        self.line.get_style_context().add_class("home-update-versions")
+        for label in (self.title, self.line):
+            label.set_ellipsize(Pango.EllipsizeMode.END)
+            label.set_max_width_chars(1)
+            texts.pack_start(label, False, False, 0)
+        top.pack_start(texts, True, True, 0)
+        card.pack_start(top, False, False, 0)
+        buttons = Gtk.Box(spacing=6, homogeneous=True)
+        self.later = Gtk.Button()
+        self.download = Gtk.Button()
+        for btn, css in ((self.later, "home-update-later"), (self.download, "home-update-install")):
+            btn.get_style_context().add_class(css)
+            btn.set_can_focus(False)
+            buttons.pack_start(btn, True, True, 0)
+        self.later.connect("clicked", lambda *_: self._later())
+        self.download.connect("clicked", lambda *_: self._download())
+        card.pack_start(buttons, False, False, 0)
+        self.add(card)
+        self.set_margin_start(12)
+        self.set_margin_end(12)
+        self.set_margin_bottom(8)
+        self.show_all()
+        stop = data.listen(self._refresh)
+        self.connect("destroy", lambda *_: stop())
+        self._refresh()
+
+    def _offered(self):
+        from plunderhub.core import proton_store
+        offer = self.data.jobs.offer
+        current = proton_store.latest_build("ge")
+        if (offer is None or self.data.jobs.busy() or (current is not None and current.tag == offer.tag)
+                or offer.tag == self.app.settings.get("pm_offer_later")):
+            return None, current
+        return offer, current
+
+    def _refresh(self):
+        offer, current = self._offered()
+        if offer is not None:
+            self.title.set_text(S["offer_title"])
+            # the new one alone: both names don't fit the sidebar
+            self.line.set_text(offer.tag if current is not None else S["offer_missing"].format(tag=offer.tag))
+            self.line.set_tooltip_text(f"{current.tag}  →  {offer.tag}" if current is not None else None)
+            self.later.set_label(self.app._("update_later_btn"))
+            self.download.set_label(S["offer_download"])
+        if self.get_reveal_child() != (offer is not None):
+            self.set_reveal_child(offer is not None)
+
+    def _later(self):
+        from plunderhub.core.persistence import save_settings
+        offer, _current = self._offered()
+        if offer is not None:
+            self.app.settings["pm_offer_later"] = offer.tag
+            save_settings(self.app.settings)
+        self._refresh()
+
+    def _download(self):
+        offer, _current = self._offered()
+        if offer is not None:
+            self.data.jobs.install(offer, latest=True)
+
+
 # --- the home page's card while a Proton downloads --------------------------------
+
+NOTES_CARD_MS = 3000       # how long the sidebar's "what's new" card stays
+
 
 class HomeDownloadCard(Gtk.Revealer):
     """In the main window's sidebar, where the update card sits: shown
@@ -1079,6 +1176,8 @@ class HomeDownloadCard(Gtk.Revealer):
         button.get_style_context().add_class("home-update-card")
         button.get_style_context().add_class("proton-home-card")
         self._notes_tag: Optional[str] = None
+        self._notes_timer: Optional[int] = None
+        self.connect("destroy", lambda *_: self._stop_notes_timer())
         button.connect("clicked", lambda *_: self._clicked(open_page))
         top = Gtk.Box(spacing=10)
         self.ring = _Ring(36)
@@ -1118,7 +1217,7 @@ class HomeDownloadCard(Gtk.Revealer):
         last = self.data.finished()
         failed = (not st["busy"] and proton_store.latest_build("ge") is None and last is not None
                   and bool(last.error) and last.error != "cancelled")
-        # Proton-GE Latest got a new release: what's new in it, once
+        # Proton-GE Latest got a new release: what's new in it, for a few seconds
         notes = None
         if not st["busy"] and last is not None and not last.error and last.kind == "install" \
                 and last.name == proton_store.FAMILIES["ge"].latest_name and last.tag \
@@ -1126,6 +1225,8 @@ class HomeDownloadCard(Gtk.Revealer):
             notes = last.tag
         self._notes_tag = notes if not (busy or failed) else None
         if self._notes_tag:
+            if self._notes_timer is None:
+                self._notes_timer = GLib.timeout_add(NOTES_CARD_MS, self._notes_expired, self._notes_tag)
             self.title.set_text(S["notes_card_title"])
             self.line.set_text(S["notes_card_line"].format(tag=notes))
             self.get_child().set_tooltip_text(None)
@@ -1140,11 +1241,27 @@ class HomeDownloadCard(Gtk.Revealer):
         if self.get_reveal_child() != shown:
             self.set_reveal_child(shown)
 
+    def _stop_notes_timer(self):
+        if self._notes_timer is not None:
+            GLib.source_remove(self._notes_timer)
+            self._notes_timer = None
+
+    def _notes_expired(self, tag: str) -> bool:
+        from plunderhub.core.persistence import save_settings
+        self._notes_timer = None
+        self.app.settings["pm_notes_seen"] = tag
+        save_settings(self.app.settings)
+        if self._notes_tag == tag:
+            self._notes_tag = None
+            self.set_reveal_child(False)
+        return False
+
     def _clicked(self, open_page: Callable[[], None]):
         tag = self._notes_tag
         if not tag:
             open_page()
             return
+        self._stop_notes_timer()
         from plunderhub.core.persistence import save_settings
         from plunderhub.ui.release_notes_window import open_notes
         self.app.settings["pm_notes_seen"] = tag

@@ -202,7 +202,19 @@ def is_steam_appid_running(appid: str) -> Optional[bool]:
     running = _vdf_get_ci(data, "HKCU", "Software", "Valve", "Steam", "apps", str(appid), "Running")
     if running is None:
         return None
-    return str(running).strip() == "1"
+    if str(running).strip() != "1":
+        return False
+    # A Steam that crashed or was killed leaves its games marked running,
+    # and a game can't be started while it counts as running. The pid is
+    # in another namespace for a Flatpak Steam: not checked there.
+    pid = _vdf_get_ci(data, "HKCU", "Software", "Valve", "Steam", "SteamPID")
+    if pid is not None and "/.var/app/" not in str(path) and not _steam_pid_alive(str(pid)):
+        return None     # processes decide
+    return True
+
+
+def _steam_pid_alive(pid: str) -> bool:
+    return pid.isdigit() and pid != "0" and Path(f"/proc/{pid}").exists()
 
 
 def parse_vdf_text(text: str) -> dict:

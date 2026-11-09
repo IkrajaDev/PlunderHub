@@ -18,18 +18,17 @@
 
 - a little after start (the window has built itself up), every build of the
   store into every launcher's folder (one installed since gets them), then
-  Proton-GE Latest checked - and downloaded when it's missing (the first
-  start) or a newer one is out - unless switched off in Settings
-  ("proton_auto_update");
+  a look for a newer Proton-GE: offered on the sidebar's card, downloaded
+  only by its Download button - or by itself when Settings says so
+  ("proton_auto_download", off by default);
 - after every library scan, the folders again (a launcher just installed);
 - while a build downloads, the games that run on it (their own choice or
   their launcher's default) wait: App._proton_waits makes their cards say
   so and their launch refused; the others start as usual;
-- Proton-GE Latest made each launcher's default, once per launcher
-  (core/proton_defaults.py) - one that ran is done at a later round;
 - an update that waited for a game to close is swapped in once it has."""
 
 import threading
+import time
 from pathlib import Path
 from typing import Dict, Optional, Set
 
@@ -39,8 +38,9 @@ from plunderhub.logging_setup import logger
 from plunderhub.ui.proton_jobs import jobs
 
 START_DELAY_MS = 2500
-# Proton-GE Latest missing and fetching it failed: tried again after this
-# (after GitHub's hourly limit resets, when that was it)
+AUTO_KEY = "proton_auto_download"
+# Proton-GE Latest missing and fetching it failed (automatic mode): tried
+# again after this (after GitHub's hourly limit resets, when that was it)
 RETRY_S = 15 * 60
 PENDING_RETRY_S = 30
 
@@ -148,7 +148,6 @@ class ProtonUpkeep:
                 proton_store.reconcile()
             except Exception as e:
                 logger.warning(f"Proton: couldn't put the builds in place: {e}")
-            self._defaults()
             self._moves_waiting()
             GLib.idle_add(self._auto_check)
         threading.Thread(target=work, daemon=True, name="plunderhub-proton-upkeep").start()
@@ -156,10 +155,27 @@ class ProtonUpkeep:
 
     def _auto_check(self) -> bool:
         import sys
-        # a self-test mustn't start a download under its measurements
-        if self.app.settings.get("proton_auto_update", True) and "--self-test" not in sys.argv:
-            self.jobs.update_latest("ge", install_missing=True)
         self._watch_pending()
+        if "--self-test" in sys.argv:
+            return False
+        if self.app.settings.get(AUTO_KEY, False):
+            self.jobs.update_latest("ge", install_missing=True)
+            return False
+
+        def work():
+            try:
+                release = proton_store.latest_outdated("ge")
+            except Exception as e:
+                logger.info(f"Proton: couldn't look for a newer Proton-GE: {e}")
+                return
+            self.jobs.checked_at["ge"] = time.time()
+            GLib.idle_add(self._offer, release)
+        threading.Thread(target=work, daemon=True, name="plunderhub-proton-check").start()
+        return False
+
+    def _offer(self, release) -> bool:
+        self.jobs.offer = release
+        self.jobs._tell(force=True)
         return False
 
     def after_scan(self):
@@ -169,7 +185,6 @@ class ProtonUpkeep:
                 proton_store.reconcile()
             except Exception as e:
                 logger.warning(f"Proton: couldn't put the builds in place: {e}")
-            self._defaults()
             self._moves_waiting()
         threading.Thread(target=work, daemon=True, name="plunderhub-proton-upkeep").start()
 
@@ -179,26 +194,6 @@ class ProtonUpkeep:
         for name, uids in dict(self.app.settings.get(REASSIGN_KEY) or {}).items():
             move_games_off(self.app, name, set(uids))
         move_games_off(self.app, None)
-
-    def _defaults(self):
-        """Proton-GE Latest as the launchers' default where it isn't yet
-        (worker thread); remembered in the settings."""
-        from plunderhub.core import proton_defaults
-        before = dict(self.app.settings.get(proton_defaults.SETTINGS_KEY) or {})
-        try:
-            after = proton_defaults.apply(before)
-        except Exception as e:
-            logger.warning(f"Proton: couldn't set the launchers' default: {e}")
-            return
-        if after != before:
-            GLib.idle_add(self._remember_defaults, after)
-
-    def _remember_defaults(self, done) -> bool:
-        from plunderhub.core import proton_defaults
-        from plunderhub.core.persistence import save_settings
-        self.app.settings[proton_defaults.SETTINGS_KEY] = done
-        save_settings(self.app.settings)
-        return False
 
     # --- games waiting for a build ------------------------------------------------------
 
@@ -213,9 +208,6 @@ class ProtonUpkeep:
         if name is None:
             self._set_waits({})
             self._watch_pending()
-            last = self.jobs.last
-            if last is not None and not last.error and last.kind == "install":
-                threading.Thread(target=self._defaults, daemon=True, name="plunderhub-proton-upkeep").start()
             return
         games = list(self.app.game_index.values())
 
@@ -235,12 +227,12 @@ class ProtonUpkeep:
         threading.Thread(target=work, daemon=True, name="plunderhub-proton-games").start()
 
     def _retry_if_missing(self):
-        """The first Proton-GE Latest couldn't be fetched: tries again by
-        itself a while later - games set to it can't start without it."""
+        """Automatic mode: the first Proton-GE Latest couldn't be fetched -
+        tried again by itself a while later."""
         last = self.jobs.last
         if (getattr(self, "_retry_id", None) is not None or last is None or not last.error
                 or last.error == "cancelled" or proton_store.latest_build("ge") is not None
-                or not self.app.settings.get("proton_auto_update", True)):
+                or not self.app.settings.get(AUTO_KEY, False)):
             return
         problem = last.problem
         minutes = (problem.detail.get("minutes") or 0) if isinstance(problem, proton_store.ProtonError) \

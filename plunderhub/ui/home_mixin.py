@@ -848,7 +848,7 @@ class GameCard(Gtk.Box):
     # --- drawing ---------------------------------------------------------
 
     def _draw_placeholder(self, widget, cr):
-        meta = self.app._home_playtime_text(self.game.uid) if self.app.show_playtime else None
+        meta = (self.app._home_playtime_text(self.game.uid) or None) if self.app.show_playtime else None
         _paint_name_plate(cr, widget, self.game.title, meta, widget.get_allocated_width(),
                           widget.get_allocated_height())
         return False
@@ -1058,7 +1058,7 @@ class GameCard(Gtk.Box):
         of a lift or an animated cover. Made again when any of it changes."""
         app = self.app
         title = self.game.title if app.show_game_titles and app.show_covers else None
-        meta = app._home_playtime_text(self.game.uid) if app.show_playtime and app.show_covers else None
+        meta = (app._home_playtime_text(self.game.uid) or None) if app.show_playtime and app.show_covers else None
         selected = self.game.uid in app.selected_uids
         is_new = app._is_new_game(self.game.uid)
         key = (w, h, phase == "launching", title, meta, app._text_factor(), app.selection_mode, selected,
@@ -1174,7 +1174,7 @@ class GameCard(Gtk.Box):
                 cr.stroke()
         else:
             # No plate behind it - just a soft shadow so it reads on light covers.
-            badge = app._home_launcher_badge(self.game.launcher, 32)
+            badge = app._game_badge(self.game.launcher, self.game.store_icon, 32)
             if badge is not None:
                 bx, by = 26 - logical_size(badge)[0] / 2, 26 - logical_size(badge)[1] / 2
                 shadow = pixbuf_surface(badge)
@@ -1389,6 +1389,13 @@ class HomeMixin:
                                     ("fav", "starred-symbolic", "home_nav_favorites"),
                                     ("recent", "clock-symbolic", "home_nav_recent")):
             self.home_nav_main.add(self._home_nav_row(key, self._icon_image_at_size(icon, 18), text_key))
+        # the stores' own launchers, a click (or H) away; only when there are some
+        self.home_nav_harbors = self._home_nav_row("harbors", self._icon_image_at_size("anchor-symbolic", 18),
+                                                   "section_harbors")
+        self.home_nav_harbors.show_all()
+        self.home_nav_harbors.set_no_show_all(True)
+        self.home_nav_harbors.hide()
+        self.home_nav_main.add(self.home_nav_harbors)
         side.pack_start(self.home_nav_main, False, False, 0)
 
         self.home_nav_head = Gtk.Label(label=self._("sources_header_launchers").upper(), xalign=0)
@@ -1419,6 +1426,8 @@ class HomeMixin:
         self._proton_card = proton_page.HomeDownloadCard(
             self, proton_page.RealProtonData(self), lambda: self.show_proton_page())
         side.pack_start(self._proton_card, False, False, 0)
+        self._proton_offer_card = proton_page.HomeOfferCard(self, self._proton_card.data)
+        side.pack_start(self._proton_offer_card, False, False, 0)
         side.pack_start(self._build_update_card(), False, False, 0)
 
         bottom = Gtk.ListBox()
@@ -1783,7 +1792,9 @@ class HomeMixin:
         row.launcher_actions = [w for w in (action if action.get_sensitive() else None, more) if w is not None]
 
         def update(animate: bool = True):
-            chosen = self.home_nav == row.home_key or (name == "Heroic" and self.home_nav.startswith("s:"))
+            # not while the Treasure Map is the page shown: it's only the page under it then
+            chosen = _treasure_map().shown(self) is None and (
+                self.home_nav == row.home_key or (name == "Heroic" and self.home_nav.startswith("s:")))
             stood_on = row.has_focus() or any(w.has_focus() for w in row.launcher_actions)
             show = chosen or stood_on
             if show and not revealer.get_reveal_child():
@@ -1838,7 +1849,10 @@ class HomeMixin:
             stores = [k for k in HEROIC_STORES if k in present]
             if len(stores) < 2 and not self.home_nav.startswith("s:"):
                 stores = []
-        valid = {"all", "fav", "recent"} | {f"l:{n}" for n in names} | {f"s:{k}" for k in stores}
+        harbors = any(g.store_platform == "store-launcher" for g in self._home_all_visible_games())
+        self.home_nav_harbors.set_visible(harbors)
+        valid = {"all", "fav", "recent"} | ({"harbors"} if harbors else set()) \
+            | {f"l:{n}" for n in names} | {f"s:{k}" for k in stores}
         if self.home_nav not in valid:
             self.home_nav = "all"
         editing = self.reorder_mode
@@ -1871,6 +1885,11 @@ class HomeMixin:
     def _home_select_nav_row(self):
         if _treasure_map().shown(self) is not None:
             # the map: its own row in the main list, nothing among the launchers
+            # (the one picked before folds its Open and menu buttons away)
+            for row in self.home_nav_launchers.get_children():
+                update = getattr(row, "plunderhub_update", None)
+                if update is not None:
+                    update()
             self._home_nav_updating = True
             try:
                 self.home_nav_launchers.unselect_all()
@@ -1900,7 +1919,8 @@ class HomeMixin:
     def _refresh_home_counts(self):
         visible = self._home_all_visible_games()
         counts: Dict[str, int] = {
-            "all": len(visible),
+            "all": sum(1 for g in visible if g.store_platform != "store-launcher"),
+            "harbors": sum(1 for g in visible if g.store_platform == "store-launcher"),
             "fav": sum(1 for g in visible if g.uid in self.favorites),
             "recent": sum(1 for g in visible if self.recent.get(g.uid)),
         }
@@ -1947,6 +1967,14 @@ class HomeMixin:
         self.scroller.get_vadjustment().set_value(0)
 
     # --- keyboard / controller: sidebar and hero --------------------------
+
+    def _toggle_harbors(self) -> bool:
+        """H: the Harbors and back, from anywhere in the main window."""
+        if not self.home_nav_harbors.get_visible():
+            return False
+        on_map = _treasure_map().shown(self) is not None
+        self._set_home_nav("all" if self.home_nav == "harbors" and not on_map else "harbors")
+        return True
 
     def _home_sidebar_rows(self) -> List[Gtk.ListBoxRow]:
         rows = []
@@ -2089,6 +2117,20 @@ class HomeMixin:
         where its hint and the Proton picker are."""
         from plunderhub.ui.game_page import GamePage
         GamePage(self, game, tab="launch", show_hint=True)
+
+    def _game_badge(self, launcher: str, store_icon: Optional[str], size: int) -> Optional[GdkPixbuf.Pixbuf]:
+        """A card's corner logo: the store's, on a game a store launcher installed."""
+        if store_icon and Path(store_icon).is_file():
+            key = (store_icon, size)
+            if key not in self._home_badge_cache:
+                try:
+                    self._home_badge_cache[key] = pixbuf_at_size(Path(store_icon), size, size)
+                except Exception as e:
+                    logger.debug(f"No store logo {store_icon}: {e}")
+                    self._home_badge_cache[key] = None
+            if self._home_badge_cache[key] is not None:
+                return self._home_badge_cache[key]
+        return self._home_launcher_badge(launcher, size)
 
     def _home_launcher_badge(self, launcher: str, size: int = 16) -> Optional[GdkPixbuf.Pixbuf]:
         key = (launcher, size)
@@ -2645,13 +2687,16 @@ class HomeMixin:
                      default: Optional[Gtk.ResponseType] = None,
                      transient_for: Optional[Gtk.Window] = None,
                      extra: Optional[Gtk.Widget] = None,
-                     other_responses: Tuple[Gtk.ResponseType, ...] = ()) -> Gtk.ResponseType:
+                     other_responses: Tuple[Gtk.ResponseType, ...] = (),
+                     art: Optional[Gtk.Widget] = None, guard_ms: int = 0) -> Gtk.ResponseType:
         """The app's own message and question dialog, in the look of
         "Ready to set sail?": a round badge, a heading, a line or two of
         text and pill buttons. buttons are (label, response, kind), the
         first one the way out (Esc / the controller's B); Enter and A
         press default, else the last one. extra goes under the text;
-        other_responses are ones the caller gives the dialog itself."""
+        other_responses are ones the caller gives the dialog itself; art
+        takes the badge's place. guard_ms: a question that comes up by itself
+        ignores this long the click or Enter meant for what was there."""
         parent = transient_for or self._dialog_transient_parent()
         # the main window not shown yet (started from Steam: the question comes first)
         dlg = Gtk.Dialog(transient_for=parent if parent.get_visible() else None, modal=True)
@@ -2688,7 +2733,7 @@ class HomeMixin:
                 cr.paint()
             return False
         badge.connect("draw", draw_badge)
-        card.pack_start(badge, False, False, 0)
+        card.pack_start(art if art is not None else badge, False, False, 0)
 
         column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         title = Gtk.Label(label=heading, xalign=0)
@@ -2714,6 +2759,7 @@ class HomeMixin:
         row = Gtk.Box(spacing=10)
         row.set_halign(Gtk.Align.END)
         row.set_margin_top(18)
+        action_buttons: List[Gtk.Button] = []
         for label, response, kind in buttons:
             # The way out is always marked Esc, even when Enter also
             # picks it (a "Sink it" question defaults to keeping).
@@ -2725,12 +2771,22 @@ class HomeMixin:
                 btn = self._dialog_button(label, kind)
             btn.connect("clicked", lambda _b, r=response: dlg.response(r))
             row.pack_start(btn, False, False, 0)
+            action_buttons.append(btn)
         if buttons:
             column.pack_start(row, False, False, 0)
         card.pack_start(column, True, True, 0)
         area.pack_start(card, True, True, 0)
+        move, press = self._card_dialog_stops(dlg, extra, action_buttons)
 
         def on_key(_w, event) -> bool:
+            way = {Gdk.KEY_Up: "up", Gdk.KEY_Down: "down", Gdk.KEY_Left: "left", Gdk.KEY_Right: "right",
+                   Gdk.KEY_Tab: "next", Gdk.KEY_ISO_Left_Tab: "prev"}.get(event.keyval)
+            if way is not None and move is not None:
+                move(way)
+                return True
+            if event.keyval in (Gdk.KEY_space, Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_ISO_Enter) \
+                    and press is not None and press():
+                return True
             if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_ISO_Enter):
                 dlg.response(go)
                 return True
@@ -2741,8 +2797,11 @@ class HomeMixin:
         dlg.connect("key-press-event", on_key)
 
         def on_controller(action: str):
-            if action == "activate":
-                dlg.response(go)
+            if action in ("up", "down", "left", "right") and move is not None:
+                move(action)
+            elif action == "activate":
+                if press is None or not press():
+                    dlg.response(go)
             elif action == "back":
                 dlg.response(back)
         dlg.plunderhub_nav = on_controller
@@ -2751,12 +2810,94 @@ class HomeMixin:
         dlg.set_focus(None)
         self._enter_dimmed_dialog()
         try:
+            if guard_ms:
+                opened = time.monotonic()
+
+                def held_back(widget, _response):
+                    if (time.monotonic() - opened) * 1000 < guard_ms:
+                        widget.stop_emission_by_name("response")
+                dlg.connect("response", held_back)
             response = dlg.run()
         finally:
             dlg.destroy()
             self._exit_dimmed_dialog()
         # Closed some other way (the window manager): the way out.
         return response if response in responses or response in other_responses else back
+
+    def _card_dialog_stops(self, dlg: Gtk.Dialog, extra: Optional[Gtk.Widget], buttons: List[Gtk.Button]):
+        """Keyboard and controller for a card dialog with picks in it: the
+        arrows / D-pad step over the picks and the buttons (nothing stood on
+        at first), the ring shows where; Enter, Space or A press that one.
+        (move, press) - press says whether something was stood on; (None,
+        None) in a dialog without picks."""
+        stops: List[Gtk.Widget] = []
+
+        def gather(widget):
+            if isinstance(widget, Gtk.ToggleButton):
+                stops.append(widget)
+            elif isinstance(widget, Gtk.Container):
+                widget.foreach(gather)
+        if extra is not None:
+            gather(extra)
+        if not stops:
+            return None, None
+        stops += buttons
+        at: Dict[str, Optional[Gtk.Widget]] = {"on": None}
+
+        def stand(widget: Optional[Gtk.Widget]):
+            if at["on"] is not None:
+                at["on"].get_style_context().remove_class("kb-focus")
+            at["on"] = widget
+            if widget is not None:
+                widget.get_style_context().add_class("kb-focus")
+
+        def live() -> List[Gtk.Widget]:
+            return [w for w in stops if w.get_mapped()]
+
+        def centre(widget: Gtk.Widget) -> Tuple[float, float]:
+            size = widget.get_allocation()
+            x, y = widget.translate_coordinates(dlg, 0, 0) or (0, 0)
+            return x + size.width / 2, y + size.height / 2
+
+        def move(way: str):
+            here = live()
+            if not here:
+                return
+            current = at["on"] if at["on"] in here else None
+            if current is None:
+                stand(here[-1] if way == "prev" else here[0])
+                return
+            if way in ("next", "prev"):
+                stand(here[(here.index(current) + (1 if way == "next" else -1)) % len(here)])
+                return
+            cx, cy = centre(current)
+            best, score = None, None
+            for widget in here:
+                if widget is current:
+                    continue
+                dx, dy = (c - o for c, o in zip(centre(widget), (cx, cy)))
+                along, across = (dy if way in ("up", "down") else dx), (dx if way in ("up", "down") else dy)
+                if way in ("up", "left"):
+                    along = -along
+                # a row's neighbours only sideways; up and down the nearest row, then the closest in it
+                if along < 12 or (way in ("left", "right") and abs(across) > 24):
+                    continue
+                value = (along, abs(across))
+                if score is None or value < score:
+                    best, score = widget, value
+            if best is not None:
+                stand(best)
+
+        def press() -> bool:
+            widget = at["on"]
+            if widget is None or not widget.get_mapped():
+                return False
+            widget.clicked()
+            return True
+
+        for widget in stops[:-len(buttons)] if buttons else stops:
+            widget.connect("clicked", lambda w: at["on"] is not None and stand(w))
+        return move, press
 
     def _confirm_launch(self, title: str, uid: Optional[str], launcher: bool = False) -> bool:
         """"Ready to set sail?" with the game's cover - or, for a launcher
@@ -2820,7 +2961,7 @@ class HomeMixin:
         column.pack_start(kicker, False, False, 0)
         column.pack_start(name, False, False, 0)
         if game is not None:
-            meta = Gtk.Label(label=f"{game.launcher}  ·  {self._home_playtime_text(game.uid)}", xalign=0)
+            meta = Gtk.Label(label="  ·  ".join(filter(None, (game.launcher, self._home_playtime_text(game.uid)))), xalign=0)
             meta.get_style_context().add_class("home-launch-meta" if art is not None else "dim-label")
             column.pack_start(meta, False, False, 0)
         elif launcher:
@@ -2993,6 +3134,8 @@ class HomeMixin:
             games = [g for g in games if g.uid in self.favorites]
         elif nav == "recent":
             games = [g for g in games if self.recent.get(g.uid)]
+        elif nav == "harbors":
+            games = [g for g in games if g.store_platform == "store-launcher"]
         elif nav.startswith("l:"):
             games = [g for g in games if g.launcher == nav[2:]]
         elif nav.startswith("s:"):
@@ -3009,6 +3152,8 @@ class HomeMixin:
             return self._("home_nav_favorites")
         if nav == "recent":
             return self._("home_nav_recent")
+        if nav == "harbors":
+            return self._("section_harbors")
         if nav.startswith("l:"):
             return nav[2:]
         if nav.startswith("s:"):
@@ -3048,10 +3193,21 @@ class HomeMixin:
             box.pack_start(chip, False, False, 0)
         return box
 
+    def _is_store_launcher(self, uid: str) -> bool:
+        game = self.game_index.get(uid)
+        return game is not None and game.store_platform == "store-launcher"
+
+    def _is_launcher_game(self, uid: str) -> bool:
+        game = self.game_index.get(uid)
+        return game is not None and game.store_platform == "launcher-game"
+
     def _home_playtime_text(self, uid: str) -> str:
+        if self._is_store_launcher(uid):
+            return ""       # Battle.net, EA app...: a launcher, its games count
         minutes = self.playtime.get(uid) or 0
         if not minutes:
-            return self._("home_not_played")
+            played = self.recent.get(uid) or uid in self.running_procs or uid in self.detected_running
+            return self._("playtime_under_minute" if played else "home_not_played")
         hours, mins = divmod(minutes, 60)
         return (self._("playtime_hm").format(h=hours, m=mins) if hours
                 else self._("playtime_m").format(m=mins))
@@ -3155,7 +3311,12 @@ class HomeMixin:
         chips = self._home_store_chips()
         if chips is not None:
             heading.pack_start(chips, False, False, 0)
-        if not games:
+        # the stores' own launchers under the games, in a row of their own
+        harbors = [] if self.search_entry.get_text().strip() or self.home_nav == "harbors" else \
+            [g for g in games if g.store_platform == "store-launcher"]
+        if harbors:
+            games = [g for g in games if g.store_platform != "store-launcher"]
+        if not games and not harbors:
             self.content.pack_start(heading, False, False, 0)
             self.content.pack_start(self._build_home_empty(), False, False, 30)
         elif self.card_view_mode == "list":
@@ -3177,8 +3338,17 @@ class HomeMixin:
                 rows_box.pack_start(row, False, False, 0)
                 self._maybe_reveal(row.plunderhub_row_btn, animate)
             column.pack_start(rows_box, False, False, 0)
-            self.content.pack_start(column, False, False, 0)
             self._nav_groups.append({"launcher_widget": None, "container": rows_box, "is_grid": False})
+            if harbors:
+                column.pack_start(self._home_section_heading(self._("section_harbors")), False, False, 0)
+                harbor_rows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+                for game in harbors:
+                    row = self._build_home_list_row(game)
+                    harbor_rows.pack_start(row, False, False, 0)
+                    self._maybe_reveal(row.plunderhub_row_btn, animate)
+                column.pack_start(harbor_rows, False, False, 0)
+                self._nav_groups.append({"launcher_widget": None, "container": harbor_rows, "is_grid": False})
+            self.content.pack_start(column, False, False, 0)
         else:
             self.content.pack_start(heading, False, False, 0)
             flow = self._home_flow()
@@ -3192,6 +3362,15 @@ class HomeMixin:
                 self._maybe_reveal(card.banner_btn, animate)
             self.content.pack_start(flow, False, False, 0)
             self._nav_groups.append({"launcher_widget": None, "container": flow, "is_grid": True})
+            if harbors:
+                self.content.pack_start(self._home_section_heading(self._("section_harbors")), False, False, 0)
+                harbor_flow = self._home_flow()
+                for game in harbors:
+                    card = GameCard(self, game, cover_w, cover_h)
+                    harbor_flow.add(card)
+                    self._maybe_reveal(card.banner_btn, animate)
+                self.content.pack_start(harbor_flow, False, False, 0)
+                self._nav_groups.append({"launcher_widget": None, "container": harbor_flow, "is_grid": True})
         self._finish_home_render()
 
     def _render_reorder_view(self, cover_h: int):
@@ -3353,7 +3532,7 @@ class HomeMixin:
         meta.pack_start(self._home_hero_logo(game.launcher, 20), False, False, 0)
         meta.pack_start(self._home_hero_meta_label(game.launcher), False, False, 0)
         timer_box = None
-        if phase == "running":
+        if phase == "running" and playtime:
             meta.pack_start(self._home_hero_meta_label(
                 self._("home_played_total").format(time=playtime) if self.playtime.get(game.uid) else playtime,
                 "clock"), False, False, 0)
@@ -3378,7 +3557,7 @@ class HomeMixin:
                 return True
             update_timer()
             GLib.timeout_add(1000, update_timer)
-        else:
+        elif playtime:
             meta.pack_start(self._home_hero_meta_label(
                 self._("home_played").format(time=playtime) if self.playtime.get(game.uid) else playtime, "clock"),
                 False, False, 0)
@@ -3717,7 +3896,7 @@ class HomeMixin:
             self._home_list_cols[key].add_widget(cell)
             return cell
         # The same badge as on the grid's cards, at the same size.
-        badge = self._home_launcher_badge(game.launcher, 32)
+        badge = self._game_badge(game.launcher, game.store_icon, 32)
         badge_image = (Gtk.Image.new_from_pixbuf(badge) if badge is not None
                        else self._load_launcher_icon(game.launcher, 32))
         hbox.pack_start(column("launcher", game.launcher, badge_image), False, False, 0)

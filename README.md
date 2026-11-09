@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/tour.avif" alt="A tour of PlunderHub: library, Edit order, Console Mode, game page, Shipwright, Captain's Dashboard and Ship's Controls" width="100%">
+  <img src="docs/tour.avif" alt="A quick tour of PlunderHub: the library, Harbors, a game's page, the Treasure Map, Shipwright, the Dashboard, Console Mode and themes" width="100%">
 </p>
 
 ---
@@ -64,18 +64,18 @@
 <table>
   <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/05-game-menu.md"><img src="docs/screenshots/05-game-menu.png" alt="Set sail menu" width="400"></a><br>
-      <sub>Set sail menu</sub>
+      <a href="docs/gallery/05-library-list.md"><img src="docs/screenshots/05-library-list.png" alt="Library, list view" width="400"></a><br>
+      <sub>Library, list view</sub>
     </td>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/06-library-list.md"><img src="docs/screenshots/06-library-list.png" alt="Library, list view" width="400"></a><br>
-      <sub>Library, list view</sub>
+      <a href="docs/gallery/06-edit-order.md"><img src="docs/screenshots/06-edit-order.png" alt="Edit order" width="400"></a><br>
+      <sub>Edit order</sub>
     </td>
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/07-edit-order.md"><img src="docs/screenshots/07-edit-order.png" alt="Edit order" width="400"></a><br>
-      <sub>Edit order</sub>
+      <a href="docs/gallery/07-game-menu.md"><img src="docs/screenshots/07-game-menu.png" alt="Set sail menu" width="400"></a><br>
+      <sub>Set sail menu</sub>
     </td>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/08-treasure-map.md"><img src="docs/screenshots/08-treasure-map.png" alt="Treasure Map" width="400"></a><br>
@@ -84,12 +84,12 @@
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/09-game-launch-options.md"><img src="docs/screenshots/09-game-launch-options.png" alt="Launch options" width="400"></a><br>
-      <sub>Launch options</sub>
+      <a href="docs/gallery/09-treasure-map-faugus.md"><img src="docs/screenshots/09-treasure-map-faugus.png" alt="Treasure Map: the Faugus tab" width="400"></a><br>
+      <sub>Treasure Map: the Faugus tab</sub>
     </td>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/10-shipwright.md"><img src="docs/screenshots/10-shipwright.png" alt="Shipwright" width="400"></a><br>
-      <sub>Shipwright</sub>
+      <a href="docs/gallery/10-game-launch-options.md"><img src="docs/screenshots/10-game-launch-options.png" alt="Launch options" width="400"></a><br>
+      <sub>Launch options</sub>
     </td>
   </tr>
   <tr>
@@ -98,33 +98,37 @@
       <sub>Proton versions</sub>
     </td>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/12-bilge-cleaning.md"><img src="docs/screenshots/12-bilge-cleaning.png" alt="Bilge cleaning" width="400"></a><br>
+      <a href="docs/gallery/12-shipwright.md"><img src="docs/screenshots/12-shipwright.png" alt="Shipwright" width="400"></a><br>
+      <sub>Shipwright</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <a href="docs/gallery/13-bilge-cleaning.md"><img src="docs/screenshots/13-bilge-cleaning.png" alt="Bilge cleaning" width="400"></a><br>
       <sub>Bilge cleaning</sub>
     </td>
-  </tr>
-  <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/13-captains-dashboard.md"><img src="docs/screenshots/13-captains-dashboard.png" alt="Captain's Dashboard" width="400"></a><br>
+      <a href="docs/gallery/14-captains-dashboard.md"><img src="docs/screenshots/14-captains-dashboard.png" alt="Captain's Dashboard" width="400"></a><br>
       <sub>Captain's Dashboard</sub>
     </td>
+  </tr>
+  <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/14-cargo-hold.md"><img src="docs/screenshots/14-cargo-hold.png" alt="Cargo hold" width="400"></a><br>
+      <a href="docs/gallery/15-cargo-hold.md"><img src="docs/screenshots/15-cargo-hold.png" alt="Cargo hold" width="400"></a><br>
       <sub>Cargo hold</sub>
     </td>
-  </tr>
-  <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/15-settings-appearance.md"><img src="docs/screenshots/15-settings-appearance.png" alt="Ship's Controls" width="400"></a><br>
+      <a href="docs/gallery/16-settings-appearance.md"><img src="docs/screenshots/16-settings-appearance.png" alt="Ship's Controls" width="400"></a><br>
       <sub>Ship's Controls</sub>
     </td>
-    <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/16-themes.md"><img src="docs/screenshots/16-themes.png" alt="15 themes" width="400"></a><br>
-      <sub>15 themes</sub>
-    </td>
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/17-report-bug.md"><img src="docs/screenshots/17-report-bug.png" alt="Report a bug" width="400"></a><br>
+      <a href="docs/gallery/17-themes.md"><img src="docs/screenshots/17-themes.png" alt="15 themes" width="400"></a><br>
+      <sub>15 themes</sub>
+    </td>
+    <td align="center" valign="top" width="50%">
+      <a href="docs/gallery/18-report-bug.md"><img src="docs/screenshots/18-report-bug.png" alt="Report a bug" width="400"></a><br>
       <sub>Report a bug</sub>
     </td>
   </tr>
@@ -136,71 +140,69 @@
 
 <table>
   <tr>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/library.svg" width="40" height="40" alt=""><br>
-      <b>One library</b><br>
-      <sub>Every launcher in one place</sub>
+      <b>One&nbsp;library</b><br>
+      <sub>All&nbsp;launchers&nbsp;together</sub>
     </td>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/map.svg" width="40" height="40" alt=""><br>
-      <b>Treasure Map</b><br>
-      <sub>Every game you own</sub>
+      <b>Treasure&nbsp;Map</b><br>
+      <sub>Every&nbsp;game&nbsp;you&nbsp;own</sub>
     </td>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/protondb.svg" width="40" height="40" alt=""><br>
       <b>ProtonDB</b><br>
-      <sub>Ratings on every game</sub>
+      <sub>Ratings&nbsp;on&nbsp;every&nbsp;game</sub>
     </td>
-  </tr>
-  <tr>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/proton.svg" width="40" height="40" alt=""><br>
       <b>Proton</b><br>
-      <sub>GE and CachyOS, shared</sub>
-    </td>
-    <td align="center" valign="top" width="33%">
-      <img src="docs/icons/launch.svg" width="40" height="40" alt=""><br>
-      <b>Launch options</b><br>
-      <sub>Per-game tweaks</sub>
-    </td>
-    <td align="center" valign="top" width="33%">
-      <img src="docs/icons/console.svg" width="40" height="40" alt=""><br>
-      <b>Console Mode</b><br>
-      <sub>Made for controllers</sub>
+      <sub>GE&nbsp;and&nbsp;CachyOS,&nbsp;shared</sub>
     </td>
   </tr>
   <tr>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/launch.svg" width="40" height="40" alt=""><br>
+      <b>Launch&nbsp;options</b><br>
+      <sub>Per-game&nbsp;tweaks</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/console.svg" width="40" height="40" alt=""><br>
+      <b>Console&nbsp;Mode</b><br>
+      <sub>Made&nbsp;for&nbsp;controllers</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/shipwright.svg" width="40" height="40" alt=""><br>
       <b>Shipwright</b><br>
-      <sub>Tools installed for you</sub>
+      <sub>Tools&nbsp;installed&nbsp;for&nbsp;you</sub>
     </td>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/inspection.svg" width="40" height="40" alt=""><br>
-      <b>Ship inspection</b><br>
-      <sub>Finds and fixes problems</sub>
-    </td>
-    <td align="center" valign="top" width="33%">
-      <img src="docs/icons/bilge.svg" width="40" height="40" alt=""><br>
-      <b>Bilge cleaning</b><br>
-      <sub>Free up disk space</sub>
+      <b>Ship&nbsp;inspection</b><br>
+      <sub>Finds&nbsp;and&nbsp;fixes&nbsp;problems</sub>
     </td>
   </tr>
   <tr>
-    <td align="center" valign="top" width="33%">
-      <img src="docs/icons/dashboard.svg" width="40" height="40" alt=""><br>
-      <b>Captain's Dashboard</b><br>
-      <sub>Playtime and storage</sub>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/bilge.svg" width="40" height="40" alt=""><br>
+      <b>Bilge&nbsp;cleaning</b><br>
+      <sub>Free&nbsp;up&nbsp;disk&nbsp;space</sub>
     </td>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/dashboard.svg" width="40" height="40" alt=""><br>
+      <b>Captain's&nbsp;Dashboard</b><br>
+      <sub>Playtime&nbsp;and&nbsp;storage</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/themes.svg" width="40" height="40" alt=""><br>
       <b>Themes</b><br>
-      <sub>15 themes</sub>
+      <sub>15&nbsp;themes</sub>
     </td>
-    <td align="center" valign="top" width="33%">
+    <td align="center" valign="top" width="25%">
       <img src="docs/icons/light.svg" width="40" height="40" alt=""><br>
       <b>Lightweight</b><br>
-      <sub>Idles when unused</sub>
+      <sub>Idles&nbsp;when&nbsp;unused</sub>
     </td>
   </tr>
 </table>
@@ -208,12 +210,15 @@
 <details>
   <summary>More</summary>
 
-- **Treasure Map**: every game you own on Steam, Epic, GOG and Amazon on one page, installed or not. Install or uninstall one with a click.
-- **Proton**: Proton-GE and Proton-CachyOS, downloaded once and used by every launcher, native or Flatpak. Proton-GE Latest updates itself.
+- **Treasure Map**: every game you own on Steam, Epic, GOG and Amazon on one page, installed or not. Install or uninstall one with a click. Right-click an installed game for the same menu as in your library.
+- **Proton**: Proton-GE and Proton-CachyOS, downloaded once and used by every launcher, native or Flatpak. A new Proton-GE shows up at the bottom left and downloads when you press Download.
 - **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and patch notes links. Launch options with a Recommended preset; winecfg, winetricks and running an .exe in the game's prefix.
 - **Ship inspection**: checks Vulkan drivers (AMD, NVIDIA, Intel, hybrid laptops), 32-bit libraries, the memory map limit, ntsync and fonts, and fixes them in one click.
 - **Shipwright**: installs launchers (native or Flathub) and tools like GameMode, MangoHud, gamescope, controller drivers and much more.
 - **Bilge cleaning**: finds what removed games left behind - Wine prefixes, shader caches, unused Proton versions - with their size. You pick what goes, to the Trash or for good. Backs up the saves in them first and can put them back later.
+- **Harbors**: Battle.net, EA app, Epic, GOG Galaxy, Ubisoft Connect, Rockstar, Amazon and Wargaming get a row of their own under your games, one click (or <kbd>H</kbd>) away. In Console Mode they have their own shelf.
+- **Faugus**: the Treasure Map's Faugus tab installs those store launchers, a Windows game from its installer or .exe, or a Linux game, each in its own Wine prefix. Remove any of them from its menu: the prefix goes to the Trash, is deleted for good or stays - you pick.
+- **Games from store launchers** (new, please report problems): a game you install with one of those launchers gets its own card, cover and launch options, starts through its launcher, and PlunderHub counts its playtime. Launchers themselves count no playtime.
 - **Live status**: see what's running, stop it anytime.
 - **Art**: covers, banners and icons from your launchers, even animated. Add a free SteamGridDB key for more.
 - **Saves**: Heroic cloud sync, backup and restore.
@@ -225,6 +230,17 @@
 - **Updates**: tells you about new versions and can install them.
 
 </details>
+
+### Does it change my existing installs?
+
+PlunderHub reads what your launchers already have. Browsing your library changes nothing, and you need no extra account.
+
+- **Games you own but haven't installed:** Steam and Heroic keep a list of them on your PC. Epic, GOG and Amazon come through your Heroic sign-in.
+- **A new game turns up:** PlunderHub asks whether you want the recommended launch options and Proton-GE Latest for it.
+- **Launch options, installs, uninstalls and cleaning:** only when you ask.
+- **Prefer it automatic?** Settings can apply the recommended options and update Proton-GE without asking. Both are off by default.
+
+Three things happen on their own: Proton versions you've downloaded are linked into your launchers' Proton folders so they can see them, a game set to a Proton that no longer exists moves to Proton-GE Latest (or its launcher's default), and a game you install with a store launcher in Faugus is added to Faugus' list (and leaves it when you uninstall it there).
 
 <p align="center"><sub>9 languages, mostly AI-translated. <a href="#about">Corrections welcome</a>.</sub></p>
 
@@ -314,11 +330,24 @@ Other distros (in the PlunderHub folder):
 
 ## Known limitations
 
-- **GNOME on Wayland** doesn't let apps move windows, so games open on the current workspace there.
 - **Plain GNOME** has no tray. Closing the window quits PlunderHub. Ubuntu's GNOME and the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support/) add one.
 - **Add to Steam** needs Steam closed for a moment, so PlunderHub restarts it. A Flatpak Steam asks for a permission to start PlunderHub. The Snap Steam can't start other programs.
 - **Treasure Map with a Flatpak Heroic** installs games to Heroic's default folders: the Flatpak can't reach others.
+- **Hyprland rules for `steam_app_*` windows** (forced fullscreen, monitor size) also catch a Windows game's installer: it can open as a blank fullscreen window. Leave installer titles (`Setup`, `Select Setup Language`) out of such a rule.
+- **Games inside store launchers** are new and haven't been tried with every store yet. Wargaming Game Center opens on its own page, press Play there. Uninstall them in their launcher.
 - **Read-only systems** (Bazzite, Silverblue): Shipwright installs launchers and tools as Flatpaks. System packages come through your system's own tools.
+
+## Tested launcher versions
+
+Launchers change their file formats now and then. These are the versions PlunderHub was last checked with (November 2026). If yours is newer and something looks off, please [report it](#reporting-bugs).
+
+| Launcher | Version | Status |
+|---|---|---|
+| Steam | client build 1792618285 | Tested |
+| Heroic | 2.22.4 | Tested |
+| Faugus Launcher | 2.5.7 | Tested |
+| Lutris | 0.5.22 | Installed, no games tried on this version yet |
+| Bottles | - | Not checked on a current version yet |
 
 ## Privacy
 
@@ -336,7 +365,7 @@ Settings are stored in <code>~/.config/plunderhub</code>. The SteamGridDB key go
 
 ## Reporting bugs
 
-<p align="center"><img src="docs/screenshots/17-report-bug.png" alt="The Report bug window" width="620"></p>
+<p align="center"><img src="docs/screenshots/18-report-bug.png" alt="The Report bug window" width="620"></p>
 
 1. Open **Report bug** in PlunderHub.
 2. **Report on GitHub** opens the [bug form](https://github.com/IkrajaDev/PlunderHub/issues/new?template=bug_report.yml) with your system filled in.

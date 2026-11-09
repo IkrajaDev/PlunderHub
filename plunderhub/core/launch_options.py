@@ -1656,8 +1656,16 @@ class FaugusBackend(LaunchOptionsBackend):
         except FileNotFoundError:
             return "games.json"
 
+    # A store's launcher in Faugus (Battle.net, EA app...): game options don't
+    # apply to it, and Faugus keeps Proton's Wayland driver off for most of them
+    # (core/faugus_add.LAUNCHER_ENV) - greyed out, and kept so on every save.
+    STORE_LAUNCHER_LOCKED = frozenset({"recommended", "wayland", "fps_check", "fps_entry", "win_fullscreen",
+                                       "win_borderless", "launcher_skip", "fsr", "hdr"})
+
     def unsupported(self, game: GameItem) -> frozenset:
         base = super().unsupported(game)
+        if game.store_platform in ("store-launcher", "launcher-game"):
+            base = base | self.STORE_LAUNCHER_LOCKED
         try:
             _data, entry = self._entries(game)
         except (OSError, ValueError):
@@ -1677,6 +1685,13 @@ class FaugusBackend(LaunchOptionsBackend):
 
     def save(self, game: GameItem, opts: LaunchOptions) -> None:
         data, entry = self._entries(game)
+        if game.store_platform in ("store-launcher", "launcher-game"):
+            from plunderhub.core.faugus_add import LAUNCHER_ENV, launcher_kind
+            words = set(LAUNCHER_SKIP_ARG.split()) | {w for ws in WINDOW_ARGS.values() for w in ws}
+            opts = replace(opts, wayland=False, fps_limit="", fsr=False, hdr=False,
+                           args=" ".join(w for w in opts.args.split() if w not in words),
+                           env={**{k: v for k, v in opts.env.items() if k != "DXVK_FRAME_RATE"},
+                                **LAUNCHER_ENV.get(launcher_kind(str(entry.get("path") or "")) or "", {})})
         before = replace(opts, gamemode=False, args="")
         if opts.gamescope.enabled:
             # Faugus would put its own mangohud wrapper outside gamescope.

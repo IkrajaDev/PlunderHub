@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""The recommended launch options, and a newly added game getting them.
+"""The recommended launch options, and asking about a newly added game.
 
 Recommended: GameMode (where it's installed), an FPS limit at the
 monitor's refresh rate, Esync and Fsync, Wayland on a Wayland session,
@@ -26,15 +26,16 @@ game's -fullscreen argument - only switched on, nothing else changed;
 the ones gamescope does itself (window mode, Wayland, FPS limit) left
 alone while it's on.
 
-Launch options' Recommended button sets them; a game that's new to
-PlunderHub gets them once by itself. Games already there when this came
-- and those of a launcher seen for the first time, which were set up in
-that launcher before - are never changed by themselves."""
+Launch options' Recommended button sets them; for a game that's new to
+PlunderHub the person is asked, once (ui/launch_options_mixin.py). Nothing
+is written without that answer. Games already there when this came - and
+those of a launcher seen for the first time, which were set up in that
+launcher before - aren't asked about."""
 
 import copy
 import os
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from plunderhub.core.launch_options import (
     LaunchOptions, LaunchOptionsBackend, backend_for, missing_tools, window_mode_in, with_window_mode,
@@ -44,6 +45,8 @@ from plunderhub.logging_setup import logger
 
 # {"launchers": [...], "games": [...]}: what PlunderHub knew already
 SETTINGS_KEY = "launch_defaults_known"
+# Settings' switch: new games get the recommended options without a question
+AUTO_KEY = "auto_recommended_new_games"
 
 
 @dataclass
@@ -122,40 +125,57 @@ def changes(before: LaunchOptions, after: LaunchOptions) -> List[Tuple[str, str,
     return found
 
 
-def apply_to_new(games: Iterable[GameItem], known: Optional[dict], ctx: Context,
-                 saved: Callable[[GameItem], None] = lambda g: None) -> dict:
-    """Gives the games new to PlunderHub the recommended options, once
-    each (worker thread); returns what's known now. The first time (known
-    None) every game there is known and nothing changes; a launcher's
-    games the first time it's seen are known as they are too. A Steam
-    game waits while Steam runs (its options can't be written then)."""
+def new_games(games: Iterable[GameItem], known: Optional[dict]) -> Tuple[dict, List[GameItem]]:
+    """What's known now, and the games to ask about (worker thread). The
+    first time (known None) every game there is known; a launcher's games
+    the first time it's seen are known as they are too. A game no longer
+    in its launcher is forgotten, so installing it again asks again (only
+    for launchers this scan found games in: one switched off or gone for
+    now keeps its games known)."""
     games = list(games)
     launchers: Set[str] = {g.launcher for g in games}
     if not isinstance(known, dict):
-        return {"launchers": sorted(launchers), "games": sorted(g.uid for g in games)}
+        return {"launchers": sorted(launchers), "games": sorted(g.uid for g in games)}, []
     known_launchers = set(known.get("launchers") or [])
     known_games = set(known.get("games") or [])
+    uids = {g.uid for g in games}
+    scanned = {uid.split(":", 1)[0] for uid in uids}
+    known_games = {uid for uid in known_games if uid in uids or uid.split(":", 1)[0] not in scanned}
+    ask: List[GameItem] = []
     for game in games:
         if game.uid in known_games:
             continue
         if game.launcher not in known_launchers:
             known_games.add(game.uid)       # set up in its launcher before PlunderHub saw it
             continue
+        if game.store_platform == "store-launcher":
+            known_games.add(game.uid)       # a store's own launcher (Faugus): no game options for it
+            continue
         backend = backend_for(game)
         if backend is None:
             known_games.add(game.uid)
             continue
-        try:
-            if backend.blocking_process_running():
-                continue                    # Steam runs - next round
-            before = backend.load(game)
-            after = recommended(before, ctx, backend, game, tools_missing(game))
-            if after != before:
-                backend.save(game, after)
-                logger.info(f"Launch options: the recommended ones for the new game {game.title!r} "
-                            f"({backend.where(game)})")
-                saved(game)
-        except Exception as e:
-            logger.warning(f"Couldn't give {game.title!r} the recommended launch options: {e}")
-        known_games.add(game.uid)
-    return {"launchers": sorted(known_launchers | launchers), "games": sorted(known_games)}
+        ask.append(game)
+    return {"launchers": sorted(known_launchers | launchers), "games": sorted(known_games)}, ask
+
+
+def apply_answer(game: GameItem, ctx: Context, use_recommended: bool, proton: Optional[str]) -> bool:
+    """What the person picked for a new game (worker thread); False while
+    its launcher can't be written."""
+    backend = backend_for(game)
+    try:
+        if backend is None:
+            return True
+        if backend.blocking_process_running():
+            return False
+        before = backend.load(game)
+        after = recommended(before, ctx, backend, game, tools_missing(game)) if use_recommended \
+            else copy.deepcopy(before)
+        if proton:
+            after.proton = proton
+        if after != before:
+            backend.save(game, after)
+            logger.info(f"New game {game.title!r}: the options picked for it saved ({backend.where(game)})")
+    except Exception as e:
+        logger.warning(f"Couldn't save the options picked for {game.title!r}: {e}")
+    return True

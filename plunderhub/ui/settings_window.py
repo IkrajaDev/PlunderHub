@@ -707,15 +707,25 @@ class SettingsWindow:
         from plunderhub.ui.proton_page import S as proton_texts
         proton_btn = self.button(proton_texts["manage"], "wine-symbolic")
         proton_btn.connect("clicked", lambda *_: (self.stop_edit(), self.app.show_proton_page(parent=self.dialog)))
-        proton_auto = self.switch(self.app.settings.get("proton_auto_update", True))
+        proton_auto = self.switch(self.app.settings.get("proton_auto_download", False))
 
         def proton_auto_toggled(switch, _pspec):
             from plunderhub.core.persistence import save_settings
-            self.app.settings["proton_auto_update"] = switch.get_active()
+            self.app.settings["proton_auto_download"] = switch.get_active()
             save_settings(self.app.settings)
         proton_auto.connect("notify::active", proton_auto_toggled)
         self.row(card, proton_texts["auto_title"], proton_texts["auto_sub"], [proton_btn, proton_auto],
                  icon="wine-symbolic")
+        from plunderhub.core import launch_defaults
+        auto_recommended = self.switch(self.app.settings.get(launch_defaults.AUTO_KEY, False))
+
+        def auto_recommended_toggled(switch, _pspec):
+            from plunderhub.core.persistence import save_settings
+            self.app.settings[launch_defaults.AUTO_KEY] = switch.get_active()
+            save_settings(self.app.settings)
+        auto_recommended.connect("notify::active", auto_recommended_toggled)
+        self.row(card, self._("lo_new_auto_title"), self._("lo_new_auto_sub"), [auto_recommended],
+                 icon="rocket-symbolic")
         protondb = self.switch(self.app.settings.get("protondb_enabled", True))
 
         def protondb_toggled(switch, _pspec):

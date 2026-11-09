@@ -1,9 +1,9 @@
 <h2 align="center">Treasure Map</h2>
 
 <p align="center">
-  <a href="07-edit-order.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 8 / 17 &nbsp;·&nbsp;
-  <a href="09-game-launch-options.md"><b>Next →</b></a>
+  <a href="07-game-menu.md"><b>← Previous</b></a>
+  &nbsp;·&nbsp; 8 / 18 &nbsp;·&nbsp;
+  <a href="09-treasure-map-faugus.md"><b>Next →</b></a>
 </p>
 
 <p align="center">

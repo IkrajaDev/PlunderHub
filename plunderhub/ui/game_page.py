@@ -317,7 +317,7 @@ class GameMenu(Gtk.Popover):
         title.set_ellipsize(Pango.EllipsizeMode.END)
         title.set_max_width_chars(26)
         title.get_style_context().add_class("gm-title")
-        sub = Gtk.Label(label=f"{game.launcher}  ·  {app._home_playtime_text(game.uid)}", xalign=0)
+        sub = Gtk.Label(label="  ·  ".join(filter(None, (game.launcher, app._home_playtime_text(game.uid)))), xalign=0)
         sub.get_style_context().add_class("gm-row-sub")
         titles.pack_start(title, False, False, 0)
         titles.pack_start(sub, False, False, 0)
@@ -361,7 +361,10 @@ class GameMenu(Gtk.Popover):
         elif app.save_locations(game):
             page.pack_start(self._row("document-save-symbolic", _("gm_backup"), _("gm_backup_sub"), chevron=True,
                                       side="backup"), False, False, 0)
-        page.pack_start(self._separator(), False, False, 0)
+        # select and reorder are the library pages' own: not on the Treasure Map
+        on_map = getattr(app, "_tm_active", False)
+        if not on_map:
+            page.pack_start(self._separator(), False, False, 0)
 
         split = Gtk.Box(homogeneous=True)
         selected = app.selection_mode and game.uid in app.selected_uids
@@ -382,7 +385,8 @@ class GameMenu(Gtk.Popover):
             b.add(hb)
             b.connect("clicked", lambda *_a, f=action: (self.popdown(), f()))
             split.pack_start(b, True, True, 0)
-        page.pack_start(split, False, False, 0)
+        if not on_map:
+            page.pack_start(split, False, False, 0)
         from plunderhub.ui import treasure_map
         treasure_map.add_uninstall_row(self, page)
         return page
@@ -424,7 +428,7 @@ class GameMenu(Gtk.Popover):
                              lambda: app._open_wineprefix_folder(game)))
             return rows
         rows = []
-        if game.store_platform != "sideload":
+        if game.store_platform not in ("sideload", "store-launcher"):
             # Hand-added Heroic games have no store - the fallback would
             # open an unrelated Steam search.
             rows.append(("store-symbolic", _("gm_store"), _("gm_store_sub"), lambda: app._open_store_page(game)))
@@ -1147,7 +1151,7 @@ class GamePage(Gtk.Dialog):
         self._text(cr, game.title, ix + iw + 16, iy, 24, True, (fg.red, fg.green, fg.blue, 1), width=text_w,
                    heavy=True)
         last = app.recent.get(game.uid)
-        meta = [game.launcher, app._home_playtime_text(game.uid)]
+        meta = [m for m in (game.launcher, app._home_playtime_text(game.uid)) if m]
         if last:
             meta.append(self._("home_last_played").format(when=app._home_ago_text(last)))
         self._text(cr, "  ·  ".join(meta), ix + iw + 16, iy + 36, 11, False, (fg.red, fg.green, fg.blue, 0.62),
@@ -1235,6 +1239,7 @@ class GamePage(Gtk.Dialog):
         # rows: 0 the Proton hint, 1 version / runner / size, 2 where it
         # lives, 3 the facts, 4 a note (one row each - the places once sat
         # in row 1 under the version cards after the hint pushed them down)
+        self._version_card, self._runner_card = version_card, runner_card
         grid.attach(version_card, 0, 1, 1, 1)
         grid.attach(runner_card, 1, 1, 1, 1)
         grid.attach(size_card, 2, 1, 1, 1)
@@ -1272,6 +1277,8 @@ class GamePage(Gtk.Dialog):
                              (_("gp_playtime"), app._home_playtime_text(game.uid)),
                              (_("gp_last_played"), app._home_ago_text(last) if last
                               else _("home_never_played_short"))):
+            if not value:
+                continue    # a store's launcher has no playtime
             card, _v = self._card(label, value)
             self._facts_row.pack_start(card, True, True, 0)
         grid.attach(self._facts_row, 0, 3, 3, 1)
@@ -1339,6 +1346,9 @@ class GamePage(Gtk.Dialog):
         version = runner = None
         try:
             version = app._resolve_game_version(game)
+            if not version and game.uid.startswith("faugus:") and (game.env or {}).get("WINEPREFIX"):
+                from plunderhub.core.faugus_add import gog_version
+                version = gog_version(game.env["WINEPREFIX"], game.install_dir)
         except Exception as e:
             logger.debug(f"Couldn't read the version of {game.title!r}: {e}")
         try:
@@ -1356,7 +1366,13 @@ class GamePage(Gtk.Dialog):
         if self.get_window() is None:
             return False
         self.size_val.set_text(format_bytes(size) if size is not None else "-")
-        self.version_val.set_text(version or self._("gp_unknown"))
+        if version:
+            self.version_val.set_text(version)
+        else:                       # nothing to say: the card goes, Runs with takes its place
+            grid = self._version_card.get_parent()
+            grid.remove(self._version_card)
+            grid.child_set_property(self._runner_card, "left-attach", 0)
+            grid.child_set_property(self._runner_card, "width", 2)
         self.runner_val.set_text(runner or self._("gp_native"))
         return False
 
@@ -1441,6 +1457,8 @@ class LaunchOptionsTab(Gtk.Box):
         notices = []
         if backend.note_key:
             notices.append((self._(backend.note_key), "triangle-alert-symbolic", False))
+        if self.game.store_platform == "store-launcher":
+            notices.append((self._("lo_store_launcher_note"), "dialog-information-symbolic", False))
         if backend.blocking_process_running():
             notices.append((self._("lo_steam_running"), "triangle-alert-symbolic", True))
         elif backend.advisory_process_running():
@@ -1640,6 +1658,7 @@ class LaunchOptionsTab(Gtk.Box):
         recommend = self.app._dialog_button(_("lo_recommended_btn"), "accent")
         recommend.set_valign(Gtk.Align.CENTER)
         recommend.connect("clicked", lambda *_a: self._apply_recommended())
+        self.ui["recommended"] = recommend
         col.pack_start(self._section("non-starred-symbolic", _("lo_recommended"), [
             self._row(_("lo_recommended_title"), None, recommend)]), False, False, 0)
 

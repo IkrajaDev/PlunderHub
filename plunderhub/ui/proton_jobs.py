@@ -63,6 +63,8 @@ class ProtonJobs:
 
     # --- who's watching -------------------------------------------------------------
 
+    offer = None    # a newer Proton-GE found at start, waiting for the Download button
+
     def listen(self, callback: Callable[[], None]) -> Callable[[], None]:
         """Calls callback (main thread) on every change; returns the
         function that stops it."""

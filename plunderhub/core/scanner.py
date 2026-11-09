@@ -34,7 +34,7 @@ from plunderhub.core.models import GameItem
 from plunderhub.core.persistence import load_hidden, load_json, save_hidden
 from plunderhub.core.scan_paths import (
     LAUNCHER_FLATPAK_IDS, STEAM_NON_GAME_NAME_PREFIXES, STEAM_PROTON_NAME_PATTERN,
-    STEAM_SOUNDTRACK_NAME_PATTERN, bottles_library_path, faugus_games_path, faugus_umu_path,
+    STEAM_SOUNDTRACK_NAME_PATTERN, bottles_library_path, faugus_games_path, faugus_own_runner, faugus_umu_path,
     invocation_for_data, lutris_db_path, resolve_launcher_invocation,
 )
 from plunderhub.core.steam_heroic import heroic_roots, parse_appmanifest, steam_library_paths, steam_roots
@@ -261,17 +261,16 @@ def read_faugus_playtimes() -> Dict[str, Tuple[int, Optional[int]]]:
     return result
 
 
-def _escape_bottles_uri_segment(value: str) -> str:
-    """Bottles' own bottles:run/"<bottle>"/"<name>" URI scheme quotes
-    each segment with literal double quotes - a bottle or game name
-    that itself contains a " would otherwise break that syntax
-    outright (e.g. corrupting which bottle/game gets launched, or
-    making the whole URI unparseable). Backslash-escaping just that
-    character leaves the overwhelmingly common case (no quote in the
-    name) completely unchanged, rather than percent-encoding the
-    whole segment, which would alter every URI's formatting (spaces,
-    etc.) for a scheme this project doesn't control the parser for."""
-    return value.replace('"', '\\"')
+def _bottles_command(invocation: List[str], bottle: str, program: str) -> List[str]:
+    """bottles-cli, as Bottles' own desktop entries start a program. Its
+    bottles:run/ link only hands over to the same command, and on the way
+    splits at every / and keeps quotes in the name (no such program then);
+    it also needs the link's handler registered on the desktop."""
+    arguments = ["run", "-b", bottle, "-p", program]
+    if invocation[:2] == ["flatpak", "run"]:
+        return ["flatpak", "run", "--command=bottles-cli", invocation[2], *arguments]
+    cli = which("bottles-cli")
+    return [cli, *arguments] if cli else ["xdg-open", f"bottles:run/{bottle}/{program}"]
 
 
 def bottles_program_executables(bottle_dir: str, program_id: str, program_name: str) -> Tuple[str, ...]:
@@ -470,14 +469,18 @@ class Scanner:
         games_path = faugus_games_path()
         if games_path is None:
             return []
+        # Faugus' own runner when it has one (it fetches what's missing itself)
+        own_runner = faugus_own_runner(games_path)
         umu_path = faugus_umu_path()
-        if umu_path is None:
+        if umu_path is None and own_runner is None:
             return []
         data = load_json(games_path)
         if not isinstance(data, list):
             return []
         games: List[GameItem] = []
         seen = set()
+        from plunderhub.core.faugus_store import known as store_games
+        launcher_games = store_games()
         for item in data:
             if not isinstance(item, dict):
                 continue
@@ -503,9 +506,17 @@ class Scanner:
                 runner = _faugus_default_runner(games_path)
             if runner == "Steam":
                 continue    # a Steam game Faugus only hands to Steam: listed under Steam
-            cmd, launch_env = _faugus_command(str(umu_path), exe_path, item)
             env: Dict[str, str] = {}
-            if runner == "Linux-Native":
+            launch_env: Dict[str, str] = {}
+            if own_runner is not None:
+                cmd = [*own_runner, "--game", str(game_id)]
+            else:
+                cmd, launch_env = _faugus_command(str(umu_path), exe_path, item)
+            if own_runner is not None:
+                # the runner reads the rest from games.json; this says where the prefix is
+                if runner != "Linux-Native":
+                    env["WINEPREFIX"] = prefix_path
+            elif runner == "Linux-Native":
                 if item.get("disable_umu"):
                     cmd.remove(str(umu_path))     # run as it is
                 else:
@@ -517,7 +528,7 @@ class Scanner:
                 if runner:
                     env["PROTONPATH"] = runner
             protonfix = item.get("protonfix") or ""
-            if protonfix:
+            if protonfix and own_runner is None:
                 env["GAMEID"] = protonfix
             # Faugus puts launch_arguments after these on its command line,
             # so its own VAR=value words win over them.
@@ -527,6 +538,10 @@ class Scanner:
                 install_dir = str(Path(exe_path).parent)
             except Exception as e:
                 logger.debug(f"Couldn't resolve Faugus install dir from {exe_path!r}: {e}")
+            from plunderhub.core.faugus_add import launcher_kind
+            of_launcher = launcher_games.get(str(game_id))
+            if of_launcher:                 # a game a store launcher installed, started through it
+                install_dir = of_launcher.get("install_dir")
             games.append(GameItem(
                 launcher="Faugus",
                 title=str(title),
@@ -535,6 +550,11 @@ class Scanner:
                 launch_label=shlex.join(cmd),
                 env=env,
                 install_dir=install_dir,
+                # a store's own launcher (Battle.net, EA app...) in Faugus: no store page,
+                # no art looked up by its name (that finds some game called alike)
+                store_platform="launcher-game" if of_launcher else "store-launcher" if launcher_kind(exe_path) else None,
+                exe_path="" if of_launcher else str(exe_path),
+                store_icon=str(games_path.parent / "icons" / f"{of_launcher['launcher']}.png") if of_launcher else None,
             ))
         games.sort(key=lambda g: g.title.lower())
         return games
@@ -612,14 +632,14 @@ class Scanner:
             if uid in seen:
                 continue
             seen.add(uid)
-            uri = f'bottles:run/"{_escape_bottles_uri_segment(bottle_name)}"/"{_escape_bottles_uri_segment(name)}"'
+            cmd = _bottles_command(bottles_invocation, str(bottle_name), str(name))
             install_dir = str(bottles_root / bottle_path) if bottle_path else None
             games.append(GameItem(
                 launcher="Bottles",
                 title=str(name),
                 uid=uid,
-                launch_cmd=["xdg-open", uri],
-                launch_label=uri,
+                launch_cmd=cmd,
+                launch_label=shlex.join(cmd),
                 install_dir=install_dir,
             ))
         games.sort(key=lambda g: g.title.lower())

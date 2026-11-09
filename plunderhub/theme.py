@@ -1208,6 +1208,17 @@ button.home-list-row-btn.game-cover:not(.game-cover-selected):active {{
 button.home-pill-ghost {{ border-radius: 999px; padding: 6px 16px; background-color: transparent; }}
 /* The card dialogs (HomeMixin._card_dialog). */
 .home-dialog-title {{ font-size: 135%; font-weight: 800; }}
+button.newgame-tile {{
+    background-image: none;
+    background-color: {tint(0.06)};
+    border: 1px solid {tint(0.16)};
+    border-radius: 14px;
+    padding: 10px 14px;
+}}
+button.newgame-tile:hover {{ background-color: {tint(0.12)}; }}
+button.newgame-tile:checked {{ background-color: {tint(0.20)}; border-color: {accent}; }}
+.newgame-tile-title {{ font-weight: 700; }}
+.newgame-restart {{ color: #f0b35a; font-weight: 600; }}
 /* The missing-art result (CoversMixin._art_fill_result): two number tiles. */
 .art-result-tile {{ background-color: {tint(0.08)}; border-radius: 14px; padding: 10px 18px 12px 18px; }}
 .art-result-num {{ font-size: 260%; font-weight: 800; }}
@@ -1760,6 +1771,11 @@ scale.kb-focus, entry.kb-focus, spinbutton.kb-focus, row.kb-focus, row.kb-focus:
     outline: none;
     box-shadow: 0 0 0 2px alpha({fg}, 0.9);
 }}
+/* a check box or radio: its node isn't "button" - the ring on the box itself */
+checkbutton.kb-focus check, checkbutton.kb-focus:hover check, radiobutton.kb-focus radio {{
+    outline: none;
+    box-shadow: 0 0 0 3px alpha({fg}, 0.9);
+}}
 """
 
 
@@ -1938,13 +1954,12 @@ headerbar button:active,
 .window-control-btn:hover {{
     background-color: rgba({accent_rgb}, 0.16);
     border-color: transparent;
-    color: {p['fg']};
 }}
 /* Close gets the red hover every desktop uses, so the one destructive
-   control in the row is identifiable before it's clicked. */
+   control in the row is identifiable before it's clicked. The icons keep
+   their colour on hover: a colour change lays the whole window out. */
 .window-close-btn:hover {{
     background-color: #c0392b;
-    color: #ffffff;
 }}
 headerbar .title, .titlebar .title {{
     color: {p['fg']};

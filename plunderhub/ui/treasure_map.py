@@ -36,6 +36,7 @@ Smooth with hundreds of games:
   (a few hundred, not all 700+)."""
 
 import math
+import os
 import re
 import threading
 import weakref
@@ -56,9 +57,9 @@ from plunderhub.core import treasure as hold_data
 from plunderhub.core.treasure import OwnedGame, StoreState
 from plunderhub.ui.game_page import TIER_COLOURS
 
-TABS = ("all", "steam", "epic", "gog", "amazon")
-STORE_NAMES = {"steam": "Steam", "epic": "Epic", "gog": "GOG", "amazon": "Amazon"}
-LAUNCHER_OF = {"steam": "Steam", "epic": "Heroic", "gog": "Heroic", "amazon": "Heroic"}
+TABS = ("all", "steam", "epic", "gog", "amazon", "faugus")
+STORE_NAMES = {"steam": "Steam", "epic": "Epic", "gog": "GOG", "amazon": "Amazon", "faugus": "Faugus"}
+LAUNCHER_OF = {"steam": "Steam", "epic": "Heroic", "gog": "Heroic", "amazon": "Heroic", "faugus": "Faugus"}
 KIND_TAG = {"demo": "tm_kind_demo", "application": "tm_kind_software", "beta": "tm_kind_beta", "mod": "tm_kind_mod"}
 SORTS = (("alpha", "sort_alpha"), ("playtime", "sort_playtime"),
          ("newest", "tm_sort_newest"), ("oldest", "tm_sort_oldest"))
@@ -87,6 +88,17 @@ stack.tm-body { background-image: none; background-color: transparent; }
 """
 
 
+
+
+def hold_data_faugus():
+    from plunderhub.core import faugus_add
+    return faugus_add
+
+
+def faugus_ui():
+    """plunderhub.ui.faugus_aboard, imported when first needed (it imports this module)."""
+    from plunderhub.ui import faugus_aboard
+    return faugus_aboard
 
 
 def _hex(value: str) -> Tuple[float, float, float]:
@@ -119,6 +131,8 @@ def _load_cover_at(path: Path, tw: int, th: int) -> GdkPixbuf.Pixbuf:
 # --- covers: decoded off the main thread, a screen ahead ---------------------------
 
 class CoverLoader:
+    library_art = None      # game -> the library's cover of it, if it has one
+
     """Newest request first (what was just scrolled to), 3 workers, at
     the tile's own pixel size. A small LRU keeps them: one evicted is
     read again from the disk cache (fast) if it comes back on screen."""
@@ -160,6 +174,15 @@ class CoverLoader:
             self._pending[game.uid] = game
         self._wake.release()
 
+    def _path_of(self, game):
+        """The cover the library shows for an Aboard game, else the store's."""
+        return (self.library_art(game) if self.library_art is not None else None) \
+            or hold_data.cover_file(game, self.cache_dir)
+
+    def forget(self, uid: str):
+        self.files.pop(uid, None)
+        self.pixbufs.pop(uid, None)
+
     def stop(self):
         self._stop = True
         for _ in range(WORKERS):
@@ -177,12 +200,18 @@ class CoverLoader:
                 size = self.size
             result = None
             try:
-                path = self.files.get(uid) if uid in self.files else hold_data.cover_file(game, self.cache_dir)
+                path = self.files.get(uid) if uid in self.files else self._path_of(game)
                 self.files[uid] = path
                 if path is not None:
                     result = _load_cover_at(path, *size)
             except Exception:
                 result = None
+                try:            # the library's own art may be a format only it reads
+                    path = hold_data.cover_file(game, self.cache_dir)
+                    self.files[uid] = path
+                    result = _load_cover_at(path, *size) if path is not None else None
+                except Exception:
+                    result = None
             # above the redraw's priority: at the default idle one, covers only
             # landed once a scroll stopped (frames kept the loop busy)
             GLib.idle_add(self._done, uid, result, size, priority=GLib.PRIORITY_HIGH_IDLE)
@@ -434,6 +463,9 @@ class MapGrid(Gtk.EventBox):
         return False
 
     def _on_click(self, _w, ev):
+        if ev.button == 3:
+            self._context_menu(ev)
+            return True
         if ev.button != 1:
             return False
         f = self.app._text_factor()
@@ -446,6 +478,16 @@ class MapGrid(Gtk.EventBox):
         if it is not None:
             self.view.on_tile(it.game)
         return True
+
+    def _context_menu(self, ev):
+        """An Aboard game's right-click: the library's own menu."""
+        it = self._hit(ev.x, ev.y)
+        if it is None or not it.game.installed or it.game.uid in self.view.downloads:
+            return
+        game = self.view.library_game(it.game)
+        if game is not None:
+            self._set_hover(None)
+            self.app._game_menu_at(self, ev, game)
 
     def _visible(self, margin: float = 0):
         top = self.adj.get_value() - margin
@@ -538,7 +580,7 @@ class MapGrid(Gtk.EventBox):
         cr.set_source_rgba(*c["fg"], 0.7)
         cr.stroke()
         x += 2 * k + 10 * f
-        shown = self.app._({"Aboard": "tm_aboard", "Buried": "tm_buried"}.get(hd.text, hd.text))
+        shown = self.app._({"Aboard": "tm_aboard", "Buried": "tm_buried", "Harbors": "section_harbors"}.get(hd.text, hd.text))
         used = _text_w(self, cr, shown, 18 * f, True)
         _pango_text(cr, self, shown, x, 10 * f, W, 18 * f, True, (*c["fg"], 1))
         x += used + 12 * f
@@ -568,7 +610,8 @@ class MapGrid(Gtk.EventBox):
         hover = it is self.hover
         sig = (self.tile_w, g.installed, hover, g.uid in self.view.removing, self.app._text_factor(),
                getattr(self.app, "show_game_titles", True), getattr(self.app, "show_playtime", True), self.view.loader.known(g.uid), self.view.tab == "all",
-               self.app.theme, None if dl is None else (dl["state"], int(dl["frac"] * 100), dl.get("place")))
+               self.app.theme, None if dl is None else (dl["state"], int(dl["frac"] * 100), dl.get("place"), dl.get("phase")),
+               g.uid in self.view.faugus_running)
         hit = self._tiles.get(g.uid)
         if hit is not None and hit[0] == sig:
             self._tiles.move_to_end(g.uid)
@@ -583,6 +626,8 @@ class MapGrid(Gtk.EventBox):
 
     def _render_tile(self, it, c, accent, hover, dl):
         g = it.game
+        if g.uid == faugus_ui().ADD_UID:
+            return faugus_ui().render_add_tile(self, it, c, accent, hover)
         m, w, h = self.M, it.w, it.h
         d = self.get_scale_factor()
         tw, th = int(w + 2 * m), int(h + self.TEXT_H + 2 * m)
@@ -636,7 +681,8 @@ class MapGrid(Gtk.EventBox):
             cr.fill()
         cr.restore()
         # the launcher's badge, top left, like the library's cards
-        badge = self._badge(LAUNCHER_OF[g.store])
+        badge = self.app._game_badge(LAUNCHER_OF[g.store], g.extra.get("store_icon"), 32) \
+            if g.extra.get("store_icon") else self._badge(LAUNCHER_OF[g.store])
         if badge is not None:
             bw, bh = logical_size(badge)
             bx, by = x + 10, y + 10
@@ -679,10 +725,19 @@ class MapGrid(Gtk.EventBox):
             px, py, pw, ph = self._panel(cr, x, y, w, h, 64 * f)
             _pango_text(cr, self, self.app._("tm_going_overboard"), px + 12, py + (ph - 18 * f) / 2, pw - 24,
                         13 * f, True, (1, 1, 1, 0.97), align_center=True)
+        elif dl is not None and dl["state"] != "done" and g.store == "faugus":
+            faugus_ui().draw_phase_progress(self, cr, x, y, w, h, dl, accent, f)
         elif dl is not None and dl["state"] != "done":
             self._draw_progress(cr, x, y, w, h, dl, accent, f)
+        if g.uid in self.view.faugus_running and not (dl is not None and dl["state"] != "done"):
+            faugus_ui().draw_running_chip(self, cr, x, y, w, accent, f)
+        if (dl is not None and dl["state"] != "done") or g.uid in self.view.removing:
+            pass
         elif hover:
-            label = ("▶  " + self.app._("launch_label")) if g.installed else ("⤓  " + self.app._("tm_dig_up"))
+            if g.uid in self.view.faugus_running:
+                label = "■  " + self.app._("tm_fg_close")
+            else:
+                label = ("▶  " + self.app._("launch_label")) if g.installed else ("⤓  " + self.app._("tm_dig_up"))
             pw = _text_w(self, cr, label, 14 * f, True) + 44 * f
             ph = 44 * f
             px, py = x + (w - pw) / 2, y + (h - ph) / 2
@@ -721,8 +776,30 @@ class MapGrid(Gtk.EventBox):
         cr.stroke()
         return px, py, pw, ph
 
+    def reveal(self, cr, x, y, w, h, frac, accent, f=1.0):
+        """Any install on its tile: the cover comes to light from the bottom
+        up as it goes on."""
+        level = y + h * (1 - frac)
+        cr.save()
+        _rounded(cr, x, y, w, h, 14)
+        cr.clip()
+        cr.rectangle(x, y, w, level - y)
+        cr.set_source_rgba(0.02, 0.05, 0.06, 0.80)
+        cr.fill()
+        if frac > 0:
+            glow = cairo.LinearGradient(0, level - 34 * f, 0, level)
+            glow.add_color_stop_rgba(0, *accent, 0)
+            glow.add_color_stop_rgba(1, *accent, 0.5)
+            cr.rectangle(x, level - 34 * f, w, 34 * f)
+            cr.set_source(glow)
+            cr.fill()
+            cr.rectangle(x, level - 1.5, w, 3)
+            cr.set_source_rgba(*accent, 1)
+            cr.fill()
+        cr.restore()
+
     def _draw_progress(self, cr, x, y, w, h, dl, accent, f=1.0):
-        frac, state = dl["frac"], dl["state"]
+        frac, state = max(0.0, min(1.0, dl["frac"])), dl["state"]
         big = state not in ("queued", "asked")
         if state == "asked":
             label = self.app._("tm_opening").format(launcher=dl["launcher"])
@@ -730,21 +807,11 @@ class MapGrid(Gtk.EventBox):
             label = self.app._("tm_waiting_n").format(n=dl["place"]) if dl.get("place") else self.app._("tm_waiting")
         else:
             label = f"{int(frac * 100)} %"
-        self._scrim(cr, x, y, w, h)
+        self.reveal(cr, x, y, w, h, frac if big else 0.0, accent, f)
         tsize = (20 if big else 13) * f
-        ph = tsize * 1.5 + 40 * f
-        px, py, pw, ph = self._panel(cr, x, y, w, h, ph)
+        px, py, pw, ph = self._panel(cr, x, y, w, h, tsize * 1.5 + 24 * f)
         _pango_text(cr, self, label, px + 12, py + 12 * f, pw - 24, tsize, True,
-                    (1, 1, 1, 0.98), align_center=True)
-        bx, bw, bh = px + 18, pw - 36, 8 * f
-        by = py + ph - 14 * f - bh
-        _rounded(cr, bx, by, bw, bh, bh / 2)
-        cr.set_source_rgba(1, 1, 1, 0.18)
-        cr.fill()
-        if frac > 0:
-            _rounded(cr, bx, by, max(bh, bw * frac), bh, bh / 2)
-            cr.set_source_rgba(*accent, 1)
-            cr.fill()
+                    (1, 1, 1, 0.98), align_center=True, lines=2)
 
 
 class InstallingCard(Gtk.EventBox):
@@ -1227,7 +1294,7 @@ class GameCard:
         # may not be on screen in the grid - a search, a scroll)
         if self.view.loader.get(self.game.uid) is None:
             try:
-                path = hold_data.cover_file(self.game, Path(self.view.opts["cache"]))
+                path = self.view.loader._path_of(self.game)
                 pw = int(132 * self.f) * d
                 self.poster_pb = _load_cover_at(path, pw, int(pw * ASPECT)) if path else None
             except Exception:
@@ -1916,6 +1983,9 @@ class TreasureMap(Gtk.Box):
         self._removing_since: Dict[str, Tuple[float, float]] = {}
         self.queue: List[str] = []
         self.games_by_uid: Dict[str, OwnedGame] = {}
+        self.faugus_pending: Dict[str, OwnedGame] = {}     # being brought aboard Faugus, not written yet
+        self.faugus_running: set = set()                   # Faugus games with a program up in their prefix
+        self._fg_poll_id: Optional[int] = None
         self._signature = None
         self._tick_id: Optional[int] = None
         self._toast_until = 0.0
@@ -1928,6 +1998,7 @@ class TreasureMap(Gtk.Box):
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
                                                  Gtk.STYLE_PROVIDER_PRIORITY_USER + 1)
         self.loader = CoverLoader(Path(opts["cache"]), self._cover_ready)
+        self.loader.library_art = self._library_cover
         self._build()
         # embedded: see-through - the library's sea and its bubbles show under it
         self.reload()
@@ -2188,8 +2259,16 @@ class TreasureMap(Gtk.Box):
         hold_data.OWN_CACHE[0] = Path(self.opts["cache"])
         self._maybe_fetch_gog()
         states = hold_data.all_states()
+        fg = states.get("faugus")
+        if fg is not None and fg.status == "ok":
+            fg.games.extend(self.faugus_pending.values())
+            for g in fg.games:
+                kind = g.extra.get("launcher")
+                if kind and not g.cover:
+                    g.cover = faugus_ui().launcher_cover(kind, Path(self.opts["cache"]), self)
         self.states = states
         self.games_by_uid = {g.uid: g for st in states.values() for g in st.games}
+        self._index_library()
         # a finished download: the launchers' files decide from now on
         for uid in [u for u, dl in self.downloads.items() if dl.get("state") == "done"]:
             del self.downloads[uid]
@@ -2265,6 +2344,8 @@ class TreasureMap(Gtk.Box):
         return True
 
     def _refresh(self, keep_scroll: bool = False):
+        if self.tab == "faugus":
+            return self._refresh_faugus(keep_scroll)
         store = None if self.tab == "all" else self.tab
         unreadable = [s for s, st in self.states.items() if st.status == "unreadable" and store in (None, s)]
         self.notice.set_text(self.app._("tm_unreadable") if unreadable else "")
@@ -2293,8 +2374,12 @@ class TreasureMap(Gtk.Box):
         aboard = coming + sorted([g for g in games if g.installed], key=key)
         buried = sorted([g for g in games if not g.installed and g.uid not in order], key=key)
         sections = []
+        harbors = [g for g in aboard if g.extra.get("launcher")]
+        aboard = [g for g in aboard if not g.extra.get("launcher")]
         if self.show in ("all", "aboard") and aboard:
             sections.append(("Aboard", self.app._("tm_aboard_note"), aboard))
+        if self.show in ("all", "aboard") and harbors:
+            sections.append(("Harbors", self.app._("section_harbors_note"), harbors))
         if self.show in ("all", "buried") and buried:
             sections.append(("Buried", self.app._("tm_buried_note"), buried))
         if not sections:
@@ -2302,6 +2387,83 @@ class TreasureMap(Gtk.Box):
             return
         self.grid.set_sections(sections, keep_scroll)
         self.body.set_visible_child_name("grid")
+
+    def _refresh_faugus(self, keep_scroll: bool = False):
+        """Faugus: its games Aboard, under them the Bring aboard card; none
+        yet: the card alone, big; Faugus never opened: open it once."""
+        self.notice.set_visible(False)
+        st = self.states.get("faugus") or StoreState("faugus", "no_launcher")
+        if st.status in ("no_launcher", "unreadable"):
+            self._show_state(StoreState("faugus", "no_launcher"))
+            return
+        games = list(st.games)
+        q = self.query.strip().lower()
+        if q:
+            games = [g for g in games if q in g.title.lower()]
+        order = {u: i for i, u in enumerate(self.queue)}
+        coming = sorted([g for g in games if not g.installed and g.uid in order], key=lambda g: order[g.uid])
+        aboard = coming + sorted([g for g in games if g.installed], key=self._sort_fn())
+        if not aboard and not q:
+            faugus_ui().show_empty(self)
+            return
+        if not aboard:
+            self._show_empty()
+            return
+        add = OwnedGame(faugus_ui().ADD_UID, "faugus", self.app._("tm_fg_bring"), True, None, "+add")
+        if self._fg_poll_id is None:
+            self._fg_poll_id = GLib.timeout_add_seconds(2, self._fg_poll)
+            self._fg_poll()
+        harbors = [g for g in aboard if g.extra.get("launcher")]
+        played = [g for g in aboard if not g.extra.get("launcher")]
+        sections = [("Aboard", self.app._("tm_aboard_note"), played)] if played else []
+        if harbors:
+            sections.append(("Harbors", self.app._("section_harbors_note"), harbors))
+        self.grid.set_sections(sections + [("", "", [add])], keep_scroll)
+        self.body.set_visible_child_name("grid")
+
+    def _fg_poll(self) -> bool:
+        """While the Faugus tab shows: which of its games has a program
+        running in its prefix (a launcher left open after its install, a
+        game) - their tiles say so, and close them on a click."""
+        if self.tab != "faugus" or not self.get_mapped():
+            self._fg_poll_id = None
+            if self.faugus_running:
+                self.faugus_running = set()
+            return False
+        st = self.states.get("faugus")
+        games = [g for g in (st.games if st else []) if g.installed and g.extra.get("prefix")]
+        by_prefix = {}
+        for g in games:
+            by_prefix.setdefault(os.path.normpath(g.extra["prefix"]), []).append(g.uid)
+        try:
+            up = hold_data_faugus().running_prefixes(set(by_prefix))
+        except Exception:
+            up = set()
+        now = {uid for p in up for uid in by_prefix.get(p, [])}
+        if now != self.faugus_running:
+            changed = now ^ self.faugus_running
+            self.faugus_running = now
+            for uid in changed:
+                self.grid.refresh_game(uid)
+        return True
+
+    def close_faugus_game(self, game: OwnedGame):
+        """A running Faugus game / launcher: closed (asked first) - all that
+        runs in its prefix."""
+        r = self.app._card_dialog(
+            self.app._("tm_fg_close_game_t").format(name=game.title), self.app._("tm_fg_close_game_s"),
+            [(self.app._("tm_not_now"), Gtk.ResponseType.CANCEL, "ghost"),
+             (self.app._("tm_fg_close"), Gtk.ResponseType.OK, "danger")],
+            icon_name="circle-alert-symbolic", default=Gtk.ResponseType.OK, transient_for=self.get_toplevel())
+        if r != Gtk.ResponseType.OK:
+            return
+        prefix = game.extra.get("prefix")
+        threading.Thread(target=lambda: hold_data_faugus().stop_prefix(prefix), daemon=True).start()
+
+    def _sort_fn(self):
+        if self.sort == "playtime":
+            return lambda g: (-g.playtime, _sort_key(g))
+        return _sort_key
 
     def _show_state(self, st: StoreState):
         for child in self.state_card.get_children():
@@ -2314,7 +2476,8 @@ class TreasureMap(Gtk.Box):
         waiting = False
         if st.status == "no_launcher":
             heading = self.app._("tm_no_launcher_t").format(launcher=launcher)
-            text = self.app._("tm_no_launcher_s").format(store=name, launcher=launcher)
+            text = self.app._("tm_fg_no_launcher_s" if st.store == "faugus" else "tm_no_launcher_s").format(
+                store=name, launcher=launcher)
             label = self.app._("tm_install_launcher").format(launcher=launcher)
             action = (lambda: self.app.show_shipwright(focus=launcher))
         elif _launcher_running(launcher):
@@ -2491,7 +2654,18 @@ class TreasureMap(Gtk.Box):
 
     # tiles
     def on_tile(self, game: OwnedGame):
+        if game.uid == faugus_ui().ADD_UID:
+            faugus_ui().open_add(self)
+            return
         if game.uid in self.downloads and self.downloads[game.uid]["state"] != "done":
+            return
+        if game.store == "faugus":
+            if game.installed:
+                self.grid._set_hover(None)
+                if game.uid in self.faugus_running:
+                    self.close_faugus_game(game)
+                else:
+                    self.set_sail(game)
             return
         if game.uid in self.removing:
             return
@@ -2668,6 +2842,15 @@ class TreasureMap(Gtk.Box):
     def stop_direct(self, uid: str):
         """Stop on the dock: the tool's whole process group goes."""
         dl = self.downloads.get(uid)
+        if dl is not None and dl.get("job") is not None:      # a Faugus install
+            job = dl["job"]
+            if dl.get("phase") in ("signin", "close_it"):
+                # its window is what it waits for: closed, the install finishes as it should
+                threading.Thread(target=lambda: hold_data_faugus().stop_prefix(job.req.prefix), daemon=True).start()
+                return
+            dl["stopped"] = True
+            job.cancel()
+            return
         proc = dl.get("proc") if dl else None
         if proc is not None and proc.poll() is None:
             import os as _os
@@ -2678,6 +2861,37 @@ class TreasureMap(Gtk.Box):
             except OSError:
                 proc.terminate()
 
+    def _index_library(self):
+        """Owned game -> its library uid: the same card art everywhere."""
+        steam, heroic, faugus = set(), {}, set()
+        for section in getattr(self.app, "_cached_launchers", []) or []:
+            for g in section.get("games") or []:
+                if g.uid.startswith("steam:"):
+                    steam.add(g.uid)
+                elif g.uid.startswith("heroic:"):
+                    heroic[g.uid.split(":", 2)[-1]] = g.uid
+                elif g.uid.startswith("faugus:"):
+                    faugus.add(g.uid)
+        index = {}
+        for g in self.games_by_uid.values():
+            if not g.installed:
+                continue
+            uid = f"steam:{g.app_id}" if g.store == "steam" else g.uid if g.store == "faugus" else heroic.get(g.app_id)
+            if uid in steam or uid in faugus or (uid and uid.startswith("heroic:")):
+                index[g.uid] = uid
+        self._library_uid = index
+
+    def _library_cover(self, game: OwnedGame) -> Optional[Path]:
+        uid = getattr(self, "_library_uid", {}).get(game.uid)
+        return self.app._find_cached_artwork(self.app.covers_dir, uid) if uid else None
+
+    def library_art_changed(self, library_uid: str):
+        """A cover changed in the library, here too at once."""
+        self._index_library()
+        for uid in [o for o, u in self._library_uid.items() if u == library_uid]:
+            self.loader.forget(uid)
+            self._cover_ready(uid)
+
     def library_game(self, game: OwnedGame):
         """The library's own entry for an owned game (Steam: steam:<appid>,
         Heroic: heroic:...:<app_name>), None before a scan has it."""
@@ -2686,7 +2900,8 @@ class TreasureMap(Gtk.Box):
             if section.get("name") != launcher:
                 continue
             for g in section.get("games") or []:
-                if g.uid == f"steam:{game.app_id}" or (launcher == "Heroic" and g.uid.endswith(":" + game.app_id)):
+                if g.uid == f"steam:{game.app_id}" or (launcher == "Heroic" and g.uid.endswith(":" + game.app_id)) \
+                        or (launcher == "Faugus" and g.uid == game.uid):
                     return g
         return None
 
@@ -2763,17 +2978,40 @@ class TreasureMap(Gtk.Box):
             return False
         return True
 
+    def steam_held(self) -> bool:
+        """Steam is up only for our work (or being closed after it): the
+        new game question waits, Steam needs no restart of its own then."""
+        return self._steam_busy() or getattr(self, "_steam_closing", False)
+
+    def _ask_after_steam_work(self):
+        self.app._ask_about_new_games(list(self.app.game_index.values()))
+
+    def _watch_steam_closing(self) -> bool:
+        self._steam_close_wait = getattr(self, "_steam_close_wait", 0) + 1
+        if self.app._launcher_is_running("Steam") and self._steam_close_wait < 60:
+            return True
+        self._steam_closing = False
+        self._steam_close_wait = 0
+        self._ask_after_steam_work()
+        return False
+
     def _steam_work_ended(self):
         """The last Steam install / removal of ours ended: a Steam we started
         is closed again (quietly - unless one of its games runs now)."""
-        if self._steam_busy() or getattr(self, "_steam_ran_before", True):
+        if self._steam_busy():
+            return
+        if getattr(self, "_steam_ran_before", True):
+            self._ask_after_steam_work()
             return
         self._steam_ran_before = True            # once
         app = self.app
         playing = any(g is not None and g.launcher == "Steam" for g in
                       (app.game_index.get(u) for u in set(app.running_procs) | set(app.detected_running)))
         if playing or not app._launcher_is_running("Steam"):
+            self._ask_after_steam_work()
             return
+        self._steam_closing = True
+        GLib.timeout_add_seconds(1, self._watch_steam_closing)
         from plunderhub.core.launch_options import steam_shutdown_invocations
         import subprocess
         for inv in steam_shutdown_invocations() or [["steam"]]:
@@ -3083,6 +3321,8 @@ class TreasureMap(Gtk.Box):
             parts = [f"{int(dl['frac'] * 100)} %"]
             part = {"shaders": "tm_phase_shaders", "game": "tm_phase_game", "commit": "tm_phase_commit"}.get(
                 dl.get("phase") or "")
+            if dl["launcher"] == "Faugus":
+                part = f"tm_fg_phase_{dl.get('phase') or 'prepare'}"
             if part:
                 parts.insert(0, self.app._(part))
             if dl["size"]:
@@ -3096,7 +3336,8 @@ class TreasureMap(Gtk.Box):
                    and u in self.games_by_uid]
         self.dock_next.set_text(self.app._("tm_next").format(names=", ".join(waiting)) if waiting else "")
         # only Stop (an install of ours); the launcher's own window isn't needed
-        self.dock_open.set_label(self.app._("tm_stop"))
+        self.dock_open.set_label(self.app._("tm_fg_close_it") if dl["launcher"] == "Faugus"
+                                 and dl.get("phase") in ("signin", "close_it") else self.app._("tm_stop"))
         self._dock_direct = bool(dl.get("direct"))
         self.dock_open.set_visible(self._dock_direct)
         self.dock_bar.show()
@@ -3256,16 +3497,17 @@ def follow_library_look(app):
 
 
 def add_uninstall_row(menu, page: Gtk.Box):
-    """A Steam / Heroic game's menu in the library: Uninstall, above the
-    last divider."""
+    """A Steam / Heroic / Faugus game's menu in the library: Uninstall,
+    above the last divider."""
     game, app = menu.game, menu.app
-    if game.launcher not in ("Steam", "Heroic"):
+    if game.launcher not in ("Steam", "Heroic", "Faugus"):
         return
     seps = [c for c in page.get_children() if isinstance(c, Gtk.Separator)]
     row = menu._row("trash-symbolic", app._("tm_uninstall"), app._("tm_uninstall_sub").format(launcher=game.launcher),
-                    action=lambda: _uninstall_from_library(app, game))
+                    action=lambda: (_uninstall_from_faugus if game.launcher == "Faugus"
+                                    else _uninstall_from_library)(app, game))
     page.pack_start(row, False, False, 0)
-    if seps:
+    if seps and not getattr(app, "_tm_active", False):      # on the map there's nothing under it
         page.reorder_child(row, page.get_children().index(seps[-1]))
     row.show_all()
 
@@ -3334,6 +3576,136 @@ def show_map(app, on: bool):
         view.hide()
         app._on_search_changed()                   # the library catches up with the search
     app._update_decorative_animation_pause_state()
+    app._home_select_nav_row()                     # the sidebar says which page this is
+
+
+def _uninstall_from_faugus(app, game):
+    """Asked first; the prefix goes too unless it's unticked (a store
+    launcher's games live in it) or another Faugus entry uses it. A running
+    Faugus is closed for it and started again."""
+    fa = hold_data_faugus()
+    _status, site = fa.faugus_status()
+    if site is None:
+        return
+    gid = game.uid.split(":", 1)[1]
+    _ = app._
+    from plunderhub.core.faugus_store import known as store_games
+    owner = store_games().get(gid)
+    if owner:
+        # its launcher's own job: the launcher opens, the card goes when the game does
+        launcher = app.game_index.get(f"faugus:{owner.get('launcher')}")
+        if launcher is not None:
+            app._show_info_dialog(_("tm_fg_uninstall_in_launcher").format(game=game.title, launcher=launcher.title),
+                                  Gtk.MessageType.INFO)
+            app.launch(launcher.launch_cmd, launcher.title, launcher.env, launcher.uid, launcher.install_dir)
+        return
+    extra = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+    tile = how = None
+    choice = {"trash": True}
+    if fa.own_prefix(site, gid):
+        tile = app._new_game_tile("trash-symbolic", _("tm_fg_rm_prefix"), _("tm_fg_rm_prefix_sub"))
+        extra.pack_start(tile, False, False, 0)
+        how = _trash_or_delete(app, choice)
+        extra.pack_start(how, False, False, 0)
+    running = app._launcher_is_running("Faugus")
+    if running:
+        note = Gtk.Label(label=_("lo_new_restart_note").format(launcher="Faugus"), xalign=0)
+        note.set_line_wrap(True)
+        note.set_max_width_chars(46)
+        note.get_style_context().add_class("newgame-restart")
+        extra.pack_start(note, False, False, 0)
+    extra.show_all()
+    if tile is not None:
+        tile.connect("toggled", lambda t: how.set_visible(t.get_active()))
+    answer = app._card_dialog(_("tm_fg_rm_t").format(game=game.title), _("tm_fg_rm_s"),
+                              [(_("tm_not_now"), Gtk.ResponseType.CANCEL, "ghost"),
+                               (_("tm_uninstall"), Gtk.ResponseType.OK, "danger")],
+                              default=Gtk.ResponseType.CANCEL, extra=extra, art=app._new_game_art(game))
+    if answer != Gtk.ResponseType.OK or (running and not app.close_launcher_asking("Faugus", app)):
+        return
+    with_prefix = tile is not None and tile.get_active()
+    command = next((list(s["cmd"]) for s in getattr(app, "_cached_launchers", []) or []
+                    if s.get("name") == "Faugus" and s.get("cmd")), None) if running else None
+
+    from plunderhub.ui.progress_card import card_dialog, status_label
+    busy = {"dlg": None}
+
+    def run(to_trash: bool):
+        # a big prefix takes a while: said, not silent
+        dlg, column = card_dialog(app._dialog_transient_parent(), game.title)
+        column.pack_start(status_label(_("tm_going_overboard")), False, False, 0)
+        dlg.show_all()
+        busy["dlg"] = dlg
+
+        def work():
+            GLib.idle_add(done, *fa.remove_game(site, gid, with_prefix, to_trash))
+        threading.Thread(target=work, daemon=True, name="plunderhub-faugus-remove").start()
+
+    def restart():
+        if command:
+            import subprocess
+            try:
+                subprocess.Popen(command, start_new_session=True, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL)
+            except OSError as e:
+                logger.warning(f"Couldn't start Faugus again: {e}")
+
+    def done(ok, why) -> bool:
+        if busy["dlg"] is not None:
+            busy["dlg"].destroy()
+            busy["dlg"] = None
+        if why == "trash":
+            if app._card_dialog(_("bg_no_trash_head"), _("bg_no_trash"),
+                                [(_("dialog_cancel"), Gtk.ResponseType.NO, "ghost"),
+                                 (_("bg_permanent"), Gtk.ResponseType.YES, "danger")],
+                                tone="danger", icon_name="user-trash-symbolic",
+                                default=Gtk.ResponseType.NO) == Gtk.ResponseType.YES:
+                run(False)
+            else:
+                restart()
+            return False
+        restart()
+        if ok:
+            app.forget_art(game.uid)
+        else:
+            app._card_dialog(_("tm_uninstall_failed").format(game=game.title), why,
+                             [(_("dialog_ok"), Gtk.ResponseType.CLOSE, "ghost")], icon_name="circle-alert-symbolic")
+        app.reload()
+        view = getattr(app, "_tm_view", None)
+        if view is not None:
+            view.reload(keep_scroll=True)       # its own list: the library's reload doesn't touch it
+        return False
+    run(choice["trash"])
+
+
+def _trash_or_delete(app, choice: Dict) -> Gtk.Box:
+    """Bilge cleaning's two tiles: to the Trash (picked first) or for good."""
+    from plunderhub.icons import get_icon_pixbuf
+    from plunderhub.ui.home_mixin import _accent_rgb
+    colour = "#%02x%02x%02x" % tuple(round(c * 255) for c in _accent_rgb(app))
+    cards = Gtk.Box(spacing=10, homogeneous=True)
+    first = None
+    for key, icon, title, sub in (("trash", "user-trash-symbolic", "bg_trash", "bg_trash_short"),
+                                  ("forever", "zap-symbolic", "bg_permanent", "bg_permanent_short")):
+        card = Gtk.RadioButton.new_from_widget(first)
+        first = first or card
+        card.set_mode(False)
+        card.set_focus_on_click(False)
+        card.get_style_context().add_class("bg-tile")
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        inner.pack_start(Gtk.Image.new_from_pixbuf(get_icon_pixbuf(icon, 22, colour)), False, False, 0)
+        name = Gtk.Label(label=app._(title))
+        name.get_style_context().add_class("bg-tile-title")
+        inner.pack_start(name, False, False, 0)
+        line = Gtk.Label(label=app._(sub), justify=Gtk.Justification.CENTER)
+        line.set_line_wrap(True)
+        line.set_max_width_chars(20)
+        line.get_style_context().add_class("bg-tile-sub")
+        inner.pack_start(line, False, False, 0)
+        card.add(inner)
+        card.connect("toggled", lambda b, k=key: b.get_active() and choice.update(trash=k == "trash"))
+        cards.pack_start(card, True, True, 0)
+    return cards
 
 
 def _uninstall_from_library(app, game):

@@ -42,6 +42,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from plunderhub.logging_setup import logger
 from plunderhub.core import launcher_art
 from plunderhub.core.scan_paths import HEROIC_CONFIG_ROOTS
 from plunderhub.core.steam_heroic import steam_libraries, steam_roots
@@ -621,7 +622,42 @@ def all_states() -> Dict[str, StoreState]:
     out = {"steam": steam_state()}
     for store in ("epic", "gog", "amazon"):
         out[store] = heroic_state(store)
+    out["faugus"] = faugus_state()
     return out
+
+
+def faugus_state() -> StoreState:
+    """Faugus' games (all aboard: Faugus lists only what's on disk) -
+    status no_launcher / ok."""
+    from plunderhub.core import faugus_add as fa
+    try:
+        status, site = fa.faugus_status()
+    except Exception as e:
+        logger.info(f"Treasure Map: Faugus not read: {e}")
+        return StoreState("faugus", "unreadable")
+    if status != "ok" or site is None:
+        return StoreState("faugus", status)
+    games = []
+    from plunderhub.core.faugus_store import known as store_games
+    launcher_games = store_games()
+    for g in fa.read_games(site):
+        gid, title = str(g.get("gameid") or ""), str(g.get("title") or "")
+        if not gid or not title or g.get("hidden") or g.get("runner") == "Steam":
+            continue
+        cover = str(g.get("cover") or "")
+        if not cover or not Path(os.path.expanduser(cover)).is_file():
+            own = site.data / "covers" / f"{gid}.png"
+            cover = str(own) if own.is_file() else ""
+        secs = g.get("playtime")
+        last = g.get("last_played")
+        games.append(OwnedGame(f"faugus:{gid}", "faugus", title, True, cover or None, gid,
+                               playtime=int(secs) // 60 if isinstance(secs, (int, float)) else 0,
+                               last_played=float(last) if isinstance(last, (int, float)) else 0.0,
+                               extra={"store_icon": str(site.data / "icons" / f"{launcher_games[gid].get('launcher')}.png")
+                                      if gid in launcher_games else None,
+                                      "launcher": None if gid in launcher_games else fa.launcher_kind(str(g.get("path") or "")),
+                                      "prefix": os.path.expanduser(str(g.get("prefix") or ""))}))
+    return StoreState("faugus", "ok", games)
 
 
 # --- covers ----------------------------------------------------------------------
@@ -629,6 +665,8 @@ def all_states() -> Dict[str, StoreState]:
 def cover_file(game: OwnedGame, cache_dir: Path) -> Optional[Path]:
     """A local file with the game's cover: Steam's own cache, Heroic's
     own images-cache, or ours (downloaded once, small)."""
+    if game.store == "faugus":                    # Faugus' own covers folder, or the launcher's drawn art
+        return Path(game.cover) if game.cover and Path(game.cover).is_file() else None
     if game.store == "steam":
         path = game.cover or steam_cover(game)
         if path:

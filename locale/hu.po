@@ -670,6 +670,14 @@ msgstr "Visszavonva – a fájlok olyanok, mint előtte"
 msgid "bg_unknown_game"
 msgstr "Ismeretlen játék (Steam-azonosító: {appid})"
 
+#. English: Couldn't start {title}
+msgid "bottles_launch_failed"
+msgstr "Nem sikerült elindítani: {title}"
+
+#. English: Bottles couldn't start the program. Do the bottle and the program still exist?
+msgid "bottles_launch_failed_text"
+msgstr "A Bottles nem tudta elindítani a programot. Megvan még a palack és a program?"
+
 #. English: Close
 msgid "bug_close"
 msgstr "Bezárás"
@@ -2202,6 +2210,58 @@ msgstr "A {launcher} nem záródott be."
 msgid "lo_mangohud"
 msgstr "MangoHud"
 
+#. English: Apply
+msgid "lo_new_apply"
+msgstr "Alkalmaz"
+
+#. English: Apply & restart
+msgid "lo_new_apply_restart"
+msgstr "Alkalmaz és újraindítás"
+
+#. English: On: new games get them without asking. Off: PlunderHub asks you.
+msgid "lo_new_auto_sub"
+msgstr "Bekapcsolva: az új játékok kérdés nélkül megkapják. Kikapcsolva: a PlunderHub megkérdez."
+
+#. English: Recommended launch options for new games
+msgid "lo_new_auto_title"
+msgstr "Ajánlott indítási opciók új játékokhoz"
+
+#. English: Use Proton-GE Latest
+msgid "lo_new_proton"
+msgstr "Proton-GE Latest használata"
+
+#. English: Runs this game on the newest Proton-GE
+msgid "lo_new_proton_sub"
+msgstr "Ezt a játékot a legújabb Proton-GE-vel futtatja"
+
+#. English: Recommended launch options
+msgid "lo_new_recommended"
+msgstr "Ajánlott indítási opciók"
+
+#. English: GameMode, FPS limit, Esync and Fsync, fullscreen and more
+msgid "lo_new_recommended_tip"
+msgstr "GameMode, FPS-korlát, Esync és Fsync, teljes képernyő és egyebek"
+
+#. English: {launcher} is running and has to restart for this.
+msgid "lo_new_restart_note"
+msgstr "A(z) {launcher} fut, ehhez újra kell indítani."
+
+#. English: Leave as is
+msgid "lo_new_skip"
+msgstr "Maradjon így"
+
+#. English: Want to set this up now? You can change it any time on the game page.
+msgid "lo_new_text"
+msgstr "Szeretnéd most beállítani? Később is bármikor módosíthatod a játék oldalán."
+
+#. English: {n} new games
+msgid "lo_new_title_many"
+msgstr "{n} új játék"
+
+#. English: New game: {title}
+msgid "lo_new_title_one"
+msgstr "Új játék: {title}"
+
 #. English: This launcher can't store wrapper commands, so these can't be saved: {words}
 msgid "lo_no_wrappers"
 msgstr "Ez a launcher nem tud burkolóparancsot tárolni, ezért ezek nem menthetők: {words}"
@@ -2297,6 +2357,10 @@ msgstr "A Steam automatikusan használja őket, ha telepítve vannak. A Steam K�
 #. English: Steam didn't close, so the launch options weren't saved.
 msgid "lo_steam_still_running"
 msgstr "A Steam nem zárult be, ezért az indítási beállítások nem lettek mentve."
+
+#. English: A store's own launcher: game options (window mode, FPS limit, Wayland, Recommended) don't apply to it - Faugus' own settings for it are kept.
+msgid "lo_store_launcher_note"
+msgstr "Ez egy áruház saját launchere: a játékbeállítások (ablakmód, FPS-limit, Wayland, Ajánlott) nem vonatkoznak rá - a Faugus saját beállításai maradnak érvényben."
 
 #. English: Stored in: {where}
 msgid "lo_stored_in"
@@ -2457,6 +2521,10 @@ msgstr "Még nincs launcher a fedélzeten.\nKapcsolj be legalább egyet a Könyv
 #. English: Ship's Controls
 msgid "options"
 msgstr "Hajóvezérlés"
+
+#. English: {launcher} couldn't start the game.
+msgid "other_launch_failed_text"
+msgstr "A(z) {launcher} nem tudta elindítani a játékot."
 
 #. English: Looking for patch notes…
 msgid "patch_notes_loading"
@@ -2790,6 +2858,10 @@ msgstr "Játékidő-előzmény a mélybe süllyesztve."
 msgid "playtime_top_games"
 msgstr "Legtöbbet hajózott utak"
 
+#. English: Under a minute
+msgid "playtime_under_minute"
+msgstr "Kevesebb mint egy perc"
+
 #. English: All
 msgid "pm_all"
 msgstr "Mind"
@@ -2798,13 +2870,13 @@ msgstr "Mind"
 msgid "pm_all_releases"
 msgstr "Összes kiadás ({n})  ›"
 
-#. English: When PlunderHub starts it downloads the newest Proton-GE, for every launcher. Games on it wait while it downloads.
+#. English: Off: a new Proton-GE shows up at the bottom left and waits for you to press Download.
 msgid "pm_auto_sub"
-msgstr "A PlunderHub indulásakor letölti a legújabb Proton-GE-t minden launcherhez. A rajta futó játékok a letöltés alatt várnak."
+msgstr "Kikapcsolva: az új Proton-GE bal alul jelenik meg, és megvárja, hogy a Letöltésre kattints."
 
-#. English: Keep Proton-GE Latest up to date
+#. English: Update Proton-GE Latest automatically
 msgid "pm_auto_title"
-msgstr "A Proton-GE Latest naprakészen tartása"
+msgstr "A Proton-GE Latest automatikus frissítése"
 
 #. English: By CachyOS: Proton tuned for speed. The build for your processor ({level}) is picked by itself. Never downloaded on its own - only when you ask.
 msgid "pm_cachyos_note"
@@ -2998,9 +3070,21 @@ msgstr "A kiadási megjegyzések nem jeleníthetők meg: a GitHub nem érhető e
 msgid "pm_nothing"
 msgstr "Még semmi"
 
-#. English: Nothing yet - Proton-GE Latest downloads by itself
+#. English: Nothing yet - download Proton-GE Latest to use it
 msgid "pm_nothing_ge"
-msgstr "Még semmi - a Proton-GE Latest magától letöltődik"
+msgstr "Még semmi - töltsd le a Proton-GE Latest-et a használatához"
+
+#. English: Download
+msgid "pm_offer_download"
+msgstr "Letöltés"
+
+#. English: {tag} - not downloaded yet
+msgid "pm_offer_missing"
+msgstr "{tag} - még nincs letöltve"
+
+#. English: New Proton-GE
+msgid "pm_offer_title"
+msgstr "Új Proton-GE"
 
 #. English: On this computer
 msgid "pm_on_computer"
@@ -3398,6 +3482,10 @@ msgstr "Megnyitás"
 msgid "sc_group_views"
 msgstr "Nézetek és keresés"
 
+#. English: Harbors and back
+msgid "sc_harbors"
+msgstr "Kikötők és vissza"
+
 #. English: Launch game
 msgid "sc_launch"
 msgstr "Játék indítása"
@@ -3489,6 +3577,14 @@ msgstr "Alattomos vizek"
 #. English: Font size
 msgid "section_font_size"
 msgstr "Betűméret"
+
+#. English: Harbors
+msgid "section_harbors"
+msgstr "Kikötők"
+
+#. English: the stores' own launchers
+msgid "section_harbors_note"
+msgstr "a boltok saját launcherei"
 
 #. English: Icon size (List view only)
 msgid "section_icon_size"
@@ -4901,6 +4997,410 @@ msgstr "Akkor indul, ha az előtte lévő elkészült."
 #. English: {launcher} is unpacking {game}
 msgid "tm_dock_unpacking"
 msgstr "A {launcher} kicsomagolja: {game}"
+
+#. English: One is enough: its games install from inside it. Open that one instead?
+msgid "tm_fg_already_s"
+msgstr "Egy elég belőle: a játékai benne telepíthetők. Inkább azt nyitod meg?"
+
+#. English: {name} is already aboard
+msgid "tm_fg_already_t"
+msgstr "A(z) {name} már a fedélzeten van"
+
+#. English: Show it in the app menu
+msgid "tm_fg_app_menu"
+msgstr "Jelenjen meg az alkalmazásmenüben"
+
+#. English: Adds it to your desktop's app list (start menu, app launcher), so it starts from there without opening PlunderHub.
+msgid "tm_fg_app_menu_why"
+msgstr "Hozzáadja az asztal alkalmazáslistájához (start menü, alkalmazásindító), így onnan is elindul a PlunderHub megnyitása nélkül."
+
+#. English: Bring aboard
+msgid "tm_fg_bring"
+msgstr "Fedélzetre vele"
+
+#. English: Launcher · installer · game
+msgid "tm_fg_bring_sub"
+msgstr "Launcher · telepítő · játék"
+
+#. English: Choose the file
+msgid "tm_fg_choose_file"
+msgstr "Fájl kiválasztása"
+
+#. English: Choose another folder
+msgid "tm_fg_choose_prefix"
+msgstr "Másik mappa választása"
+
+#. English: Close
+msgid "tm_fg_close"
+msgstr "Bezárás"
+
+#. English: Close Faugus
+msgid "tm_fg_close_btn"
+msgstr "Faugus bezárása"
+
+#. English: Its window and everything running in its prefix closes. A download in it stops too.
+msgid "tm_fg_close_game_s"
+msgstr "Bezárul az ablaka és minden, ami a prefixében fut. A benne futó letöltés is leáll."
+
+#. English: Close {name}?
+msgid "tm_fg_close_game_t"
+msgstr "Bezárod: {name}?"
+
+#. English: Close it
+msgid "tm_fg_close_it"
+msgstr "Bezárom"
+
+#. English: Faugus writes its own game list back when it closes - so it has to be closed while {game} is written in. It opens fine afterwards.
+msgid "tm_fg_close_s"
+msgstr "A Faugus bezáráskor visszaírja a saját játéklistáját - ezért zárva kell lennie, amíg a(z) {game} bekerül. Utána rendben megnyílik."
+
+#. English: Close Faugus to save it?
+msgid "tm_fg_close_t"
+msgstr "Bezárod a Faugust a mentéshez?"
+
+#. English: A store launcher, a game's installer or a game already on disk - it goes into a Faugus prefix, and both Faugus and PlunderHub list it.
+msgid "tm_fg_empty_s"
+msgstr "Áruház-launcher, játéktelepítő vagy már lemezen lévő játék - egy Faugus-prefixbe kerül, és a Faugus meg a PlunderHub is listázza."
+
+#. English: No Faugus games yet
+msgid "tm_fg_empty_t"
+msgstr "Még nincs Faugus-játék"
+
+#. English: The installer finished, but no game .exe turned up in the prefix. Its log: {log}
+msgid "tm_fg_failed_no_exe"
+msgstr "A telepítő lefutott, de nem került játék .exe a prefixbe. A naplója: {log}"
+
+#. English: The installer finished, but {name} isn't in the prefix. Its log: {log}
+msgid "tm_fg_failed_not_installed"
+msgstr "A telepítő lefutott, de a(z) {name} nincs a prefixben. A naplója: {log}"
+
+#. English: Something went wrong: {why}. The log: {log}
+msgid "tm_fg_failed_other"
+msgstr "Valami elromlott: {why}. A napló: {log}"
+
+#. English: That file isn't there.
+msgid "tm_fg_file_missing"
+msgstr "Ez a fájl nincs meg."
+
+#. English: Faugus (Flatpak) can't reach this folder - pick one in your home, /mnt or /run/media.
+msgid "tm_fg_flatpak_cant_see"
+msgstr "A Faugus (Flatpak) nem látja ezt a mappát - válassz a home-odban, a /mnt vagy a /run/media alatt."
+
+#. English: FREE NOW
+msgid "tm_fg_free"
+msgstr "SZABAD MOST"
+
+#. English: THE GAME'S .EXE
+msgid "tm_fg_game_exe"
+msgstr "A JÁTÉK .EXE-JE"
+
+#. English: Hoist aboard
+msgid "tm_fg_go"
+msgstr "Fel a fedélzetre"
+
+#. English: A GAME
+msgid "tm_fg_group_game"
+msgstr "JÁTÉK"
+
+#. English: A STORE'S LAUNCHER
+msgid "tm_fg_group_store"
+msgstr "ÁRUHÁZ LAUNCHERE"
+
+#. English: For {store}, I'd suggest Heroic Games Launcher
+msgid "tm_fg_heroic"
+msgstr "{store} esetén a Heroic Games Launchert javaslom"
+
+#. English: Show my {store} games on the map
+msgid "tm_fg_heroic_go"
+msgstr "{store}-játékaim a térképen"
+
+#. English: INSTALLER (.exe / .msi)
+msgid "tm_fg_installer"
+msgstr "TELEPÍTŐ (.exe / .msi)"
+
+#. English: the installer tells
+msgid "tm_fg_installer_tells"
+msgstr "a telepítő megmondja"
+
+#. English: Windows game already on disk
+msgid "tm_fg_kind_exe"
+msgstr "Már lemezen lévő Windows-játék"
+
+#. English: point at its .exe
+msgid "tm_fg_kind_exe_sub"
+msgstr "add meg az .exe-jét"
+
+#. English: Linux game
+msgid "tm_fg_kind_linux"
+msgstr "Linux-játék"
+
+#. English: runs natively, no Wine
+msgid "tm_fg_kind_linux_sub"
+msgstr "natívan fut, Wine nélkül"
+
+#. English: Windows game from its installer
+msgid "tm_fg_kind_setup"
+msgstr "Windows-játék a telepítőjéből"
+
+#. English: setup.exe, a GOG offline installer, itch.io, a disc
+msgid "tm_fg_kind_setup_sub"
+msgstr "setup.exe, GOG offline telepítő, itch.io, lemez"
+
+#. English: Left out: {names}
+msgid "tm_fg_left_out"
+msgstr "Kihagyva: {names}"
+
+#. English: likeliest
+msgid "tm_fg_likeliest"
+msgstr "legvalószínűbb"
+
+#. English: NAME
+msgid "tm_fg_name"
+msgstr "NÉV"
+
+#. English: Choose the file.
+msgid "tm_fg_need_file"
+msgstr "Válaszd ki a fájlt."
+
+#. English: Give it a name.
+msgid "tm_fg_need_name"
+msgstr "Adj neki nevet."
+
+#. English: Choose a prefix folder.
+msgid "tm_fg_need_prefix"
+msgstr "Válassz prefix-mappát."
+
+#. English: NEEDS
+msgid "tm_fg_needs"
+msgstr "KELL"
+
+#. English: the launcher itself
+msgid "tm_fg_needs_launcher"
+msgstr "maga a launcher"
+
+#. English: + {size} game runtime, first time only
+msgid "tm_fg_needs_runtime"
+msgstr "+ {size} futtatókörnyezet, csak először"
+
+#. English: Install Faugus - then store launchers, installers and games can come aboard from here.
+msgid "tm_fg_no_launcher_s"
+msgstr "Telepítsd a Faugust - utána innen hozhatsz a fedélzetre launchereket, telepítőket és játékokat."
+
+#. English: Open Faugus
+msgid "tm_fg_open"
+msgstr "Faugus megnyitása"
+
+#. English: Open it
+msgid "tm_fg_open_it"
+msgstr "Megnyitás"
+
+#. English: Another file…
+msgid "tm_fg_other_file"
+msgstr "Másik fájl…"
+
+#. English: Close its window to finish
+msgid "tm_fg_phase_close_it"
+msgstr "Zárd be az ablakát a befejezéshez"
+
+#. English: Downloading the installer
+msgid "tm_fg_phase_download"
+msgstr "A telepítő letöltése"
+
+#. English: Looking for the game's .exe
+msgid "tm_fg_phase_find"
+msgstr "A játék .exe-jének keresése"
+
+#. English: Installing into the prefix
+msgid "tm_fg_phase_install"
+msgstr "Telepítés a prefixbe"
+
+#. English: Getting ready
+msgid "tm_fg_phase_prepare"
+msgstr "Előkészítés"
+
+#. English: Fetching the game runtime (first time only)
+msgid "tm_fg_phase_runtime"
+msgstr "A futtatókörnyezet letöltése (csak először)"
+
+#. English: Waiting for Faugus to close
+msgid "tm_fg_phase_save"
+msgstr "Várakozás a Faugus bezárására"
+
+#. English: Sign in, then close its window
+msgid "tm_fg_phase_signin"
+msgstr "Jelentkezz be, aztán zárd be az ablakát"
+
+#. English: The installer of {name} left these. The likeliest is picked.
+msgid "tm_fg_pick_s"
+msgstr "A(z) {name} telepítője ezeket hagyta. A legvalószínűbb ki van jelölve."
+
+#. English: Which one starts the game?
+msgid "tm_fg_pick_t"
+msgstr "Melyik indítja a játékot?"
+
+#. English: PREFIX  ·  Faugus' default folder + the name
+msgid "tm_fg_prefix"
+msgstr "PREFIX  ·  a Faugus alapmappája + a név"
+
+#. English: PREVIEW
+msgid "tm_fg_preview"
+msgstr "ELŐNÉZET"
+
+#. English: PROTON
+msgid "tm_fg_proton"
+msgstr "PROTON"
+
+#. English: {name}  (PlunderHub's)
+msgid "tm_fg_proton_ours"
+msgstr "{name}  (a PlunderHubé)"
+
+#. English: Delete its Wine prefix too
+msgid "tm_fg_rm_prefix"
+msgstr "A Wine-prefixe is törlődjön"
+
+#. English: Saves in it and everything installed in it, including this launcher's games, go with it.
+msgid "tm_fg_rm_prefix_sub"
+msgstr "A benne lévő mentések és minden, ami bele van telepítve (a launcher játékai is), vele együtt törlődik."
+
+#. English: It goes from Faugus and your library.
+msgid "tm_fg_rm_s"
+msgstr "Eltűnik a Faugusból és a könyvtáradból."
+
+#. English: Remove {game}?
+msgid "tm_fg_rm_t"
+msgstr "Eltávolítod: {game}?"
+
+#. English: Running
+msgid "tm_fg_running"
+msgstr "Fut"
+
+#. English: Faugus is closed for a moment while its list is written - it opens fine afterwards.
+msgid "tm_fg_running_note"
+msgstr "A Faugus egy pillanatra bezárul, amíg a listája íródik - utána rendben megnyílik."
+
+#. English: RUNS WITH
+msgid "tm_fg_runs_with"
+msgstr "EZZEL FUT"
+
+#. English: PlunderHub's recommended options
+msgid "tm_fg_runs_with_sub"
+msgstr "a PlunderHub ajánlott beállításaival"
+
+#. English: The download didn't work - GitHub isn't answering right now. Try again in a few minutes.
+msgid "tm_fg_setup_failed"
+msgstr "A letöltés nem sikerült, a GitHub most nem válaszol. Próbáld újra néhány perc múlva."
+
+#. English: THE GAME'S START FILE
+msgid "tm_fg_start_file"
+msgstr "A JÁTÉK INDÍTÓFÁJLJA"
+
+#. English: Aboard, in Faugus and in your library
+msgid "tm_fg_step_aboard"
+msgstr "Fedélzeten, a Faugusban és a könyvtáradban"
+
+#. English: It opens when done - close it to finish
+msgid "tm_fg_step_close"
+msgstr "Ha kész, megnyílik - zárd be a befejezéshez"
+
+#. English: Downloads {name}'s installer from its maker
+msgid "tm_fg_step_dl"
+msgstr "Letölti a(z) {name} telepítőjét a gyártótól"
+
+#. English: Finds the game's .exe from the shortcuts it made
+msgid "tm_fg_step_find"
+msgstr "Megkeresi a játék .exe-jét a létrehozott parancsikonokból"
+
+#. English: Keep the install folder it offers
+msgid "tm_fg_step_keep_path"
+msgstr "A felajánlott telepítési mappát hagyd meg"
+
+#. English: Aboard: your games install from inside it
+msgid "tm_fg_step_launcher_done"
+msgstr "Fedélzeten: a játékaidat belőle telepíted"
+
+#. English: Aboard - runs without Wine
+msgid "tm_fg_step_native"
+msgstr "Fedélzeten - Wine nélkül fut"
+
+#. English: You check it's the right one
+msgid "tm_fg_step_pick"
+msgstr "Ellenőrzöd, hogy jó-e"
+
+#. English: The prefix is made on the first launch
+msgid "tm_fg_step_prefix_first"
+msgstr "A prefix az első indításkor jön létre"
+
+#. English: Installs it quietly into the prefix
+msgid "tm_fg_step_quiet"
+msgstr "Csendben telepíti a prefixbe"
+
+#. English: Runs the installer in the prefix - click through it as usual
+msgid "tm_fg_step_run_setup"
+msgstr "Futtatja a telepítőt a prefixben - kattints végig rajta, ahogy szoktad"
+
+#. English: First time only: the game runtime (~700 MB) is fetched
+msgid "tm_fg_step_runtime"
+msgstr "Csak először: letölti a futtatókörnyezetet (~700 MB)"
+
+#. English: Its sign-in window opens - sign in, then close it
+msgid "tm_fg_step_signin"
+msgstr "Megnyílik a bejelentkező ablaka - jelentkezz be, aztán zárd be"
+
+#. English: Store launcher
+msgid "tm_fg_store_launcher"
+msgstr "Áruház-launcher"
+
+#. English: It goes into a Faugus prefix: Faugus and PlunderHub both list it.
+msgid "tm_fg_sub"
+msgstr "Egy Faugus-prefixbe kerül: a Faugus és a PlunderHub is listázza."
+
+#. English: Blizzard: Diablo, Overwatch, WoW
+msgid "tm_fg_sub_battle"
+msgstr "Blizzard: Diablo, Overwatch, WoW"
+
+#. English: EA's games
+msgid "tm_fg_sub_ea"
+msgstr "Az EA játékai"
+
+#. English: Heroic is suggested
+msgid "tm_fg_sub_heroic"
+msgstr "Inkább a Heroicot javaslom"
+
+#. English: GTA, Red Dead
+msgid "tm_fg_sub_rockstar"
+msgstr "GTA, Red Dead"
+
+#. English: Ubisoft's games
+msgid "tm_fg_sub_ubisoft"
+msgstr "A Ubisoft játékai"
+
+#. English: World of Tanks, Warships
+msgid "tm_fg_sub_wargaming"
+msgstr "World of Tanks, Warships"
+
+#. English: Faugus already has a game called {name}.
+msgid "tm_fg_taken"
+msgstr "A Faugusban már van {name} nevű játék."
+
+#. English: That's it
+msgid "tm_fg_thats_it"
+msgstr "Ez az"
+
+#. English: Bring it aboard with Faugus
+msgid "tm_fg_title"
+msgstr "Fedélzetre a Faugusszal"
+
+#. English: {game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone.
+msgid "tm_fg_uninstall_in_launcher"
+msgstr "A(z) {game} eltávolítása a(z) {launcher} programban történik, ez most megnyílik. A kártya eltűnik, amint a játék lekerült."
+
+#. English: WHAT ARE YOU BRINGING?
+msgid "tm_fg_what"
+msgstr "MIT HOZOL?"
+
+#. English: WHAT HAPPENS
+msgid "tm_fg_what_happens"
+msgstr "MI TÖRTÉNIK"
 
 #. English: Heroic (Flatpak) only sees its own folders - it installs there. You can change them in Heroic's settings.
 msgid "tm_flatpak_fixed_paths"

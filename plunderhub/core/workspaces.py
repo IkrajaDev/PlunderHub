@@ -1251,6 +1251,11 @@ class WorkspaceMover:
                         with self._lock:
                             follow = uid not in self._followed
                             self._followed.add(uid)
+                        # a launcher's splash, then its real window: every new
+                        # window is followed while the player still watches the
+                        # launch - one who went elsewhere isn't pulled back
+                        if not follow:
+                            follow = self.compositor.focused_workspace() in (target, ws)
                         ok = self.compositor.move(wid, target, follow)
                         logger.info(f"Moving {uid}'s window to workspace {target} on "
                                     f"{self.compositor.name}: {'done' if ok else 'failed'}")

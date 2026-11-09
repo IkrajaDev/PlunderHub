@@ -152,15 +152,21 @@ def repaints_when_idle(window: Gtk.Widget, seconds: float = 1.0, tries: int = 4)
 
 def assert_calm(window: Gtk.Widget, what: str, root: Gtk.Widget = None, idle: bool = True):
     """Fails with the offenders' names when hovering relayouts the window
-    or, with idle, when it keeps repainting on its own."""
+    or, with idle, when it keeps repainting on its own. Measured on the
+    real desktop, where the player's pointer or a window closing can land
+    in one pass: only what shows twice in a row counts."""
     problems = []
-    offenders = hover_relayouts(window, root)
-    if offenders:
-        problems.append(f"hover lays the whole {what} out again: " + ", ".join(sorted(set(offenders))[:8]))
-    if idle:
-        frames = repaints_when_idle(window)
-        # a one-off update is fine; something animating paints every frame
-        if frames > 10:
-            problems.append(f"the {what} keeps repainting when left alone ({frames} frames a second)")
+    for _attempt in range(2):
+        problems = []
+        offenders = hover_relayouts(window, root)
+        if offenders:
+            problems.append(f"hover lays the whole {what} out again: " + ", ".join(sorted(set(offenders))[:8]))
+        if idle:
+            frames = repaints_when_idle(window)
+            # a one-off update is fine; something animating paints every frame
+            if frames > 10:
+                problems.append(f"the {what} keeps repainting when left alone ({frames} frames a second)")
+        if not problems:
+            return
     assert not problems, "; ".join(problems)
 

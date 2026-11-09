@@ -670,6 +670,14 @@ msgstr "Deshecho: los archivos están como antes"
 msgid "bg_unknown_game"
 msgstr "Juego desconocido (app de Steam {appid})"
 
+#. English: Couldn't start {title}
+msgid "bottles_launch_failed"
+msgstr "No se pudo iniciar {title}"
+
+#. English: Bottles couldn't start the program. Do the bottle and the program still exist?
+msgid "bottles_launch_failed_text"
+msgstr "Bottles no pudo iniciar el programa. ¿Siguen existiendo la botella y el programa?"
+
 #. English: Close
 msgid "bug_close"
 msgstr "Cerrar"
@@ -2202,6 +2210,58 @@ msgstr "{launcher} no se cerró."
 msgid "lo_mangohud"
 msgstr "MangoHud"
 
+#. English: Apply
+msgid "lo_new_apply"
+msgstr "Aplicar"
+
+#. English: Apply & restart
+msgid "lo_new_apply_restart"
+msgstr "Aplicar y reiniciar"
+
+#. English: On: new games get them without asking. Off: PlunderHub asks you.
+msgid "lo_new_auto_sub"
+msgstr "Activado: los juegos nuevos las reciben sin preguntar. Desactivado: PlunderHub te pregunta."
+
+#. English: Recommended launch options for new games
+msgid "lo_new_auto_title"
+msgstr "Opciones de inicio recomendadas para juegos nuevos"
+
+#. English: Use Proton-GE Latest
+msgid "lo_new_proton"
+msgstr "Usar Proton-GE Latest"
+
+#. English: Runs this game on the newest Proton-GE
+msgid "lo_new_proton_sub"
+msgstr "Ejecuta este juego con el Proton-GE más reciente"
+
+#. English: Recommended launch options
+msgid "lo_new_recommended"
+msgstr "Opciones de inicio recomendadas"
+
+#. English: GameMode, FPS limit, Esync and Fsync, fullscreen and more
+msgid "lo_new_recommended_tip"
+msgstr "GameMode, límite de FPS, Esync y Fsync, pantalla completa y más"
+
+#. English: {launcher} is running and has to restart for this.
+msgid "lo_new_restart_note"
+msgstr "{launcher} está en marcha y debe reiniciarse para esto."
+
+#. English: Leave as is
+msgid "lo_new_skip"
+msgstr "Dejar como está"
+
+#. English: Want to set this up now? You can change it any time on the game page.
+msgid "lo_new_text"
+msgstr "¿Quieres configurarlo ahora? Puedes cambiarlo cuando quieras en la página del juego."
+
+#. English: {n} new games
+msgid "lo_new_title_many"
+msgstr "{n} juegos nuevos"
+
+#. English: New game: {title}
+msgid "lo_new_title_one"
+msgstr "Juego nuevo: {title}"
+
 #. English: This launcher can't store wrapper commands, so these can't be saved: {words}
 msgid "lo_no_wrappers"
 msgstr "Este launcher no puede guardar comandos wrapper, así que esto no se puede guardar: {words}"
@@ -2297,6 +2357,10 @@ msgstr "Steam los usa automáticamente si están instalados. Puedes instalarlos 
 #. English: Steam didn't close, so the launch options weren't saved.
 msgid "lo_steam_still_running"
 msgstr "Steam no se cerró, así que las opciones de inicio no se guardaron."
+
+#. English: A store's own launcher: game options (window mode, FPS limit, Wayland, Recommended) don't apply to it - Faugus' own settings for it are kept.
+msgid "lo_store_launcher_note"
+msgstr "El launcher propio de una tienda: las opciones de juego (modo de ventana, límite de FPS, Wayland, Recomendado) no se aplican; se mantienen los ajustes de Faugus."
 
 #. English: Stored in: {where}
 msgid "lo_stored_in"
@@ -2457,6 +2521,10 @@ msgstr "Aún no hay launchers a bordo.\nActiva al menos uno en la página Biblio
 #. English: Ship's Controls
 msgid "options"
 msgstr "Controles del Barco"
+
+#. English: {launcher} couldn't start the game.
+msgid "other_launch_failed_text"
+msgstr "{launcher} no pudo iniciar el juego."
 
 #. English: Looking for patch notes…
 msgid "patch_notes_loading"
@@ -2790,6 +2858,10 @@ msgstr "Historial de tiempo de juego enviado al fondo del mar."
 msgid "playtime_top_games"
 msgstr "Travesías más navegadas"
 
+#. English: Under a minute
+msgid "playtime_under_minute"
+msgstr "Menos de un minuto"
+
 #. English: All
 msgid "pm_all"
 msgstr "Todos"
@@ -2798,13 +2870,13 @@ msgstr "Todos"
 msgid "pm_all_releases"
 msgstr "Las {n} versiones  ›"
 
-#. English: When PlunderHub starts it downloads the newest Proton-GE, for every launcher. Games on it wait while it downloads.
+#. English: Off: a new Proton-GE shows up at the bottom left and waits for you to press Download.
 msgid "pm_auto_sub"
-msgstr "Al iniciarse, PlunderHub descarga el Proton-GE más reciente para todos los launchers. Los juegos que lo usan esperan mientras se descarga."
+msgstr "Desactivado: un nuevo Proton-GE aparece abajo a la izquierda y espera a que pulses Descargar."
 
-#. English: Keep Proton-GE Latest up to date
+#. English: Update Proton-GE Latest automatically
 msgid "pm_auto_title"
-msgstr "Mantener Proton-GE Latest al día"
+msgstr "Actualizar Proton-GE Latest automáticamente"
 
 #. English: By CachyOS: Proton tuned for speed. The build for your processor ({level}) is picked by itself. Never downloaded on its own - only when you ask.
 msgid "pm_cachyos_note"
@@ -2998,9 +3070,21 @@ msgstr "No se pueden mostrar las notas: no se puede acceder a GitHub y aún no s
 msgid "pm_nothing"
 msgstr "Nada todavía"
 
-#. English: Nothing yet - Proton-GE Latest downloads by itself
+#. English: Nothing yet - download Proton-GE Latest to use it
 msgid "pm_nothing_ge"
-msgstr "Nada todavía: Proton-GE Latest se descarga solo"
+msgstr "Nada todavía: descarga Proton-GE Latest para usarlo"
+
+#. English: Download
+msgid "pm_offer_download"
+msgstr "Descargar"
+
+#. English: {tag} - not downloaded yet
+msgid "pm_offer_missing"
+msgstr "{tag} - aún sin descargar"
+
+#. English: New Proton-GE
+msgid "pm_offer_title"
+msgstr "Nuevo Proton-GE"
 
 #. English: On this computer
 msgid "pm_on_computer"
@@ -3398,6 +3482,10 @@ msgstr "Abrir"
 msgid "sc_group_views"
 msgstr "Vistas y búsqueda"
 
+#. English: Harbors and back
+msgid "sc_harbors"
+msgstr "Puertos y volver"
+
 #. English: Launch game
 msgid "sc_launch"
 msgstr "Iniciar juego"
@@ -3489,6 +3577,14 @@ msgstr "Aguas traicioneras"
 #. English: Font size
 msgid "section_font_size"
 msgstr "Tamaño de fuente"
+
+#. English: Harbors
+msgid "section_harbors"
+msgstr "Puertos"
+
+#. English: the stores' own launchers
+msgid "section_harbors_note"
+msgstr "los lanzadores de las tiendas"
 
 #. English: Icon size (List view only)
 msgid "section_icon_size"
@@ -4901,6 +4997,410 @@ msgstr "Empieza cuando termine el anterior."
 #. English: {launcher} is unpacking {game}
 msgid "tm_dock_unpacking"
 msgstr "{launcher} está desempaquetando {game}"
+
+#. English: One is enough: its games install from inside it. Open that one instead?
+msgid "tm_fg_already_s"
+msgstr "Con uno basta: sus juegos se instalan desde él. ¿Abrir ese?"
+
+#. English: {name} is already aboard
+msgid "tm_fg_already_t"
+msgstr "{name} ya está a bordo"
+
+#. English: Show it in the app menu
+msgid "tm_fg_app_menu"
+msgstr "Mostrar en el menú de aplicaciones"
+
+#. English: Adds it to your desktop's app list (start menu, app launcher), so it starts from there without opening PlunderHub.
+msgid "tm_fg_app_menu_why"
+msgstr "Lo añade a la lista de apps de tu escritorio (menú de inicio, lanzador), para iniciarlo desde ahí sin abrir PlunderHub."
+
+#. English: Bring aboard
+msgid "tm_fg_bring"
+msgstr "Subir a bordo"
+
+#. English: Launcher · installer · game
+msgid "tm_fg_bring_sub"
+msgstr "Launcher · instalador · juego"
+
+#. English: Choose the file
+msgid "tm_fg_choose_file"
+msgstr "Elegir el archivo"
+
+#. English: Choose another folder
+msgid "tm_fg_choose_prefix"
+msgstr "Elegir otra carpeta"
+
+#. English: Close
+msgid "tm_fg_close"
+msgstr "Cerrar"
+
+#. English: Close Faugus
+msgid "tm_fg_close_btn"
+msgstr "Cerrar Faugus"
+
+#. English: Its window and everything running in its prefix closes. A download in it stops too.
+msgid "tm_fg_close_game_s"
+msgstr "Se cierra su ventana y todo lo que corre en su prefijo. Una descarga en él también se detiene."
+
+#. English: Close {name}?
+msgid "tm_fg_close_game_t"
+msgstr "¿Cerrar {name}?"
+
+#. English: Close it
+msgid "tm_fg_close_it"
+msgstr "Cerrarlo"
+
+#. English: Faugus writes its own game list back when it closes - so it has to be closed while {game} is written in. It opens fine afterwards.
+msgid "tm_fg_close_s"
+msgstr "Faugus reescribe su lista al cerrarse, así que debe estar cerrado mientras se añade {game}. Después se abre bien."
+
+#. English: Close Faugus to save it?
+msgid "tm_fg_close_t"
+msgstr "¿Cerrar Faugus para guardarlo?"
+
+#. English: A store launcher, a game's installer or a game already on disk - it goes into a Faugus prefix, and both Faugus and PlunderHub list it.
+msgid "tm_fg_empty_s"
+msgstr "Un launcher de tienda, el instalador de un juego o un juego que ya está en el disco: va a un prefijo de Faugus, y tanto Faugus como PlunderHub lo muestran."
+
+#. English: No Faugus games yet
+msgid "tm_fg_empty_t"
+msgstr "Aún no hay juegos de Faugus"
+
+#. English: The installer finished, but no game .exe turned up in the prefix. Its log: {log}
+msgid "tm_fg_failed_no_exe"
+msgstr "El instalador terminó, pero no apareció ningún .exe de juego en el prefijo. Su registro: {log}"
+
+#. English: The installer finished, but {name} isn't in the prefix. Its log: {log}
+msgid "tm_fg_failed_not_installed"
+msgstr "El instalador terminó, pero {name} no está en el prefijo. Su registro: {log}"
+
+#. English: Something went wrong: {why}. The log: {log}
+msgid "tm_fg_failed_other"
+msgstr "Algo salió mal: {why}. El registro: {log}"
+
+#. English: That file isn't there.
+msgid "tm_fg_file_missing"
+msgstr "Ese archivo no existe."
+
+#. English: Faugus (Flatpak) can't reach this folder - pick one in your home, /mnt or /run/media.
+msgid "tm_fg_flatpak_cant_see"
+msgstr "Faugus (Flatpak) no llega a esta carpeta: elige una en tu home, /mnt o /run/media."
+
+#. English: FREE NOW
+msgid "tm_fg_free"
+msgstr "LIBRE AHORA"
+
+#. English: THE GAME'S .EXE
+msgid "tm_fg_game_exe"
+msgstr "EL .EXE DEL JUEGO"
+
+#. English: Hoist aboard
+msgid "tm_fg_go"
+msgstr "Subir a bordo"
+
+#. English: A GAME
+msgid "tm_fg_group_game"
+msgstr "UN JUEGO"
+
+#. English: A STORE'S LAUNCHER
+msgid "tm_fg_group_store"
+msgstr "LAUNCHER DE UNA TIENDA"
+
+#. English: For {store}, I'd suggest Heroic Games Launcher
+msgid "tm_fg_heroic"
+msgstr "Para {store}, te recomiendo Heroic Games Launcher"
+
+#. English: Show my {store} games on the map
+msgid "tm_fg_heroic_go"
+msgstr "Ver mis juegos de {store} en el mapa"
+
+#. English: INSTALLER (.exe / .msi)
+msgid "tm_fg_installer"
+msgstr "INSTALADOR (.exe / .msi)"
+
+#. English: the installer tells
+msgid "tm_fg_installer_tells"
+msgstr "lo dice el instalador"
+
+#. English: Windows game already on disk
+msgid "tm_fg_kind_exe"
+msgstr "Juego de Windows ya en el disco"
+
+#. English: point at its .exe
+msgid "tm_fg_kind_exe_sub"
+msgstr "elige su .exe"
+
+#. English: Linux game
+msgid "tm_fg_kind_linux"
+msgstr "Juego de Linux"
+
+#. English: runs natively, no Wine
+msgid "tm_fg_kind_linux_sub"
+msgstr "nativo, sin Wine"
+
+#. English: Windows game from its installer
+msgid "tm_fg_kind_setup"
+msgstr "Juego de Windows desde su instalador"
+
+#. English: setup.exe, a GOG offline installer, itch.io, a disc
+msgid "tm_fg_kind_setup_sub"
+msgstr "setup.exe, instalador offline de GOG, itch.io, un disco"
+
+#. English: Left out: {names}
+msgid "tm_fg_left_out"
+msgstr "Omitidos: {names}"
+
+#. English: likeliest
+msgid "tm_fg_likeliest"
+msgstr "el más probable"
+
+#. English: NAME
+msgid "tm_fg_name"
+msgstr "NOMBRE"
+
+#. English: Choose the file.
+msgid "tm_fg_need_file"
+msgstr "Elige el archivo."
+
+#. English: Give it a name.
+msgid "tm_fg_need_name"
+msgstr "Dale un nombre."
+
+#. English: Choose a prefix folder.
+msgid "tm_fg_need_prefix"
+msgstr "Elige una carpeta de prefijo."
+
+#. English: NEEDS
+msgid "tm_fg_needs"
+msgstr "NECESITA"
+
+#. English: the launcher itself
+msgid "tm_fg_needs_launcher"
+msgstr "el launcher en sí"
+
+#. English: + {size} game runtime, first time only
+msgid "tm_fg_needs_runtime"
+msgstr "+ {size} de runtime, solo la primera vez"
+
+#. English: Install Faugus - then store launchers, installers and games can come aboard from here.
+msgid "tm_fg_no_launcher_s"
+msgstr "Instala Faugus y podrás subir a bordo launchers, instaladores y juegos desde aquí."
+
+#. English: Open Faugus
+msgid "tm_fg_open"
+msgstr "Abrir Faugus"
+
+#. English: Open it
+msgid "tm_fg_open_it"
+msgstr "Abrirlo"
+
+#. English: Another file…
+msgid "tm_fg_other_file"
+msgstr "Otro archivo…"
+
+#. English: Close its window to finish
+msgid "tm_fg_phase_close_it"
+msgstr "Cierra su ventana para acabar"
+
+#. English: Downloading the installer
+msgid "tm_fg_phase_download"
+msgstr "Descargando el instalador"
+
+#. English: Looking for the game's .exe
+msgid "tm_fg_phase_find"
+msgstr "Buscando el .exe del juego"
+
+#. English: Installing into the prefix
+msgid "tm_fg_phase_install"
+msgstr "Instalando en el prefijo"
+
+#. English: Getting ready
+msgid "tm_fg_phase_prepare"
+msgstr "Preparando"
+
+#. English: Fetching the game runtime (first time only)
+msgid "tm_fg_phase_runtime"
+msgstr "Descargando el runtime (solo la primera vez)"
+
+#. English: Waiting for Faugus to close
+msgid "tm_fg_phase_save"
+msgstr "Esperando a que Faugus se cierre"
+
+#. English: Sign in, then close its window
+msgid "tm_fg_phase_signin"
+msgstr "Inicia sesión y cierra su ventana"
+
+#. English: The installer of {name} left these. The likeliest is picked.
+msgid "tm_fg_pick_s"
+msgstr "El instalador de {name} dejó estos. El más probable está elegido."
+
+#. English: Which one starts the game?
+msgid "tm_fg_pick_t"
+msgstr "¿Cuál inicia el juego?"
+
+#. English: PREFIX  ·  Faugus' default folder + the name
+msgid "tm_fg_prefix"
+msgstr "PREFIJO  ·  la carpeta de Faugus + el nombre"
+
+#. English: PREVIEW
+msgid "tm_fg_preview"
+msgstr "VISTA PREVIA"
+
+#. English: PROTON
+msgid "tm_fg_proton"
+msgstr "PROTON"
+
+#. English: {name}  (PlunderHub's)
+msgid "tm_fg_proton_ours"
+msgstr "{name}  (de PlunderHub)"
+
+#. English: Delete its Wine prefix too
+msgid "tm_fg_rm_prefix"
+msgstr "Borrar también su prefijo de Wine"
+
+#. English: Saves in it and everything installed in it, including this launcher's games, go with it.
+msgid "tm_fg_rm_prefix_sub"
+msgstr "Las partidas guardadas y todo lo instalado en él, incluidos los juegos de este launcher, se van con él."
+
+#. English: It goes from Faugus and your library.
+msgid "tm_fg_rm_s"
+msgstr "Desaparecerá de Faugus y de tu biblioteca."
+
+#. English: Remove {game}?
+msgid "tm_fg_rm_t"
+msgstr "¿Quitar {game}?"
+
+#. English: Running
+msgid "tm_fg_running"
+msgstr "En marcha"
+
+#. English: Faugus is closed for a moment while its list is written - it opens fine afterwards.
+msgid "tm_fg_running_note"
+msgstr "Faugus se cierra un momento mientras se escribe su lista; luego se abre bien."
+
+#. English: RUNS WITH
+msgid "tm_fg_runs_with"
+msgstr "SE EJECUTA CON"
+
+#. English: PlunderHub's recommended options
+msgid "tm_fg_runs_with_sub"
+msgstr "opciones recomendadas de PlunderHub"
+
+#. English: The download didn't work - GitHub isn't answering right now. Try again in a few minutes.
+msgid "tm_fg_setup_failed"
+msgstr "La descarga ha fallado: GitHub no responde ahora mismo. Inténtalo de nuevo en unos minutos."
+
+#. English: THE GAME'S START FILE
+msgid "tm_fg_start_file"
+msgstr "ARCHIVO DE INICIO DEL JUEGO"
+
+#. English: Aboard, in Faugus and in your library
+msgid "tm_fg_step_aboard"
+msgstr "A bordo, en Faugus y en tu biblioteca"
+
+#. English: It opens when done - close it to finish
+msgid "tm_fg_step_close"
+msgstr "Se abre al terminar: ciérralo para acabar"
+
+#. English: Downloads {name}'s installer from its maker
+msgid "tm_fg_step_dl"
+msgstr "Descarga el instalador de {name} de su fabricante"
+
+#. English: Finds the game's .exe from the shortcuts it made
+msgid "tm_fg_step_find"
+msgstr "Encuentra el .exe del juego por los accesos directos creados"
+
+#. English: Keep the install folder it offers
+msgid "tm_fg_step_keep_path"
+msgstr "Deja la carpeta que propone"
+
+#. English: Aboard: your games install from inside it
+msgid "tm_fg_step_launcher_done"
+msgstr "A bordo: tus juegos se instalan desde él"
+
+#. English: Aboard - runs without Wine
+msgid "tm_fg_step_native"
+msgstr "A bordo: se ejecuta sin Wine"
+
+#. English: You check it's the right one
+msgid "tm_fg_step_pick"
+msgstr "Compruebas que es el correcto"
+
+#. English: The prefix is made on the first launch
+msgid "tm_fg_step_prefix_first"
+msgstr "El prefijo se crea en el primer inicio"
+
+#. English: Installs it quietly into the prefix
+msgid "tm_fg_step_quiet"
+msgstr "Lo instala en silencio en el prefijo"
+
+#. English: Runs the installer in the prefix - click through it as usual
+msgid "tm_fg_step_run_setup"
+msgstr "Ejecuta el instalador en el prefijo: avanza como siempre"
+
+#. English: First time only: the game runtime (~700 MB) is fetched
+msgid "tm_fg_step_runtime"
+msgstr "Solo la primera vez: se descarga el runtime (~700 MB)"
+
+#. English: Its sign-in window opens - sign in, then close it
+msgid "tm_fg_step_signin"
+msgstr "Se abre su ventana de inicio de sesión: entra y ciérrala"
+
+#. English: Store launcher
+msgid "tm_fg_store_launcher"
+msgstr "Launcher de tienda"
+
+#. English: It goes into a Faugus prefix: Faugus and PlunderHub both list it.
+msgid "tm_fg_sub"
+msgstr "Va a un prefijo de Faugus: Faugus y PlunderHub lo muestran."
+
+#. English: Blizzard: Diablo, Overwatch, WoW
+msgid "tm_fg_sub_battle"
+msgstr "Blizzard: Diablo, Overwatch, WoW"
+
+#. English: EA's games
+msgid "tm_fg_sub_ea"
+msgstr "Los juegos de EA"
+
+#. English: Heroic is suggested
+msgid "tm_fg_sub_heroic"
+msgstr "Se recomienda Heroic"
+
+#. English: GTA, Red Dead
+msgid "tm_fg_sub_rockstar"
+msgstr "GTA, Red Dead"
+
+#. English: Ubisoft's games
+msgid "tm_fg_sub_ubisoft"
+msgstr "Los juegos de Ubisoft"
+
+#. English: World of Tanks, Warships
+msgid "tm_fg_sub_wargaming"
+msgstr "World of Tanks, Warships"
+
+#. English: Faugus already has a game called {name}.
+msgid "tm_fg_taken"
+msgstr "Faugus ya tiene un juego llamado {name}."
+
+#. English: That's it
+msgid "tm_fg_thats_it"
+msgstr "Es este"
+
+#. English: Bring it aboard with Faugus
+msgid "tm_fg_title"
+msgstr "Súbelo a bordo con Faugus"
+
+#. English: {game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone.
+msgid "tm_fg_uninstall_in_launcher"
+msgstr "{game} se desinstala en {launcher}, que se abre ahora. Su tarjeta desaparecerá cuando el juego ya no esté."
+
+#. English: WHAT ARE YOU BRINGING?
+msgid "tm_fg_what"
+msgstr "¿QUÉ SUBES A BORDO?"
+
+#. English: WHAT HAPPENS
+msgid "tm_fg_what_happens"
+msgstr "QUÉ PASA"
 
 #. English: Heroic (Flatpak) only sees its own folders - it installs there. You can change them in Heroic's settings.
 msgid "tm_flatpak_fixed_paths"

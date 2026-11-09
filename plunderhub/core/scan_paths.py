@@ -20,8 +20,9 @@
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from plunderhub.core.utils import which
 
@@ -165,6 +166,40 @@ FLATPAK_APP_DIRS: List[Path] = [
 
 def flatpak_app_installed(app_id: str) -> bool:
     return any((d / app_id).is_dir() for d in FLATPAK_APP_DIRS)
+
+
+_PY = f"python{sys.version_info.major}.{sys.version_info.minor}"
+# where a distro package puts Faugus for the python3 this runs on
+FAUGUS_SITE_DIRS: Tuple[Path, ...] = (
+    Path("/usr/lib") / _PY / "site-packages", Path("/usr/lib64") / _PY / "site-packages",
+    Path("/usr/local/lib") / _PY / "site-packages", Path("/usr/lib/python3/dist-packages"),
+)
+
+
+def _runner_takes_game(runner: Path) -> bool:
+    try:
+        return '"--game"' in runner.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+
+
+def faugus_own_runner(games_path: Path) -> Optional[List[str]]:
+    """The command of Faugus' own game runner ("--game <gameid>" follows),
+    None on a Faugus too old to have one. It does what a bare umu-run
+    doesn't: fetches umu and a "Latest" Proton that's missing, the
+    anti-cheat runtimes, the game's GPU, its .bat, pre/post-launch, the
+    settings and variables of Faugus - and shows its splash meanwhile."""
+    text = str(games_path)
+    for app_id in LAUNCHER_FLATPAK_IDS["Faugus"]:
+        if f"/.var/app/{app_id}/" in text:
+            for root in FLATPAK_APP_DIRS:
+                if any(_runner_takes_game(p) for p in (root / app_id).glob(
+                        "current/active/files/lib/python3*/site-packages/faugus/runner.py")):
+                    return ["flatpak", "run", "--command=python3", app_id, "-m", "faugus.runner"]
+            return None
+    if which("faugus-launcher") and any(_runner_takes_game(d / "faugus/runner.py") for d in FAUGUS_SITE_DIRS):
+        return ["python3", "-m", "faugus.runner"]
+    return None
 
 
 def resolve_launcher_invocation(

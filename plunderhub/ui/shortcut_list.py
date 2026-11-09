@@ -49,6 +49,7 @@ KEYBOARD = [
         (("T",), "tm_title"),
         (("D",), "sc_dashboard"),
         (("O",), "sc_settings"),
+        (("H",), "sc_harbors"),
         (("C",), "sc_console"),
         (("F1",), "sc_this_list"),
     ]),

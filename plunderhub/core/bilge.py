@@ -215,8 +215,13 @@ def lutris_prefix_folders() -> List[Path]:
 
 
 def faugus_prefix_folders() -> List[Path]:
-    """Faugus' default-prefix (config.ini), ~/Faugus by default."""
+    """Faugus' default-prefix (config.json, config.ini in old versions),
+    the folders its games' prefixes are in, ~/Faugus by default."""
+    from plunderhub.core.faugus_add import faugus_status
     folders = []
+    _status, site = faugus_status()
+    if site is not None:
+        folders.append(site.default_prefix_root())
     games = faugus_games_path()
     if games is not None:
         try:
@@ -366,6 +371,10 @@ def _launcher_setting_files() -> List[Path]:
     games = faugus_games_path()
     if games is not None:
         files += [games, games.parent / "config.ini"]
+    from plunderhub.core.faugus_add import faugus_status
+    _status, site = faugus_status()
+    if site is not None:
+        files.append(site.config)
     return files
 
 

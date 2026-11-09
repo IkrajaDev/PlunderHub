@@ -38,12 +38,12 @@ HEADERS = {
     "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
 }
-def run(cmd: List[str], env: Optional[Dict[str, str]] = None) -> subprocess.Popen:
+def run(cmd: List[str], env: Optional[Dict[str, str]] = None, cwd: Optional[str] = None) -> subprocess.Popen:
     run_env = os.environ.copy()
     if env:
         run_env.update(env)
     return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                             env=run_env, start_new_session=True)
+                             env=run_env, cwd=cwd, start_new_session=True)
 
 @dataclass(frozen=True)
 class GameProcessMatch:

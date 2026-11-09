@@ -2,8 +2,8 @@
 
 <p align="center">
   <a href="03-game-overview.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 4 / 17 &nbsp;·&nbsp;
-  <a href="05-game-menu.md"><b>Next →</b></a>
+  &nbsp;·&nbsp; 4 / 18 &nbsp;·&nbsp;
+  <a href="05-library-list.md"><b>Next →</b></a>
 </p>
 
 <p align="center">

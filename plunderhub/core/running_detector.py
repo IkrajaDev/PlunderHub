@@ -285,7 +285,8 @@ def build_targets(games) -> List[GameTarget]:
                 targets.append(GameTarget(uid, _usable_install_dir(game.install_dir), _exe_set(_lutris_executable(game))))
             elif uid.startswith("faugus:"):
                 exe = _faugus_executable(game)
-                targets.append(GameTarget(uid, _usable_install_dir(os.path.dirname(exe) if exe else None), _exe_set(exe)))
+                targets.append(GameTarget(uid, _usable_install_dir(os.path.dirname(exe) if exe else game.install_dir),
+                                          _exe_set(exe)))
             elif uid.startswith("bottles:") and game.install_dir:
                 from plunderhub.core.scanner import bottles_program_executables
                 names = bottles_program_executables(game.install_dir, uid.split(":", 1)[1], game.title)
@@ -335,7 +336,9 @@ def _lutris_executable(game) -> Optional[str]:
 
 
 def _faugus_executable(game) -> Optional[str]:
-    """The game file PlunderHub launches with umu-run (see _faugus_command)."""
+    """The game file: named by the scan, or the word after umu-run (see _faugus_command)."""
+    if game.exe_path is not None:
+        return game.exe_path or None
     cmd = game.launch_cmd or []
     for i, word in enumerate(cmd[:-1]):
         if os.path.basename(word) == "umu-run":

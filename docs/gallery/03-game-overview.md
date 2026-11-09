@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="02-treasure-map-card.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 3 / 17 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 3 / 18 &nbsp;·&nbsp;
   <a href="04-console-mode.md"><b>Next →</b></a>
 </p>
 

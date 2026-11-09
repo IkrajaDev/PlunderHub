@@ -20,9 +20,8 @@
 who PlunderHub is, then a page per main feature (a picture and a few
 words), the keys worth knowing last.
 
-The first time (forced) it is watched through: no way out but Next, which
-lights up a moment after each page shows; Set sail! at the end is what
-marks it seen. Opened again from the sidebar's logo it is free: the dots
+The first time (forced) it is watched through: no way out but Next; Set
+sail! at the end is what marks it seen. Opened again from the sidebar's logo it is free: the dots
 jump, Esc and Close leave.
 
 Nothing repaints once a page has settled: the logo, the splash and the
@@ -46,7 +45,6 @@ from plunderhub.ui.progress_card import card_dialog
 
 GITHUB_URL = "https://github.com/IkrajaDev/PlunderHub"
 LICENSE_URL = "https://github.com/IkrajaDev/PlunderHub/blob/main/LICENSE"
-NEXT_WAIT_US = 2_000_000          # forced: Next lights up this long after a page shows
 WIDTH = 900                        # the card's column
 
 # (title key, text key, picture in assets/tour/ - made by PlunderHubDemos/tour_pictures.py)
@@ -290,8 +288,7 @@ class Tour:
 
         self.next_btn = app._dialog_button(self.t("wt_show_around") + "  →", "accent", "activate", "Enter")
         self.next_btn.connect("clicked", lambda *_: self.next())
-        self.next_fill = NextFill(self.next_btn)
-        foot.pack_end(self.next_fill, False, False, 0)
+        foot.pack_end(self.next_btn, False, False, 0)
         return foot
 
     def _update_footer(self):
@@ -303,10 +300,6 @@ class Tour:
         self.back_btn.set_visible(self.page > 0)
         self.close_btn.set_visible(not self.forced)
         self.dots.set_page(self.page)
-        if self.forced and self.page not in self.seen:
-            self.next_fill.wait(NEXT_WAIT_US)
-        else:
-            self.next_fill.done()
         self.seen.add(self.page)
 
     def go(self, i: int):
@@ -317,8 +310,6 @@ class Tour:
         self._update_footer()
 
     def next(self):
-        if not self.next_fill.ready:
-            return
         if self.page == len(self.pages) - 1:
             if self.finished:
                 return                  # already sinking
@@ -328,7 +319,7 @@ class Tour:
             self.go(self.page + 1)
 
     def _dot_clicked(self, i: int):
-        # forced: only back to a page already seen, or on to the next one once allowed
+        # forced: only back to a page already seen, or on to the next one
         if not self.forced or i in self.seen:
             self.go(i)
         elif i == self.page + 1:
@@ -521,71 +512,6 @@ def _on_beat(widget: Gtk.Widget, clock) -> bool:
                 rate = monitor.get_refresh_rate() / 1000
         cached = widget._wt_beat = (max(1, round(rate / 60)) if rate > 0 else 1, now)
     return clock.get_frame_counter() % cached[0] == 0
-
-
-class NextFill(Gtk.Overlay):
-    """Next, filling up like a progress bar until it may be pressed. The fill
-    is painted under the button's words (in its own draw, before GTK's), and
-    while it fills the button is the ghost pill - see-through, light words -
-    so they stay readable; then it's the accent pill again. It stays
-    clickable: Tour.next() waits for ready."""
-
-    def __init__(self, button: Gtk.Button):
-        super().__init__()
-        self.button = button
-        self.add(button)
-        button.connect("draw", self._draw)
-        self.frac, self.ready, self._tick, self._t0, self._len = 1.0, True, None, None, 1
-        self._animate = True
-
-    def _ghost(self, on: bool):
-        ctx = self.button.get_style_context()
-        (ctx.remove_class if on else ctx.add_class)("suggested-action")
-        (ctx.add_class if on else ctx.remove_class)("home-pill-ghost")
-
-    def wait(self, length_us: int):
-        self._animate = Gtk.Settings.get_default().props.gtk_enable_animations
-        self.ready = False
-        self.frac = 0.0
-        self._ghost(True)
-        self._t0, self._len = None, length_us
-        if self._tick is None:
-            self._tick = self.add_tick_callback(self._step)
-
-    def done(self):
-        if self._tick is not None:
-            self.remove_tick_callback(self._tick)
-            self._tick = None
-        self.frac, self.ready = 1.0, True
-        self._ghost(False)
-        self.button.queue_draw()
-
-    def _step(self, _w, clock) -> bool:
-        now = clock.get_frame_time()
-        if self._t0 is None:
-            self._t0 = now
-        self.frac = min(1.0, (now - self._t0) / self._len)
-        if self._animate and (self.frac >= 1.0 or _on_beat(self, clock)):
-            self.button.queue_draw()
-        if self.frac >= 1.0:
-            self._tick = None
-            self.done()
-            return False
-        return True
-
-    def _draw(self, widget, cr):
-        # no animations: still the wait, without the moving fill
-        if self.ready or not self._animate:
-            return False
-        w, h = widget.get_allocated_width(), widget.get_allocated_height()
-        cr.save()
-        _rounded(cr, 0, 0, w, h, h / 2)
-        cr.clip()
-        cr.rectangle(0, 0, w * self.frac, h)
-        cr.set_source_rgba(*_accent_rgb(widget), 0.42)
-        cr.fill()
-        cr.restore()
-        return False
 
 
 class RisingLogo(Gtk.DrawingArea):

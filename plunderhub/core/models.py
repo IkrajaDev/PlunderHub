@@ -34,6 +34,10 @@ class GameItem:
     install_dir: Optional[str] = None
     store_url: Optional[str] = None
     store_platform: Optional[str] = None
+    # the game file itself, where launch_cmd doesn't name it (Faugus' own runner)
+    exe_path: Optional[str] = None
+    # the store's own logo, on the card of a game a store launcher installed
+    store_icon: Optional[str] = None
 
 
 # Heroic's sources, as GameItem.store_platform spells them - also the
