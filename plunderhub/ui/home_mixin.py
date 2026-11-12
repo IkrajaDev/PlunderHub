@@ -848,7 +848,8 @@ class GameCard(Gtk.Box):
     # --- drawing ---------------------------------------------------------
 
     def _draw_placeholder(self, widget, cr):
-        meta = (self.app._home_playtime_text(self.game.uid) or None) if self.app.show_playtime else None
+        meta = ((self.app.harbor_text(self.game.uid) if self.app._is_store_launcher(self.game.uid)
+                 else self.app._home_playtime_text(self.game.uid)) or None) if self.app.show_playtime else None
         _paint_name_plate(cr, widget, self.game.title, meta, widget.get_allocated_width(),
                           widget.get_allocated_height())
         return False
@@ -1058,7 +1059,8 @@ class GameCard(Gtk.Box):
         of a lift or an animated cover. Made again when any of it changes."""
         app = self.app
         title = self.game.title if app.show_game_titles and app.show_covers else None
-        meta = (app._home_playtime_text(self.game.uid) or None) if app.show_playtime and app.show_covers else None
+        meta = ((app.harbor_text(self.game.uid) if app._is_store_launcher(self.game.uid)
+                 else app._home_playtime_text(self.game.uid)) or None) if app.show_playtime and app.show_covers else None
         selected = self.game.uid in app.selected_uids
         is_new = app._is_new_game(self.game.uid)
         key = (w, h, phase == "launching", title, meta, app._text_factor(), app.selection_mode, selected,
@@ -2468,7 +2470,10 @@ class HomeMixin:
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroller.set_propagate_natural_height(True)
-        scroller.set_max_content_height(max(300, self.get_size()[1] - 180))
+        from plunderhub.gi_setup import screen_room
+        room = screen_room(self)
+        # no taller than the main window, nor than the screen (a 768 px laptop)
+        scroller.set_max_content_height(max(300, min(self.get_size()[1], room[1] if room else 10_000) - 180))
         scroller.get_style_context().add_class("settings-scroll")
         panels = self._build_shortcuts_panels()
         scroller.add(panels)
@@ -3203,7 +3208,7 @@ class HomeMixin:
 
     def _home_playtime_text(self, uid: str) -> str:
         if self._is_store_launcher(uid):
-            return ""       # Battle.net, EA app...: a launcher, its games count
+            return ""       # Battle.net, EA app...: a launcher, its games count (harbor_text: what it holds)
         minutes = self.playtime.get(uid) or 0
         if not minutes:
             played = self.recent.get(uid) or uid in self.running_procs or uid in self.detected_running
@@ -3900,7 +3905,19 @@ class HomeMixin:
         badge_image = (Gtk.Image.new_from_pixbuf(badge) if badge is not None
                        else self._load_launcher_icon(game.launcher, 32))
         hbox.pack_start(column("launcher", game.launcher, badge_image), False, False, 0)
-        if self.show_playtime:
+        if self.show_playtime and self._is_store_launcher(game.uid):
+            # a store launcher (Harbors): no playtime of its own - what it holds
+            # ("3 games · 120 GB") once measured, the Set sail buttons in line
+            held = self.harbor_text(game.uid)
+            icon = None
+            if held:
+                if row.get_style_context().has_class("home-list-row-hero"):
+                    from plunderhub.ui.game_page import _icon
+                    icon = _icon("package-symbolic", 14, "#ffffff")
+                else:
+                    icon = self._icon_image_at_size("package-symbolic", 14)
+            hbox.pack_start(column("time", held, icon), False, False, 0)
+        elif self.show_playtime:
             if row.get_style_context().has_class("home-list-row-hero"):
                 # light over the shaded hero, whatever the theme's text is
                 from plunderhub.ui.game_page import _icon

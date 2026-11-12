@@ -782,6 +782,10 @@ msgstr "{count} játék kijelölve"
 msgid "bulk_unfavorite_btn"
 msgstr "Eltávolítás a kedvencek közül"
 
+#. English: Uninstall selected
+msgid "bulk_uninstall_btn"
+msgstr "Kijelöltek eltávolítása"
+
 #. English: Clear selection
 msgid "clear_selection_btn"
 msgstr "Kijelölés törlése"
@@ -965,6 +969,10 @@ msgstr "Játékok {size}"
 #. English: Games played
 msgid "dash_games_played"
 msgstr "Játszott játékok"
+
+#. English: Launchers {size}
+msgid "dash_harbors_legend"
+msgstr "Launcherek {size}"
 
 #. English: Measuring the cargo hold…
 msgid "dash_measuring"
@@ -1362,6 +1370,10 @@ msgstr "Választás SteamGridDB-ről…"
 msgid "gp_goverlay_tooltip"
 msgstr "MangoHud és vkBasalt beállítása a GOverlayben"
 
+#. English: Holds
+msgid "gp_holds"
+msgstr "Benne"
+
 #. English: Installed in
 msgid "gp_installed_in"
 msgstr "Telepítve ide"
@@ -1517,6 +1529,18 @@ msgstr "Fájl feltöltése…"
 #. English: Version
 msgid "gp_version"
 msgstr "Verzió"
+
+#. English: {n} games · {size}
+msgid "harbor_games"
+msgstr "{n} játék · {size}"
+
+#. English: No games yet
+msgid "harbor_no_games"
+msgstr "Még nincs benne játék"
+
+#. English: 1 game · {size}
+msgid "harbor_one_game"
+msgstr "1 játék · {size}"
 
 #. English: Keyboard & controller shortcuts
 msgid "help_btn_tooltip"
@@ -4946,6 +4970,46 @@ msgstr "Fedélzeten"
 msgid "tm_aboard_note"
 msgstr "telepítve - indulhat a hajó"
 
+#. English: Back up the saves first
+msgid "tm_bulk_backup"
+msgstr "Előbb a mentések biztonsági mentése"
+
+#. English: saves not backed up, so it was kept ({why})
+msgid "tm_bulk_backup_failed"
+msgstr "a mentéseit nem sikerült elmenteni, ezért megmaradt ({why})"
+
+#. English: {count} of the prefixes hold saves - they go to Bilge cleaning's backups, where you can put them back.
+msgid "tm_bulk_backup_sub"
+msgstr "{count} prefixben vannak mentések - a Hajófenék-takarítás biztonsági mentései közé kerülnek, onnan visszatehetők."
+
+#. English: Frees {size}
+msgid "tm_bulk_free"
+msgstr "{size} szabadul fel"
+
+#. English: +{count} more
+msgid "tm_bulk_more"
+msgstr "+{count} további"
+
+#. English: Steam, Heroic and Faugus games can be uninstalled from PlunderHub - the others from their own launcher.
+msgid "tm_bulk_none_s"
+msgstr "A Steam-, Heroic- és Faugus-játékokat a PlunderHubból is eltávolíthatod - a többit a saját launcherükből."
+
+#. English: Nothing to uninstall from here
+msgid "tm_bulk_none_t"
+msgstr "Innen nincs mit eltávolítani"
+
+#. English: Delete their Wine prefixes too
+msgid "tm_bulk_rm_prefix"
+msgstr "A Wine-prefixeik is törlődjenek"
+
+#. English: Uninstall {count} games?
+msgid "tm_bulk_rm_t"
+msgstr "Eltávolítasz {count} játékot?"
+
+#. English: Not from here (their own launcher): {names}
+msgid "tm_bulk_skipped"
+msgstr "Innen nem (a saját launcherükből): {names}"
+
 #. English: Buried
 msgid "tm_buried"
 msgstr "Elásva"
@@ -5202,6 +5266,10 @@ msgstr "Másik fájl…"
 msgid "tm_fg_phase_close_it"
 msgstr "Zárd be az ablakát a befejezéshez"
 
+#. English: Closing the installer's window
+msgid "tm_fg_phase_closing"
+msgstr "A telepítő ablakának bezárása"
+
 #. English: Downloading the installer
 msgid "tm_fg_phase_download"
 msgstr "A telepítő letöltése"
@@ -5230,6 +5298,10 @@ msgstr "Várakozás a Faugus bezárására"
 msgid "tm_fg_phase_signin"
 msgstr "Jelentkezz be, aztán zárd be az ablakát"
 
+#. English: Starting {name}
+msgid "tm_fg_phase_start"
+msgstr "{name} indítása"
+
 #. English: The installer of {name} left these. The likeliest is picked.
 msgid "tm_fg_pick_s"
 msgstr "A(z) {name} telepítője ezeket hagyta. A legvalószínűbb ki van jelölve."
@@ -5245,6 +5317,22 @@ msgstr "PREFIX  ·  a Faugus alapmappája + a név"
 #. English: PREVIEW
 msgid "tm_fg_preview"
 msgstr "ELŐNÉZET"
+
+#. English: {name} is ready
+msgid "tm_fg_prog_done"
+msgstr "{name} kész"
+
+#. English: Hide
+msgid "tm_fg_prog_hide"
+msgstr "Elrejtés"
+
+#. English: It installs in the background - keep using PlunderHub. When it's done, it's added to Faugus and starts by itself.
+msgid "tm_fg_prog_sub"
+msgstr "A háttérben települ - közben nyugodtan használd a PlunderHubot. Ha kész, bekerül a Faugusba, és magától elindul."
+
+#. English: Installing {name}
+msgid "tm_fg_prog_title"
+msgstr "{name} telepítése"
 
 #. English: PROTON
 msgid "tm_fg_proton"
@@ -5302,13 +5390,25 @@ msgstr "Fedélzeten, a Faugusban és a könyvtáradban"
 msgid "tm_fg_step_close"
 msgstr "Ha kész, megnyílik - zárd be a befejezéshez"
 
+#. English: Close
+msgid "tm_fg_step_closing"
+msgstr "Bezárás"
+
 #. English: Downloads {name}'s installer from its maker
 msgid "tm_fg_step_dl"
 msgstr "Letölti a(z) {name} telepítőjét a gyártótól"
 
+#. English: Download
+msgid "tm_fg_step_download"
+msgstr "Letöltés"
+
 #. English: Finds the game's .exe from the shortcuts it made
 msgid "tm_fg_step_find"
 msgstr "Megkeresi a játék .exe-jét a létrehozott parancsikonokból"
+
+#. English: Install
+msgid "tm_fg_step_install"
+msgstr "Telepítés"
 
 #. English: Keep the install folder it offers
 msgid "tm_fg_step_keep_path"
@@ -5338,13 +5438,21 @@ msgstr "Csendben telepíti a prefixbe"
 msgid "tm_fg_step_run_setup"
 msgstr "Futtatja a telepítőt a prefixben - kattints végig rajta, ahogy szoktad"
 
-#. English: First time only: the game runtime (~700 MB) is fetched
+#. English: Runtime
 msgid "tm_fg_step_runtime"
-msgstr "Csak először: letölti a futtatókörnyezetet (~700 MB)"
+msgstr "Környezet"
+
+#. English: Save
+msgid "tm_fg_step_save"
+msgstr "Mentés"
 
 #. English: Its sign-in window opens - sign in, then close it
 msgid "tm_fg_step_signin"
 msgstr "Megnyílik a bejelentkező ablaka - jelentkezz be, aztán zárd be"
+
+#. English: Start
+msgid "tm_fg_step_start"
+msgstr "Indítás"
 
 #. English: Store launcher
 msgid "tm_fg_store_launcher"

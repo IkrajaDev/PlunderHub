@@ -144,7 +144,9 @@ def logo_at_size(px: int):
     from plunderhub.gi_setup import hidpi_pixbuf, ui_scale
     scale = ui_scale()
     pb = logo_pixbuf(px * scale)
-    return hidpi_pixbuf(pb, scale) if pb is not None else None
+    # a copy: marking the cached one would make every other user of
+    # logo_pixbuf(that size) draw it at 1/scale
+    return hidpi_pixbuf(pb.copy(), scale) if pb is not None else None
 
 
 def mark_logo(image, px: int):

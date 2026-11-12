@@ -1275,6 +1275,7 @@ class GamePage(Gtk.Dialog):
         self._facts_row = Gtk.Box(spacing=14, homogeneous=True)
         for label, value in ((_("gp_launcher"), launcher),
                              (_("gp_playtime"), app._home_playtime_text(game.uid)),
+                             (_("gp_holds"), app.harbor_text(game.uid) if app._is_store_launcher(game.uid) else ""),
                              (_("gp_last_played"), app._home_ago_text(last) if last
                               else _("home_never_played_short"))):
             if not value:

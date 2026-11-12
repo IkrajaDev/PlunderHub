@@ -791,7 +791,7 @@ class DashboardView(Gtk.DrawingArea):
         self._text(cr, app._("dash_across_games").format(n=len(games)), pad + hw + 18, y + 18 + hh - 26, 12,
                    True, (*c["dim"], 1), width=400)
         dy = y + 92
-        for mount, size, used, games_bytes in drives:
+        for mount, size, used, games_bytes, harbor_bytes in drives:
             _rounded(cr, pad, dy, W - 2 * pad, 96, 16)
             cr.set_source_rgba(*c["raised"], 1)
             cr.fill()
@@ -800,24 +800,35 @@ class DashboardView(Gtk.DrawingArea):
             fw, _ = self._measure(cr, free_text, 11)
             self._text(cr, free_text, W - pad - 20 - fw, dy + 16, 11, True, (*c["dim"], 1), width=fw + 4)
             mx, mw = pad + 20, W - 2 * pad - 40
-            other = max(0, used - games_bytes)
+            other = max(0, used - games_bytes - harbor_bytes)
             cr.save()
             _rounded(cr, mx, dy + 50, mw, 14, 7)
             cr.set_source_rgba(*accent, 0.14)
             cr.fill_preserve()
             cr.clip()
             gw = mw * games_bytes / max(1, size) * self.anim
+            hw_ = mw * harbor_bytes / max(1, size) * self.anim
             ow = mw * other / max(1, size) * self.anim
             cr.set_source_rgba(*accent, 1)
             cr.rectangle(mx, dy + 50, gw, 14)
             cr.fill()
+            hx = mx + gw
+            if harbor_bytes:
+                # the store launchers themselves (their prefixes less their games): the accent, lighter
+                cr.set_source_rgba(*accent, 0.5)
+                cr.rectangle(hx + 2, dy + 50, max(0, hw_ - 2), 14)      # 2px surface gap between fills
+                cr.fill()
+                hx += hw_
             cr.set_source_rgba(*c["dim"], 0.55)
-            cr.rectangle(mx + gw + 2, dy + 50, max(0, ow - 2), 14)      # 2px surface gap between fills
+            cr.rectangle(hx + 2, dy + 50, max(0, ow - 2), 14)
             cr.fill()
             cr.restore()
             lx = mx
-            for color, label in (((*accent, 1), app._("dash_games_legend").format(size=format_bytes(games_bytes))),
-                                 ((*c["dim"], 0.55), app._("dash_else_legend").format(size=format_bytes(other)))):
+            legend = [((*accent, 1), app._("dash_games_legend").format(size=format_bytes(games_bytes)))]
+            if harbor_bytes:
+                legend.append(((*accent, 0.5), app._("dash_harbors_legend").format(size=format_bytes(harbor_bytes))))
+            legend.append(((*c["dim"], 0.55), app._("dash_else_legend").format(size=format_bytes(other))))
+            for color, label in legend:
                 cr.set_source_rgba(*color)
                 _rounded(cr, lx, dy + 74, 10, 10, 2)
                 cr.fill()

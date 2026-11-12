@@ -1261,44 +1261,51 @@ def heroic_uninstall(store: str, app_name: str, title: str) -> Tuple[bool, str]:
         _remove_shortcuts(title, app_name)
         return True, ""
     if store == "gog":
-        path = root / "gog_store" / "installed.json"
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as e:
-            return False, str(e)
-        entries = data.get("installed") if isinstance(data, dict) else None
-        if not isinstance(entries, list):
-            return False, "unknown installed.json"
-        entry = next((e for e in entries if isinstance(e, dict) and str(e.get("appName")) == app_name), None)
-        if entry is None:
-            return True, ""                       # already gone
-        # (Heroic also runs the game's own unins000.exe in its prefix first, for
-        # the prefix's registry; the files go with the folder below either way)
-        folder = _safe_game_dir(entry.get("install_path") or "")
-        # never a folder that holds another installed game (Heroic's install folder itself)
-        for other in entries:
-            if folder is None or other is entry or not isinstance(other, dict):
-                continue
-            o = _safe_game_dir(str(other.get("install_path") or ""))
-            if o is not None and (o == folder or folder in o.parents):
-                return False, f"{folder} holds another game too - not removed"
-        if folder is not None:
-            shutil.rmtree(folder, ignore_errors=True)
-            if folder.exists():
-                return False, f"couldn't remove {folder}"
-        gogdl = root / "gogdlConfig" / "heroic_gogdl"
-        try:
-            (gogdl / "manifests" / app_name).unlink()
-        except OSError:
-            pass
-        shutil.rmtree(gogdl / "gog-support" / app_name, ignore_errors=True)
-        data["installed"] = [e for e in entries if e is not entry]
-        tmp = path.with_suffix(".json.plunderhub-tmp")
-        tmp.write_text(json.dumps(data, indent="\t", ensure_ascii=False), encoding="utf-8")
-        os.replace(tmp, path)
-        _remove_shortcuts(title, app_name)
-        return True, ""
+        from plunderhub.core.file_lock import held
+        with held(root / "gog_store" / "installed.json"):
+            return _gog_uninstall(root, app_name, title)
     return False, f"unknown store {store}"
+
+
+def _gog_uninstall(root: Path, app_name: str, title: str) -> Tuple[bool, str]:
+    """GOG's part of heroic_uninstall, with installed.json's lock held."""
+    path = root / "gog_store" / "installed.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return False, str(e)
+    entries = data.get("installed") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        return False, "unknown installed.json"
+    entry = next((e for e in entries if isinstance(e, dict) and str(e.get("appName")) == app_name), None)
+    if entry is None:
+        return True, ""                       # already gone
+    # (Heroic also runs the game's own unins000.exe in its prefix first, for
+    # the prefix's registry; the files go with the folder below either way)
+    folder = _safe_game_dir(entry.get("install_path") or "")
+    # never a folder that holds another installed game (Heroic's install folder itself)
+    for other in entries:
+        if folder is None or other is entry or not isinstance(other, dict):
+            continue
+        o = _safe_game_dir(str(other.get("install_path") or ""))
+        if o is not None and (o == folder or folder in o.parents):
+            return False, f"{folder} holds another game too - not removed"
+    if folder is not None:
+        shutil.rmtree(folder, ignore_errors=True)
+        if folder.exists():
+            return False, f"couldn't remove {folder}"
+    gogdl = root / "gogdlConfig" / "heroic_gogdl"
+    try:
+        (gogdl / "manifests" / app_name).unlink()
+    except OSError:
+        pass
+    shutil.rmtree(gogdl / "gog-support" / app_name, ignore_errors=True)
+    data["installed"] = [e for e in entries if e is not entry]
+    tmp = path.with_suffix(".json.plunderhub-tmp")
+    tmp.write_text(json.dumps(data, indent="\t", ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, path)
+    _remove_shortcuts(title, app_name)
+    return True, ""
 
 
 # --- installing a Heroic game without Heroic ----------------------------------------
@@ -1553,21 +1560,30 @@ def heroic_install(store: str, app_name: str, title: str, base_path: str, prefix
                  "versionEtag": (info.get("manifest") or {}).get("versionEtag") or "",
                  "buildId": (info.get("game") or {}).get("buildId") or "", "pinnedVersion": False}
         path = root / "gog_store" / "installed.json"
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            data = {}
-        if not isinstance(data, dict):
-            data = {}
-        data["installed"] = [e for e in data.get("installed") or [] if str(e.get("appName")) != app_name] + [entry]
-        tmp = path.with_suffix(".json.plunderhub-tmp")
-        tmp.write_text(json.dumps(data, indent="\t", ensure_ascii=False), encoding="utf-8")
-        os.replace(tmp, path)
+        from plunderhub.core.file_lock import held
+        with held(path):            # an uninstall's worker may rewrite it meanwhile
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                data = {}
+            if not isinstance(data, dict):
+                data = {}
+            data["installed"] = [e for e in data.get("installed") or []
+                                 if str(e.get("appName")) != app_name] + [entry]
+            tmp = path.with_suffix(".json.plunderhub-tmp")
+            tmp.write_text(json.dumps(data, indent="\t", ensure_ascii=False), encoding="utf-8")
+            os.replace(tmp, path)
     _write_game_config(root, app_name, prefix, wine)
     return True, ""
 
 
 def _write_game_config(root: Path, app_name: str, prefix: str, wine: Dict):
+    from plunderhub.core.file_lock import held
+    with held(root / "GamesConfig" / f"{app_name}.json"):
+        _write_game_config_locked(root, app_name, prefix, wine)
+
+
+def _write_game_config_locked(root: Path, app_name: str, prefix: str, wine: Dict):
     """The game's own Heroic settings, as its install window leaves them: a
     copy of Heroic's defaults with this game's Wine prefix and version.
     An existing file keeps everything else."""

@@ -1033,6 +1033,19 @@ class GameCard:
         self._pdb_hover = False
         self.poster_pb: Optional[GdkPixbuf.Pixbuf] = None
 
+    def _fit_hero(self, dlg):
+        """A low screen (a laptop at 125-200 %): the hero art gives up what
+        the card lacks, so its buttons stay on the screen."""
+        from plunderhub.gi_setup import screen_room
+        room = screen_room(self.view)
+        if room is None:
+            return
+        need = dlg.get_preferred_height_for_width(self.Wf)[1]
+        if need <= room[1]:
+            return
+        self.HERO_H = max(110, self.HERO_H - (need - room[1]) / self.f)
+        self.top.set_size_request(self.Wf, int((self.HERO_H + 22 + self.VERDICT_H + 12) * self.f))
+
     def run(self) -> Optional[str]:
         app, game = self.app, self.game
         dlg = self.dlg = Gtk.Dialog(transient_for=self.view.get_toplevel(), modal=True)
@@ -1133,6 +1146,7 @@ class GameCard:
             threading.Thread(target=self._fetch_pdb, daemon=True).start()
         else:
             self.pdb = False
+        self._fit_hero(dlg)
         dlg.show_all()
         buttons[1].grab_focus()
         r = dlg.run()
@@ -1340,6 +1354,7 @@ class GameCard:
         self.desc_scroll.set_visible(bool(desc))
         for w in (self.top, self.room):
             w.queue_draw()
+        self._fit_hero(self.dlg)            # its text came in: still on the screen
         return False
 
     def _on_top_click(self, _w, ev):
@@ -2458,6 +2473,7 @@ class TreasureMap(Gtk.Box):
         if r != Gtk.ResponseType.OK:
             return
         prefix = game.extra.get("prefix")
+        self.app.closed_on_purpose.add(game.uid)
         threading.Thread(target=lambda: hold_data_faugus().stop_prefix(prefix), daemon=True).start()
 
     def _sort_fn(self):
@@ -2658,6 +2674,9 @@ class TreasureMap(Gtk.Box):
             faugus_ui().open_add(self)
             return
         if game.uid in self.downloads and self.downloads[game.uid]["state"] != "done":
+            win = self.downloads[game.uid].get("window")
+            if win is not None and not win.closed:
+                win.show()          # a launcher's install window, hidden: back
             return
         if game.store == "faugus":
             if game.installed:
@@ -3565,6 +3584,12 @@ def show_map(app, on: bool):
         if view.queue or getattr(app, "_tm_lib_shown", False):
             GLib.idle_add(lambda: app._render_launchers() and False)
     app.scroller.set_visible(not on)
+    # the library's Back to top pill belongs to the library: left up from a scrolled
+    # library it sat over the map's dock (its Stop button) and scrolled the hidden page
+    if on:
+        app._set_scroll_top_visible(False)
+    else:
+        app._on_main_scroll_value_changed(app.scroller.get_vadjustment())
     if on:
         view.set_no_show_all(False)
         view.show_all()
@@ -3719,3 +3744,199 @@ def _uninstall_from_library(app, game):
         return
     if view is not None and owned is not None:
         view.start_uninstall(owned)
+
+
+# --- the library's Select: several games uninstalled at once ------------------------------
+
+def bulk_uninstall(app, uids) -> bool:
+    """The selected games that can go from here (Steam, Heroic, a Faugus
+    entry of its own), asked once; Steam and Heroic closed once for all and
+    their games removed one after the other (they share the launcher's
+    files), Faugus' alike. True: it started."""
+    from plunderhub.core.utils import format_bytes
+    _ = app._
+    view = getattr(app, "_tm_view", None)
+    fa = hold_data_faugus()
+    from plunderhub.core.faugus_store import known as store_games
+    inside = store_games()
+    steam, heroic, faugus, skipped = [], [], [], []
+    for uid in uids:
+        g = app.game_index.get(uid)
+        if g is None:
+            continue
+        if g.launcher in ("Steam", "Heroic") and view is not None:
+            app_id = uid.split(":")[-1]
+            owned = next((o for st in view.states.values() for o in st.games
+                          if o.app_id == app_id and o.installed and LAUNCHER_OF.get(o.store) == g.launcher), None)
+            if owned is None or owned.uid in view.removing:
+                skipped.append(g.title)
+            else:
+                (steam if owned.store == "steam" else heroic).append(owned)
+        elif g.launcher == "Faugus" and uid.split(":", 1)[1] not in inside:
+            faugus.append(g)
+        else:
+            skipped.append(g.title)
+    titles = [o.title for o in steam + heroic] + [g.title for g in faugus]
+    if not titles:
+        app._card_dialog(_("tm_bulk_none_t"), _("tm_bulk_none_s"),
+                         [(_("dialog_ok"), Gtk.ResponseType.CLOSE, "ghost")], icon_name="trash-symbolic")
+        return False
+    lines = ["• " + t for t in titles[:8]]
+    if len(titles) > 8:
+        lines.append(_("tm_bulk_more").format(count=len(titles) - 8))
+    size = sum(o.size for o in steam + heroic)
+    text = "\n".join(lines)
+    if size:
+        text += "\n\n" + _("tm_bulk_free").format(size=format_bytes(size))
+    if skipped:
+        text += "\n\n" + _("tm_bulk_skipped").format(names=", ".join(skipped[:5]) + ("…" if len(skipped) > 5 else ""))
+    extra = None
+    tile = how = None
+    choice = {"trash": True}
+    _status, site = fa.faugus_status()
+    backup_tile = None
+    with_saves: Dict[str, str] = {}             # Faugus uid -> its own prefix, when it holds player files
+    if faugus and site is not None and any(fa.own_prefix(site, g.uid.split(":", 1)[1]) for g in faugus):
+        from plunderhub.core import bilge
+        for g in faugus:
+            prefix = fa.own_prefix(site, g.uid.split(":", 1)[1])
+            if prefix:
+                item = bilge.Item("prefix", "Faugus", Path(prefix), g.title)
+                bilge.look_for_saves(item)
+                if item.saves:
+                    with_saves[g.uid] = prefix
+        extra = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        tile = app._new_game_tile("trash-symbolic", _("tm_bulk_rm_prefix"), _("tm_fg_rm_prefix_sub"))
+        extra.pack_start(tile, False, False, 0)
+        if with_saves:
+            # the saves in the prefixes that go: copied to Bilge cleaning's backups first
+            backup_tile = app._new_game_tile("document-save-symbolic", _("tm_bulk_backup"),
+                                             _("tm_bulk_backup_sub").format(count=len(with_saves)))
+            extra.pack_start(backup_tile, False, False, 0)
+        how = _trash_or_delete(app, choice)
+        extra.pack_start(how, False, False, 0)
+        extra.show_all()
+
+        def prefix_toggled(t):
+            how.set_visible(t.get_active())
+            if backup_tile is not None:
+                backup_tile.set_visible(t.get_active())
+        tile.connect("toggled", prefix_toggled)
+    answer = app._card_dialog(_("tm_bulk_rm_t").format(count=len(titles)), text,
+                              [(_("tm_keep_it"), Gtk.ResponseType.CANCEL, "ghost"),
+                               (_("tm_uninstall"), Gtk.ResponseType.OK, "danger")],
+                              tone="danger", icon_name="trash-symbolic", default=Gtk.ResponseType.CANCEL, extra=extra)
+    if answer != Gtk.ResponseType.OK:
+        return False
+    # the launchers closed first, once (each asks when one of its games runs)
+    if steam and not view._steam_stop_for_work():
+        steam = []
+    if heroic and app._launcher_is_running("Heroic") and not app.close_launcher_asking("Heroic", app):
+        heroic = []
+    faugus_cmd = None
+    if faugus:
+        if app._launcher_is_running("Faugus"):
+            faugus_cmd = next((list(s["cmd"]) for s in getattr(app, "_cached_launchers", []) or []
+                               if s.get("name") == "Faugus" and s.get("cmd")), None)
+            if not app.close_launcher_asking("Faugus", app):
+                faugus, faugus_cmd = [], None
+    if not (steam or heroic or faugus):
+        return False
+    logger.info(f"Bulk uninstall: {len(steam)} Steam, {len(heroic)} Heroic, {len(faugus)} Faugus")
+    for o in steam + heroic:
+        view.removing.add(o.uid)
+        view._removing_since[o.uid] = (time.monotonic(), 3600)
+        view.grid.refresh_game(o.uid)
+    if steam or heroic:
+        view._ensure_tick()
+    failed: List[Tuple[str, str]] = []
+    left = {"n": (1 if steam else 0) + (1 if heroic else 0) + (1 if faugus else 0)}
+
+    def all_done():
+        left["n"] -= 1
+        if left["n"]:
+            return
+        if failed:
+            app._card_dialog(_("tm_uninstall_failed").format(game=", ".join(t for t, _w in failed)),
+                             "\n".join(f"{t}: {w}" for t, w in failed),
+                             [(_("dialog_ok"), Gtk.ResponseType.CLOSE, "ghost")], icon_name="circle-alert-symbolic")
+        app.reload()
+        if view is not None:
+            view.reload(keep_scroll=True)       # its own list: the library's reload doesn't touch it
+
+    def steam_work():
+        for o in steam:
+            ok, why = hold_data.steam_remove_files(o.app_id)
+            if not ok:
+                failed.append((o.title, why))
+                GLib.idle_add(lambda u=o.uid: (view.removing.discard(u), view.grid.refresh_game(u), False)[2])
+
+        def done():
+            if view._steam_ran_before:
+                view._steam_start_silent()
+            all_done()
+            return False
+        GLib.idle_add(done)
+
+    def heroic_work():
+        for o in heroic:
+            ok, why = hold_data.heroic_uninstall(o.store, o.app_id, o.title)
+            if not ok:
+                failed.append((o.title, why))
+                GLib.idle_add(lambda u=o.uid: (view.removing.discard(u), view.grid.refresh_game(u), False)[2])
+        GLib.idle_add(lambda: all_done() and False)
+
+    with_prefix = tile is not None and tile.get_active()
+    back_up_first = with_prefix and backup_tile is not None and backup_tile.get_active()
+    backed: set = set()
+
+    def faugus_work(to_trash: bool):
+        no_trash = []
+        for g in faugus:
+            gid = g.uid.split(":", 1)[1]
+            if back_up_first and g.uid in with_saves and g.uid not in backed:
+                from plunderhub.core import bilge
+                try:
+                    bilge.back_up(bilge.Item("prefix", "Faugus", Path(with_saves[g.uid]), g.title), g.title)
+                    backed.add(g.uid)
+                    logger.info(f"Bulk uninstall: {g.title}'s saves backed up")
+                except Exception as e:      # no copy of its saves: it stays as it is
+                    logger.warning(f"Bulk uninstall: {g.title}'s saves not backed up: {e}")
+                    failed.append((g.title, _("tm_bulk_backup_failed").format(why=e)))
+                    continue
+            ok, why = fa.remove_game(site, gid, with_prefix and bool(fa.own_prefix(site, gid)), to_trash)
+            if why == "trash":
+                no_trash.append(g)
+            elif not ok:
+                failed.append((g.title, why))
+            else:
+                GLib.idle_add(lambda u=g.uid: (app.forget_art(u), False)[1])
+        GLib.idle_add(faugus_done, no_trash)
+
+    def faugus_done(no_trash) -> bool:
+        if no_trash and app._card_dialog(_("bg_no_trash_head"), _("bg_no_trash"),
+                                         [(_("dialog_cancel"), Gtk.ResponseType.NO, "ghost"),
+                                          (_("bg_permanent"), Gtk.ResponseType.YES, "danger")],
+                                         tone="danger", icon_name="user-trash-symbolic",
+                                         default=Gtk.ResponseType.NO) == Gtk.ResponseType.YES:
+            faugus[:] = no_trash
+            threading.Thread(target=faugus_work, args=(False,), daemon=True).start()
+            return False
+        if faugus_cmd:
+            import subprocess
+            try:
+                subprocess.Popen(faugus_cmd, start_new_session=True, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL)
+            except OSError as e:
+                logger.warning(f"Couldn't start Faugus again: {e}")
+        all_done()
+        return False
+
+    if steam:
+        threading.Thread(target=steam_work, daemon=True, name="plunderhub-bulk-steam").start()
+    if heroic:
+        threading.Thread(target=heroic_work, daemon=True, name="plunderhub-bulk-heroic").start()
+    if faugus:
+        threading.Thread(target=faugus_work, args=(choice["trash"],), daemon=True,
+                         name="plunderhub-bulk-faugus").start()
+    return True

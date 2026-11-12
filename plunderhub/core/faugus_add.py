@@ -117,14 +117,16 @@ LAUNCHER_ENV: Dict[str, Dict[str, str]] = {
     "battle": {"WINE_SIMULATE_WRITECOPY": "1", "PROTON_ENABLE_WAYLAND": "0"},
 }
 
-# the launcher's own program, as its process shows (a Windows path's tail, lower case): once it
-# runs in our prefix with its .exe in place, the install is done - its window may stay open
-# (Faugus waits for it to be closed). The EA app isn't cut short: its folders are rearranged
-# after it closes (ea_fix).
+# the launcher's own program, as its process shows (a Windows path's tail or tails, lower case):
+# once its installer starts it in our prefix (files in place), the install is done - it's killed
+# at once, before its window (a sign-in page) shows, the installer gets a moment to finish, then
+# it's written down and started fresh (11-12: the EA app's sign-in showed while it still
+# installed). The EA app's version folder is moved after that (ea_fix).
 RUNNING_AS = {
     "battle": "battle.net\\battle.net.exe", "epic": "epicgameslauncher.exe", "gog": "galaxyclient.exe",
-    "ubisoft": "ubisoftconnect.exe", "rockstar": "rockstar games\\launcher\\launcher.exe",
+    "ubisoft": ("ubisoftconnect.exe", "\\upc.exe"), "rockstar": "rockstar games\\launcher\\launcher.exe",
     "amazon": "amazon games.exe", "wargaming": "gamecenter\\wgc.exe",
+    "ea": ("\\ealauncher.exe", "\\eadesktop.exe"),
 }
 
 # Faugus' games.json fields (faugus/utils.py GAME_FIELDS) and its defaults for a new entry
@@ -617,14 +619,21 @@ class AddJob:
                 installer = installer.parent / "gog-x" / info["tar"]
             cmd = [str(self.site.umu)] + (["msiexec", "/i", str(installer)] if info.get("msi") else [str(installer)])
             cmd += info["args"]
-            self._exec(cmd, info["env"], signin=info.get("signin"), close_it=info.get("close_to_finish"),
+            # in the background, start to end: nobody has to close the window the
+            # installer opens - once the launcher is in place it's closed here and
+            # started fresh after it's written down (faugus_aboard)
+            self._exec(cmd, info["env"], signin=False, close_it=False,
                        installed=lambda: _launcher_on_disk(kind, pfx, info),
-                       done_when=(pfx / info["exe"], RUNNING_AS[kind]) if kind in RUNNING_AS else None)
+                       done_when=(pfx / info["exe"], RUNNING_AS[kind]) if kind in RUNNING_AS else None,
+                       setup_name="msiexec.exe" if info.get("msi") else Path(installer).name.lower())
             if self._cancel:
                 return self._fail("")
             exe = ea_fix(pfx) if kind == "ea" else pfx / info["exe"]
             if not exe.is_file():
                 return self._fail("not_installed")
+            if self._proc is None or running_prefixes({req.prefix}):
+                self._set(phase="closing", frac=max(self.frac, 0.97))
+                stop_prefix(req.prefix, wait=8.0)
             self.exe = str(exe)
             self._set(state="ready", frac=1.0)
             return
@@ -683,7 +692,8 @@ class AddJob:
         return dest
 
     def _exec(self, cmd: List[str], extra: Dict[str, str], signin: bool, close_it: bool,
-              done_when: Optional[Tuple[Path, str]] = None, installed=None, finished=None, installer: str = ""):
+              done_when: Optional[Tuple[Path, str]] = None, installed=None, finished=None, installer: str = "",
+              setup_name: str = ""):
         """umu-run in the prefix; the phase follows what it says (its first
         run fetches the Steam Runtime), the bar creeps while it works.
         done_when (a launcher): its .exe in place and its program running in
@@ -693,7 +703,10 @@ class AddJob:
         left is only its window (an installer doesn't say how far it is).
         finished() true = done, whatever stays open. installer: its file
         name - once it's gone but umu-run still waits, something it started
-        is holding the install open: the player is told to close that."""
+        is holding the install open: the player is told to close that.
+        setup_name (a launcher's installer): the launcher's files there and
+        its installer gone for a while = done too, for a launcher that runs
+        under another name than done_when's (or has none: the EA app)."""
         env = os.environ.copy()
         for k in ("PYTHONPATH", "PYTHONHOME", "LD_PRELOAD"):
             env.pop(k, None)
@@ -714,18 +727,34 @@ class AddJob:
         up_since = 0.0
         on_disk = False
         installer_seen = False
+        setup_gone = 0.0
         while self._proc.poll() is None:
             time.sleep(0.5)
             if self._cancel:
                 break
-            if done_when is not None and done_when[0].is_file() and _runs_in_prefix(done_when[1], self.req.prefix):
+            if done_when is not None and (up_since or ((done_when[0].is_file() or on_disk)
+                                                       and _runs_in_prefix(done_when[1], self.req.prefix))):
+                # the installer started the launcher: closed at once, before its window
+                # (a sign-in page) shows - it's started fresh once written down. The
+                # installer itself gets a moment to finish its last steps.
+                if _kill_in_prefix(done_when[1], self.req.prefix):
+                    logger.info(f"Faugus add: {done_when[0].name} started by its installer - closed, to start fresh")
                 up_since = up_since or time.monotonic()
-                if time.monotonic() - up_since > 3:
-                    logger.info(f"Faugus add: {done_when[0].name} is up in the prefix - installed (left open)")
+                left = setup_name and _runs_in_prefix(setup_name, self.req.prefix)
+                if time.monotonic() - up_since > (20 if left else 2):
+                    logger.info(f"Faugus add: {done_when[0].name} installed")
                     self._proc = None
                     break
-            else:
-                up_since = 0.0
+                continue
+            if setup_name and on_disk and int((time.monotonic() - start) * 2) % 4 == 0:
+                if _runs_in_prefix(setup_name, self.req.prefix):
+                    setup_gone = 0.0
+                else:
+                    setup_gone = setup_gone or time.monotonic()
+                    if time.monotonic() - setup_gone > 25:
+                        logger.info("Faugus add: the launcher is on disk, its installer gone - installed")
+                        self._proc = None
+                        break
             if finished is not None and finished():
                 logger.info("Faugus add: the installed game is on record - done (what's open stays open)")
                 self._proc = None
@@ -802,6 +831,26 @@ def _runs_in_prefix(tail: str, prefix: str) -> bool:
     return False
 
 
+def _kill_in_prefix(tail, prefix: str) -> int:
+    """Kills (SIGKILL) the Windows programs whose command line ends in tail
+    (a string or a tuple) running in this prefix; how many."""
+    from plunderhub.core.utils import _proc_pids, _read_proc_cmdline, _read_proc_environ
+    want = os.path.normpath(prefix)
+    n = 0
+    for pid in _proc_pids() or []:
+        args = _read_proc_cmdline(int(pid))
+        if not args or not args[0].lower().replace("/", "\\").endswith(tail):
+            continue
+        if _prefix_of(_read_proc_environ(int(pid))) != want:
+            continue
+        try:
+            os.kill(int(pid), signal.SIGKILL)
+            n += 1
+        except OSError:
+            pass
+    return n
+
+
 def _prefix_of(env: Dict[str, str]) -> str:
     compat = env.get("STEAM_COMPAT_DATA_PATH")
     if compat:
@@ -862,6 +911,13 @@ def stop_prefix(prefix: str, wait: float = 5.0):
 
 def write_entry(site: FaugusSite, req: AddRequest, exe: str,
                 art: Optional[Callable[[str], Optional[str]]] = None) -> str:
+    from plunderhub.core.file_lock import held
+    with held(site.games_json):
+        return _write_entry(site, req, exe, art)
+
+
+def _write_entry(site: FaugusSite, req: AddRequest, exe: str,
+                 art: Optional[Callable[[str], Optional[str]]] = None) -> str:
     """The games.json entry (Faugus must be closed - it writes its own
     list back), the .exe's icon, an app-menu entry. Returns the game id."""
     from plunderhub.core.launch_options import _write_with_backup
@@ -943,6 +999,12 @@ def own_prefix(site: FaugusSite, gid: str) -> Optional[str]:
 
 
 def remove_game(site: FaugusSite, gid: str, with_prefix: bool, to_trash: bool = True) -> Tuple[bool, str]:
+    from plunderhub.core.file_lock import held
+    with held(site.games_json):
+        return _remove_game(site, gid, with_prefix, to_trash)
+
+
+def _remove_game(site: FaugusSite, gid: str, with_prefix: bool, to_trash: bool = True) -> Tuple[bool, str]:
     """What Faugus' own Delete does (faugus/launcher.py): the prefix when
     asked (to the Trash or for good), the entry, its art, app menu and
     desktop entries, its .bat. Faugus must be closed - it writes its list

@@ -84,9 +84,12 @@ def _mount_point_of(real_path: str, mounts: List[Tuple[str, str, str]]) -> str:
 class DialogsMixin:
 
     def _compute_storage_results(self) -> Tuple[List[Tuple[GameItem, int]],
-                                                List[Tuple[str, int, int, int]]]:
+                                                List[Tuple[str, int, int, int, int]]]:
         """Each installed game's size (biggest first), and per drive
-        holding games: (mount point, total, used, used by games)."""
+        holding games: (mount point, total, used, used by games, used by the
+        store launchers themselves - their prefixes less their games). A store
+        launcher isn't a game: not in the list (its folder held its games too -
+        counted twice)."""
         results: List[Tuple[GameItem, int]] = []
         seen_dirs: set = set()
         # Keyed by the filesystem, not st_dev: btrfs gives every subvolume
@@ -96,7 +99,7 @@ class DialogsMixin:
         mounts = _read_mounts()
         for section in self._cached_launchers:
             for game in section["games"]:
-                if not game.install_dir:
+                if not game.install_dir or game.store_platform == "store-launcher":
                     continue
                 path = Path(game.install_dir)
                 if not path.exists():
@@ -114,10 +117,28 @@ class DialogsMixin:
                     fs_key = _filesystem_key(real, os.stat(path).st_dev, mounts)
                     if fs_key not in drive_stats:
                         usage = shutil.disk_usage(str(path))
-                        drive_stats[fs_key] = [_mount_point_of(real, mounts), usage.total, usage.used, 0]
+                        drive_stats[fs_key] = [_mount_point_of(real, mounts), usage.total, usage.used, 0, 0]
                     drive_stats[fs_key][3] += size
                 except OSError:
                     pass
+        # the store launchers' own room (Battle.net, EA app... in their Faugus prefixes)
+        from plunderhub.core import harbors
+        try:
+            found = harbors.report([g for s in self._cached_launchers for g in s["games"]], self._dir_size_bytes)
+        except Exception as e:
+            logger.debug(f"Cargo hold: launchers not measured: {e}")
+            found = {}
+        for harbor in found.values():
+            if not harbor.prefix or not harbor.own_bytes:
+                continue
+            try:
+                fs_key = _filesystem_key(harbor.prefix, os.stat(harbor.prefix).st_dev, mounts)
+                if fs_key not in drive_stats:
+                    usage = shutil.disk_usage(harbor.prefix)
+                    drive_stats[fs_key] = [_mount_point_of(harbor.prefix, mounts), usage.total, usage.used, 0, 0]
+                drive_stats[fs_key][4] += harbor.own_bytes
+            except OSError:
+                pass
         results.sort(key=lambda t: t[1], reverse=True)
         drives = sorted((tuple(v) for v in drive_stats.values()), key=lambda d: d[0])
         return results, drives

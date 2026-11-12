@@ -919,6 +919,11 @@ class SteamBackend(LaunchOptionsBackend):
         return opts
 
     def save(self, game: GameItem, opts: LaunchOptions) -> None:
+        from plunderhub.core.file_lock import held
+        with held(self._localconfig()), held(self._config_vdf()):
+            self._save(game, opts)
+
+    def _save(self, game: GameItem, opts: LaunchOptions) -> None:
         if self.blocking_process_running():
             raise RuntimeError("Steam is running")
         appid = self._appid(game)
@@ -948,6 +953,11 @@ class SteamBackend(LaunchOptionsBackend):
 
     def _set_compat_tools(self, tools: Dict[str, Optional[str]]) -> None:
         """appid -> Proton (None removes the game's own mapping), in one edit."""
+        from plunderhub.core.file_lock import held
+        with held(self._config_vdf()):
+            self._set_compat_tools_locked(tools)
+
+    def _set_compat_tools_locked(self, tools: Dict[str, Optional[str]]) -> None:
         config = self._config_vdf()
         if not config.is_file():
             if any(tools.values()):
@@ -1195,6 +1205,11 @@ class HeroicBackend(LaunchOptionsBackend):
         return opts
 
     def save(self, game: GameItem, opts: LaunchOptions) -> None:
+        from plunderhub.core.file_lock import held
+        with held(self._config_path(game)):
+            self._save(game, opts)
+
+    def _save(self, game: GameItem, opts: LaunchOptions) -> None:
         name = self._app_name(game)
         path = self._config_path(game)
         doc, merged = self._settings(game)
@@ -1684,6 +1699,11 @@ class FaugusBackend(LaunchOptionsBackend):
         return opts
 
     def save(self, game: GameItem, opts: LaunchOptions) -> None:
+        from plunderhub.core.file_lock import held
+        with held(self._path()):
+            self._save(game, opts)
+
+    def _save(self, game: GameItem, opts: LaunchOptions) -> None:
         data, entry = self._entries(game)
         if game.store_platform in ("store-launcher", "launcher-game"):
             from plunderhub.core.faugus_add import LAUNCHER_ENV, launcher_kind

@@ -329,6 +329,12 @@ def _save(data: Dict[str, Dict]) -> None:
 
 
 def sync(site) -> bool:
+    from plunderhub.core.file_lock import held
+    with held(site.games_json):
+        return _sync(site)
+
+
+def _sync(site) -> bool:
     """Brings Faugus' list in line with what the launchers have installed.
     Not while Faugus is open: it writes its own list back when it closes.
     True when something changed. A worker thread."""

@@ -31,6 +31,7 @@ import math
 import random
 import os
 import re
+import threading
 import time
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -274,10 +275,15 @@ def draw_monogram(cr, widget, x, y, s, kind):
     cr.fill()
     try:
         theme = Gtk.IconTheme.get_default()
-        info = theme.lookup_icon(KIND_ICON[kind], int(s * 0.55), 0)
+        from plunderhub.gi_setup import hidpi_pixbuf, logical_size
+        d = widget.get_scale_factor()           # the screen's own pixels
+        info = theme.lookup_icon_for_scale(KIND_ICON[kind], int(s * 0.55), d, 0)
         rgba = Gdk.RGBA(*accent, 1)
         pb, _sym = info.load_symbolic(rgba, None, None, None)
-        Gdk.cairo_set_source_pixbuf(cr, pb, x + (s - pb.get_width()) / 2, y + (s - pb.get_height()) / 2)
+        if d > 1 and pb.get_width() > int(s * 0.55):
+            pb = hidpi_pixbuf(pb, d)
+        pw, ph = logical_size(pb)
+        Gdk.cairo_set_source_pixbuf(cr, pb, x + (s - pw) / 2, y + (s - ph) / 2)
         cr.paint()
     except Exception:
         pass
@@ -594,10 +600,27 @@ def show_empty(view):
     for child in view.state_card.get_children():
         view.state_card.remove(child)
     f = app._text_factor()
-    w = int(app.cover_size * 1.35)
-    h = int(w * 4 / 3)
+    big_w = int(app.cover_size * 1.35)
     area = Gtk.DrawingArea()
-    area.set_size_request(w + 40, h + 40)
+    area._fit = None
+
+    def fit(*_a):
+        # as big as the page lets it be: on a small (or 125 % / 200 %
+        # scaled) screen the lines under it stay in sight
+        room = view.body.get_allocated_height()
+        if room <= 1:
+            room = 10_000
+        tall = min(int(big_w * 4 / 3), room - 40 - int(150 * f))
+        tall = max(int(240 * f), tall)
+        size = (int(tall * 3 / 4) + 40, tall + 40)
+        if size != area._fit:
+            area._fit = size
+            area.set_size_request(*size)
+    fit()
+    view._fg_fit = fit
+    if not getattr(view, "_fg_fit_hooked", False):
+        view._fg_fit_hooked = True
+        view.body.connect("size-allocate", lambda *_a: GLib.idle_add(lambda: view._fg_fit() and False))
     area.set_halign(Gtk.Align.CENTER)
     area.set_can_focus(True)
     area.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.ENTER_NOTIFY_MASK
@@ -605,6 +628,9 @@ def show_empty(view):
     area._hover = False
 
     def draw(widget, cr):
+        if area._fit is None:
+            fit()
+        w, h = area._fit[0] - 40, area._fit[1] - 40
         draw_add_card(cr, widget, 20, 20, w, h, view.colors(), _accent_rgb(widget), widget._hover or widget.has_focus(),
                       f, big=True, words=(app._("tm_fg_bring"), app._("tm_fg_bring_sub")))
         return False
@@ -681,6 +707,21 @@ def _card_window(view, width: int) -> Gtk.Dialog:
         aa.set_no_show_all(True)
         aa.hide()
     return dlg
+
+
+def _fit_screen(dlg, view, outer, scroll, inner) -> None:
+    """The window no taller than the screen's free height: what does not
+    fit of `inner` scrolls inside `scroll` (the rest stays in sight)."""
+    from plunderhub.gi_setup import screen_room
+    fits = screen_room(view)
+    if fits is None:
+        return
+    width = outer.get_preferred_width()[1]
+    whole = outer.get_preferred_height_for_width(width)[1]          # margins included
+    own = inner.get_preferred_height_for_width(inner.get_preferred_width()[1])[1]
+    room = fits[1] - (whole - own)
+    scroll.set_max_content_height(max(160, min(own, room)))
+    scroll.set_min_content_height(max(160, min(own, room)) if room < own else -1)
 
 
 class AddWindow:
@@ -826,7 +867,20 @@ class AddWindow:
         self.preview = Gtk.DrawingArea()
         self.preview.connect("draw", self._draw_preview)
         cols.pack_start(self.preview, False, False, 0)
-        outer.pack_start(cols, False, False, 0)
+        # on a low screen (a laptop at 125 % / 200 %) the columns scroll and
+        # the buttons stay in sight (the height is set in _fit_screen)
+        self.cols_scroll = Gtk.ScrolledWindow()
+        self.cols_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.cols_scroll.set_overlay_scrolling(False)
+        self.cols_scroll.set_propagate_natural_width(True)
+        self.cols_scroll.set_propagate_natural_height(True)
+        self.cols_scroll.get_style_context().add_class("settings-scroll")
+        self.cols_scroll.add(cols)
+        vp = self.cols_scroll.get_child()
+        if isinstance(vp, Gtk.Viewport):
+            vp.set_shadow_type(Gtk.ShadowType.NONE)
+        self.cols = cols
+        outer.pack_start(self.cols_scroll, False, False, 0)
 
         row = Gtk.Box(spacing=10)
         self.warn = self._label("")
@@ -860,6 +914,7 @@ class AddWindow:
             tallest = max(tallest, left.get_preferred_height_for_width(lw)[1])
         left.set_size_request(lw, tallest)
         self.preview.set_size_request(int(400 * self.f), max(int(560 * self.f), tallest))
+        _fit_screen(dlg, self.view, outer, self.cols_scroll, self.cols)
         self.prefix_edited = False
         self.name.set_text("")
         self.file.set_text("")
@@ -1323,6 +1378,159 @@ class ExePicker:
         return chosen["path"] if int(r) == 1 else None
 
 
+# --- a launcher's install, step by step (it runs in the background) -------------------------
+
+_STEP_OF = {"prepare": "download", "download": "download", "runtime": "runtime", "install": "install",
+            "signin": "install", "close_it": "install", "find": "install", "closing": "closing",
+            "save": "save", "start": "start"}
+
+
+class InstallWindow:
+    """A store launcher's install in Faugus: the update window's card (ring,
+    steps, status line). Nothing to click through - the install runs in the
+    background, the launcher's own window is closed for it, then it's
+    written down and started fresh. Hide keeps it going on the dock."""
+
+    def __init__(self, view, uid: str, req: fa.AddRequest):
+        from plunderhub.ui.launcher_tasks import launcher_pixbuf
+        from plunderhub.ui.progress_card import (RING_ICON, ProgressRing, Stepper, card_dialog, pill_buttons,
+                                                 status_label)
+        self.view, self.app, self.uid = view, view.app, uid
+        _ = self.app._
+        self.name = fa.LAUNCHERS[req.kind]["name"]
+        self.steps = ["download"] + ([] if fa.umu_runtime_ready() else ["runtime"]) + \
+            ["install", "closing", "save", "start"]
+        self.frac = 0.0
+        self.closed = False
+        self.anim = 0
+        title = _("tm_fg_prog_title").format(name=self.name)
+        dlg, column = card_dialog(view.get_toplevel(), title)
+        dlg.set_modal(False)
+        self.dialog = dlg
+        dlg.connect("delete-event", lambda *_a: self.hide() or True)
+        dlg.connect("key-press-event", self._on_key)
+        dlg.plunderhub_nav = lambda action: action == "back" and self.hide()
+        self.ring = ProgressRing(launcher_pixbuf("Faugus", RING_ICON))
+        column.pack_start(self.ring, False, False, 0)
+        head = Gtk.Label(label=title)
+        head.set_line_wrap(True)
+        head.set_max_width_chars(30)
+        head.set_justify(Gtk.Justification.CENTER)
+        head.get_style_context().add_class("home-dialog-title")
+        column.pack_start(head, False, False, 0)
+        sub = Gtk.Label(label=_("tm_fg_prog_sub"))
+        sub.set_line_wrap(True)
+        sub.set_max_width_chars(44)
+        sub.set_justify(Gtk.Justification.CENTER)
+        sub.get_style_context().add_class("dim-label")
+        column.pack_start(sub, False, False, 0)
+        self.stepper = Stepper([(k, _(f"tm_fg_step_{k}")) for k in self.steps])
+        column.pack_start(self.stepper, False, False, 0)
+        self.status = status_label(_("tm_fg_phase_prepare"))
+        column.pack_start(self.status, False, False, 0)
+        buttons = Gtk.Box(spacing=8)
+        buttons.set_margin_top(16)
+        self.cancel_btn, self.hide_btn = pill_buttons(self.app, ((_("dialog_cancel"), "ghost"),
+                                                                 (_("tm_fg_prog_hide"), "accent")))
+        self.cancel_btn.connect("clicked", lambda *_a: self.view.stop_direct(self.uid))
+        self.hide_btn.connect("clicked", lambda *_a: self.hide())
+        buttons.pack_end(self.hide_btn, False, False, 0)
+        buttons.pack_end(self.cancel_btn, False, False, 0)
+        column.pack_start(buttons, False, False, 0)
+        dlg.get_content_area().show_all()
+        self.cancel_btn.show()
+        self.hide_btn.show()
+        dlg.show()
+        dlg.set_focus(None)
+        self._run_anim()
+
+    def _on_key(self, _w, ev) -> bool:
+        if ev.keyval == Gdk.KEY_Escape:
+            self.hide()
+            return True
+        return False
+
+    def _run_anim(self):
+        if not self.anim and not self.closed:
+            self.anim = GLib.timeout_add(40, self._animate)
+
+    def _animate(self) -> bool:
+        if self.closed or not self.dialog.get_visible():
+            self.anim = 0
+            return False
+        self.ring.tick(self.frac)
+        self.stepper.tick()
+        if self.ring.state != "running" and self.ring.shown == self.frac:
+            self.anim = 0               # settled: no repaint while it stays open
+            return False
+        return True
+
+    def hide(self):
+        if not self.closed:
+            self.dialog.hide()
+
+    def show(self):
+        if not self.closed:
+            self.dialog.present()
+            self._run_anim()
+
+    def update(self, phase: str, frac: float, text: Optional[str] = None):
+        if self.closed:
+            return
+        self.frac = max(self.frac, min(1.0, frac))
+        step = _STEP_OF.get(phase, "install")
+        if step not in self.steps:
+            step = "install"
+        for k in self.steps[:self.steps.index(step)]:
+            self.stepper.set_state(k, "done")
+        self.stepper.set_state(step, "active")
+        if step in ("closing", "save", "start"):
+            self.cancel_btn.hide()      # it's installed: nothing to stop any more
+        self.status.set_text(text or self.app._(f"tm_fg_phase_{phase}"))
+        self._run_anim()
+
+    def done(self):
+        if self.closed:
+            return
+        for k in self.steps:
+            self.stepper.set_state(k, "done")
+        self.frac = 1.0
+        self.ring.finish("done")
+        self.status.set_text(self.app._("tm_fg_prog_done").format(name=self.name))
+        self.cancel_btn.hide()
+        self.hide_btn.set_sensitive(True)
+        self._run_anim()
+        GLib.timeout_add(2600, lambda: self.close() and False)
+
+    def close(self):
+        if not self.closed:
+            self.closed = True
+            self.dialog.destroy()
+
+
+def _window(dl) -> Optional[InstallWindow]:
+    win = dl.get("window")
+    return win if win is not None and not win.closed else None
+
+
+def _start_fresh(view, gid: str, tries: int = 0) -> bool:
+    """The launcher written down and in the library: started fresh, as from
+    its card (no asking - it was asked for with the install)."""
+    app = view.app
+    uid = f"faugus:{gid}"
+    game = next((g for section in getattr(app, "_cached_launchers", []) or [] if section.get("name") == "Faugus"
+                 for g in section.get("games") or [] if g.uid == uid), None)
+    if game is None:
+        if tries < 60:          # the library's scan: a moment after the reload
+            GLib.timeout_add(500, lambda: _start_fresh(view, gid, tries + 1) and False)
+        else:
+            logger.info(f"Faugus add: {uid} not in the library yet - not started")
+        return False
+    logger.info(f"Faugus add: starting {game.title} fresh")
+    app.launch(game.launch_cmd, game.title, game.env, game.uid, game.install_dir)
+    return False
+
+
 # --- the flow: window -> job on the tile + dock -> pick -> Faugus closed -> written ----------
 
 def open_add(view):
@@ -1343,6 +1551,40 @@ def open_add(view):
             view.set_sail(game)
         return
     start(view, site, answer)
+
+
+def _keep_installer_home(view, job: fa.AddJob):
+    """While it installs, the installer's windows stay on PlunderHub's
+    workspace (the view goes back there with them): a desktop rule for Wine
+    windows (Hyprland's steam_app* -> a gaming workspace) sent them away
+    mid-install. The launcher started fresh afterwards is a launch like any
+    other - "Open games on the next workspace" moves that one."""
+    mover = view.app.workspace_mover() if hasattr(view.app, "workspace_mover") else None
+    prefix = os.path.normpath(job.req.prefix or "")
+    if mover is None or not job.req.prefix:
+        return
+    comp = mover.compositor
+
+    def work():
+        from plunderhub.core.utils import _read_proc_environ
+        mine = os.getpid()
+        seen: set = set()
+        while job.state == "working" and not job._cancel:
+            time.sleep(0.5)
+            windows = comp.windows() or []
+            home = next((ws for _wid, pid, ws in windows if pid == mine and ws), None)
+            if not home:
+                continue
+            for wid, pid, ws in windows:
+                if wid in seen or pid <= 0 or pid == mine or not ws:
+                    continue
+                seen.add(wid)
+                if ws == home or fa._prefix_of(_read_proc_environ(pid)) != prefix:
+                    continue
+                ok = comp.move(wid, home, True)
+                logger.info(f"Faugus add: an installer window was put on {ws} - back to PlunderHub's {home}: "
+                            f"{'done' if ok else 'failed'}")
+    threading.Thread(target=work, daemon=True, name="plunderhub-faugus-home").start()
 
 
 def start(view, site: fa.FaugusSite, req: fa.AddRequest):
@@ -1368,6 +1610,9 @@ def start(view, site: fa.FaugusSite, req: fa.AddRequest):
             dl["state"] = "installing" if job.phase not in ("prepare", "download") else "downloading"
             view.grid.refresh_game(uid)
             view._update_dock()
+            win = _window(dl)
+            if win is not None and job.state == "working":
+                win.update(job.phase, job.frac)
             if job.state != "working":
                 _finished(view, site, req, job, uid, game, dl)
             return False
@@ -1376,6 +1621,9 @@ def start(view, site: fa.FaugusSite, req: fa.AddRequest):
     dl["job"] = job
     logger.info(f"Faugus add: {req.kind} '{req.title}' -> {req.prefix or req.file}")
     job.start()
+    _keep_installer_home(view, job)
+    if req.kind in fa.LAUNCHERS:
+        dl["window"] = InstallWindow(view, uid, req)
     view._update_dock()
 
 
@@ -1392,6 +1640,8 @@ def _finished(view, site, req, job: fa.AddJob, uid, game, dl):
         return
     dl["finished"] = True
     if job.state in ("failed", "cancelled"):
+        if _window(dl) is not None:
+            _window(dl).close()
         _drop(view, uid)
         view.reload(keep_scroll=True)
         view._update_dock()
@@ -1415,6 +1665,8 @@ def _finished(view, site, req, job: fa.AddJob, uid, game, dl):
             return
     dl["phase"] = "save"
     dl["frac"] = 1.0
+    if _window(dl) is not None:
+        _window(dl).update("save", 0.98)
     _write_when_closed(view, site, req, exe, uid, dl, asked=False)
 
 
@@ -1440,6 +1692,8 @@ def _write_when_closed(view, site, req, exe, uid, dl, asked: bool):
         gid = fa.write_entry(site, req, exe, art=art)
     except Exception as e:
         logger.exception("Faugus add: writing the entry")
+        if _window(dl) is not None:
+            _window(dl).close()
         _drop(view, uid)
         view.reload(keep_scroll=True)
         view._update_dock()
@@ -1453,7 +1707,18 @@ def _write_when_closed(view, site, req, exe, uid, dl, asked: bool):
     view._toast_until = time.monotonic() + 5
     view.reload(keep_scroll=True)
     view._update_dock()
-    if hasattr(app, "reload"):
+    if "Faugus" not in app.enabled_launchers:
+        # installed with Faugus: its games belong in the library - Faugus is switched on
+        from plunderhub.ui.launcher_tasks import _set_enabled
+        logger.info("Faugus add: Faugus switched on in the library")
+        _set_enabled(app, "Faugus", True)           # reloads the library itself
+    elif hasattr(app, "reload"):
         app.reload()
     logger.info(f"Faugus add: {req.title} aboard as faugus:{gid}")
+    win = _window(dl)
+    if req.kind in fa.LAUNCHERS:
+        if win is not None:
+            win.update("start", 0.99, app._("tm_fg_phase_start").format(name=win.name))
+            GLib.timeout_add(1500, lambda: win.done() and False)
+        _start_fresh(view, gid)
     return False

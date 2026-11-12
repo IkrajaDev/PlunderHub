@@ -171,9 +171,10 @@ class LaunchOptionsMixin:
         """The game's cover with a soft glow of the accent colour."""
         from plunderhub.ui.home_mixin import _accent_rgb, _rounded
         w, h, room = 165, 220, 16
-        scale = self.get_scale_factor()
+        # _resolve_cover_pixbuf makes the screen's own pixels itself (marked
+        # HiDPI): asked for w x h logical, drawn at logical_size
         cached = self._find_cached_artwork(self.covers_dir, game.uid)
-        pixbuf = self._resolve_cover_pixbuf(w * scale, h * scale, cached, game_title=game.title)
+        pixbuf = self._resolve_cover_pixbuf(w, h, cached, game_title=game.title)
         area = Gtk.DrawingArea()
         area.set_size_request(w + 2 * room, h + 2 * room)
         area.set_valign(Gtk.Align.CENTER)
@@ -188,7 +189,7 @@ class LaunchOptionsMixin:
             found = self._find_cached_artwork(self.covers_dir, game.uid)
             if found is None:
                 return True
-            pixbuf = self._resolve_cover_pixbuf(w * scale, h * scale, found, game_title=game.title)
+            pixbuf = self._resolve_cover_pixbuf(w, h, found, game_title=game.title)
             area.queue_draw()
             return False
         if cached is None:
@@ -203,7 +204,9 @@ class LaunchOptionsMixin:
             _rounded(cr, room, room, w, h, 12)
             cr.clip()
             cr.translate(room, room)
-            cr.scale(w / pixbuf.get_width(), h / pixbuf.get_height())
+            from plunderhub.gi_setup import logical_size
+            pw, ph = logical_size(pixbuf)
+            cr.scale(w / pw, h / ph)
             Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0)
             cr.paint()
             return False

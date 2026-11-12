@@ -998,6 +998,10 @@ class SettingsWindow:
         for kb in key_boxes:
             box.pack_start(kb, False, False, 0)
         desc = Gtk.Label(label=text, xalign=0)
+        # wraps: one long line (a translation) made the whole Ship's Controls window
+        # 1450 px wide - past a 1366 px laptop screen
+        desc.set_line_wrap(True)
+        desc.set_max_width_chars(46)
         card.desc_col.add_widget(desc)
         box.pack_start(desc, False, False, 0)
         if tag:

@@ -276,6 +276,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._launchers_running: set = set()
         self._launchers_checked_at = 0.0
         self._directory_confirmed_running: set = set()
+        # games PlunderHub closed for the player (the map's Close on a Faugus one):
+        # their exit code is not a failed start
+        self.closed_on_purpose: set = set()
         self._running_process_match: Dict[str, GameProcessMatch] = {}
         # Games running without PlunderHub having started them (see
         # core/running_detector.py), and uids to ignore briefly after a
@@ -820,7 +823,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self.main_overlay.set_overlay_pass_through(self.scroll_top_revealer, not visible)
 
     def _on_main_scroll_value_changed(self, adjustment):
-        if not self.scroll_top_button_enabled:
+        if not self.scroll_top_button_enabled or not self.scroller.get_visible():
+            # off, or the library hidden (the Treasure Map in its place)
             self._set_scroll_top_visible(False)
             return
         scrollable_range = adjustment.get_upper() - adjustment.get_page_size()
@@ -1027,6 +1031,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         ("bulk_fav_btn", "starred-symbolic", "bulk_favorite_btn"),
         ("bulk_unfav_btn", "non-starred-symbolic", "bulk_unfavorite_btn"),
         ("bulk_hide_btn", "view-conceal-symbolic", "bulk_hide_btn"),
+        ("bulk_uninstall_btn", "trash-symbolic", "bulk_uninstall_btn"),
     )
 
     def _build_bulk_action_bar(self) -> Gtk.Box:
@@ -1049,6 +1054,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             "bulk_fav_btn": lambda: self._bulk_set_favorite(True),
             "bulk_unfav_btn": lambda: self._bulk_set_favorite(False),
             "bulk_hide_btn": self._bulk_hide,
+            "bulk_uninstall_btn": self._bulk_uninstall,
         }
         for attr, icon, key in self._BULK_ACTIONS:
             btn = Gtk.Button()
@@ -4140,7 +4146,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             if proc.poll() is not None and not self._process_group_alive(proc):
                 finished.append(uid)
                 ran = time.monotonic() - self.running_since.get(uid, time.monotonic())
-                if proc.returncode != 0 and ran < self._FAILED_START_SECONDS:
+                # closed on purpose (the map's Close: its prefix stopped) or killed by a
+                # signal: it did start - not a failed launch
+                closed = uid in self.closed_on_purpose or (proc.returncode or 0) < 0
+                self.closed_on_purpose.discard(uid)
+                if proc.returncode != 0 and ran < self._FAILED_START_SECONDS and not closed:
                     failed_launches.append((uid, ""))
         for uid in self.launching_uids:
             stage = self._process_probe.stage(uid)
@@ -5079,6 +5089,45 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return self._heroic_game_version(game)
         return None
 
+    def _refresh_harbors(self, launchers) -> None:
+        """The Harbors' numbers (games in each store launcher, their size) -
+        measured in the background after a scan; the cards again when they
+        changed."""
+        harbors_now = [g for section in launchers for g in section["games"]
+                       if g.store_platform == "store-launcher"]
+        if not harbors_now:
+            self._harbors = {}
+            return
+        self._harbors_gen = gen = getattr(self, "_harbors_gen", 0) + 1
+
+        def work():
+            from plunderhub.core import harbors
+            try:
+                found = harbors.report([g for section in launchers for g in section["games"]], self._dir_size_bytes)
+            except Exception as e:
+                logger.debug(f"Harbors: not measured: {e}")
+                return
+
+            def done():
+                if gen != self._harbors_gen:
+                    return False
+                if found != getattr(self, "_harbors", None):
+                    self._harbors = found
+                    self._render_launchers()
+                return False
+            GLib.idle_add(done)
+        threading.Thread(target=work, daemon=True, name="plunderhub-harbors").start()
+
+    def harbor_text(self, uid: str) -> str:
+        """"3 games · 120.4 GB" for a store launcher once measured, else ""."""
+        harbor = (getattr(self, "_harbors", None) or {}).get(uid)
+        if harbor is None:
+            return ""
+        if not harbor.games:
+            return self._("harbor_no_games")
+        key = "harbor_one_game" if harbor.games == 1 else "harbor_games"
+        return self._(key).format(n=harbor.games, size=format_bytes(harbor.games_bytes))
+
     def _dir_size_bytes(self, path: Path) -> int:
         total = 0
         try:
@@ -5544,7 +5593,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         count = len(self.selected_uids)
         self.bulk_count_label.set_text(self._("bulk_selected_count").format(count=count))
         sensitive = count > 0
-        for btn in (self.bulk_fav_btn, self.bulk_unfav_btn, self.bulk_hide_btn, self.bulk_clear_sel_btn):
+        for btn in (self.bulk_fav_btn, self.bulk_unfav_btn, self.bulk_hide_btn, self.bulk_clear_sel_btn,
+                    self.bulk_uninstall_btn):
             btn.set_sensitive(sensitive)
 
     def _grab_focus_on_hover(self, widget: Gtk.Widget):
@@ -6422,6 +6472,15 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 icon_name="view-conceal-symbolic",
             )
 
+    def _bulk_uninstall(self):
+        """The selected games off the disk (the Treasure Map does the work:
+        Steam, Heroic and Faugus ones - the rest are named, not touched)."""
+        if not self.selected_uids:
+            return
+        from plunderhub.ui import treasure_map
+        if treasure_map.bulk_uninstall(self, list(self.selected_uids)):
+            self._exit_selection_mode()
+
     def _undo_bulk_hide(self, pairs: List[Tuple[str, str]]):
         for launcher, uid in pairs:
             self.scanner.unhide(launcher, uid)
@@ -6632,6 +6691,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._render_launchers(animate=first_scan)
         self._home_fade_uids = set()
         self._scanned_once = True
+        self._refresh_harbors(launchers)
         manual, self._reload_manual = getattr(self, "_reload_manual", False), False
         if manual or added or removed:
             self._finish_resupply_pill(len(added), len(removed))

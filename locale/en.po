@@ -591,6 +591,9 @@ msgstr "{count} game(s) selected"
 msgid "bulk_unfavorite_btn"
 msgstr "Remove from Favorites"
 
+msgid "bulk_uninstall_btn"
+msgstr "Uninstall selected"
+
 msgid "clear_selection_btn"
 msgstr "Clear selection"
 
@@ -728,6 +731,9 @@ msgstr "Games {size}"
 
 msgid "dash_games_played"
 msgstr "Games played"
+
+msgid "dash_harbors_legend"
+msgstr "Launchers {size}"
 
 msgid "dash_measuring"
 msgstr "Measuring the cargo hold…"
@@ -1026,6 +1032,9 @@ msgstr "Choose from SteamGridDB…"
 msgid "gp_goverlay_tooltip"
 msgstr "Set up MangoHud and vkBasalt in GOverlay"
 
+msgid "gp_holds"
+msgstr "Holds"
+
 msgid "gp_installed_in"
 msgstr "Installed in"
 
@@ -1142,6 +1151,15 @@ msgstr "Upload a file…"
 
 msgid "gp_version"
 msgstr "Version"
+
+msgid "harbor_games"
+msgstr "{n} games · {size}"
+
+msgid "harbor_no_games"
+msgstr "No games yet"
+
+msgid "harbor_one_game"
+msgstr "1 game · {size}"
 
 msgid "help_btn_tooltip"
 msgstr "Keyboard & controller shortcuts"
@@ -3714,6 +3732,36 @@ msgstr "Aboard"
 msgid "tm_aboard_note"
 msgstr "installed - ready to set sail"
 
+msgid "tm_bulk_backup"
+msgstr "Back up the saves first"
+
+msgid "tm_bulk_backup_failed"
+msgstr "saves not backed up, so it was kept ({why})"
+
+msgid "tm_bulk_backup_sub"
+msgstr "{count} of the prefixes hold saves - they go to Bilge cleaning's backups, where you can put them back."
+
+msgid "tm_bulk_free"
+msgstr "Frees {size}"
+
+msgid "tm_bulk_more"
+msgstr "+{count} more"
+
+msgid "tm_bulk_none_s"
+msgstr "Steam, Heroic and Faugus games can be uninstalled from PlunderHub - the others from their own launcher."
+
+msgid "tm_bulk_none_t"
+msgstr "Nothing to uninstall from here"
+
+msgid "tm_bulk_rm_prefix"
+msgstr "Delete their Wine prefixes too"
+
+msgid "tm_bulk_rm_t"
+msgstr "Uninstall {count} games?"
+
+msgid "tm_bulk_skipped"
+msgstr "Not from here (their own launcher): {names}"
+
 msgid "tm_buried"
 msgstr "Buried"
 
@@ -3906,6 +3954,9 @@ msgstr "Another file…"
 msgid "tm_fg_phase_close_it"
 msgstr "Close its window to finish"
 
+msgid "tm_fg_phase_closing"
+msgstr "Closing the installer's window"
+
 msgid "tm_fg_phase_download"
 msgstr "Downloading the installer"
 
@@ -3927,6 +3978,9 @@ msgstr "Waiting for Faugus to close"
 msgid "tm_fg_phase_signin"
 msgstr "Sign in, then close its window"
 
+msgid "tm_fg_phase_start"
+msgstr "Starting {name}"
+
 msgid "tm_fg_pick_s"
 msgstr "The installer of {name} left these. The likeliest is picked."
 
@@ -3938,6 +3992,18 @@ msgstr "PREFIX  ·  Faugus' default folder + the name"
 
 msgid "tm_fg_preview"
 msgstr "PREVIEW"
+
+msgid "tm_fg_prog_done"
+msgstr "{name} is ready"
+
+msgid "tm_fg_prog_hide"
+msgstr "Hide"
+
+msgid "tm_fg_prog_sub"
+msgstr "It installs in the background - keep using PlunderHub. When it's done, it's added to Faugus and starts by itself."
+
+msgid "tm_fg_prog_title"
+msgstr "Installing {name}"
 
 msgid "tm_fg_proton"
 msgstr "PROTON"
@@ -3981,11 +4047,20 @@ msgstr "Aboard, in Faugus and in your library"
 msgid "tm_fg_step_close"
 msgstr "It opens when done - close it to finish"
 
+msgid "tm_fg_step_closing"
+msgstr "Close"
+
 msgid "tm_fg_step_dl"
 msgstr "Downloads {name}'s installer from its maker"
 
+msgid "tm_fg_step_download"
+msgstr "Download"
+
 msgid "tm_fg_step_find"
 msgstr "Finds the game's .exe from the shortcuts it made"
+
+msgid "tm_fg_step_install"
+msgstr "Install"
 
 msgid "tm_fg_step_keep_path"
 msgstr "Keep the install folder it offers"
@@ -4009,10 +4084,16 @@ msgid "tm_fg_step_run_setup"
 msgstr "Runs the installer in the prefix - click through it as usual"
 
 msgid "tm_fg_step_runtime"
-msgstr "First time only: the game runtime (~700 MB) is fetched"
+msgstr "Runtime"
+
+msgid "tm_fg_step_save"
+msgstr "Save"
 
 msgid "tm_fg_step_signin"
 msgstr "Its sign-in window opens - sign in, then close it"
+
+msgid "tm_fg_step_start"
+msgstr "Start"
 
 msgid "tm_fg_store_launcher"
 msgstr "Store launcher"

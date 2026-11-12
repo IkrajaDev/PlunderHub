@@ -232,6 +232,25 @@ def _drop_double_close(window: Gtk.Window) -> bool:
     return False
 
 
+def screen_room(widget):
+    """(width, height) - the most a window may take on the screen widget is on (logical px),
+    None when unknown:
+    the work area less a margin - and, where GTK 3 isn't told where the
+    panels are (Wayland: the work area is the whole screen), room for one."""
+    try:
+        display = Gdk.Display.get_default()
+        top = widget.get_toplevel() if widget is not None else None
+        gdk_window = top.get_window() if top is not None else None
+        monitor = (display.get_monitor_at_window(gdk_window) if gdk_window is not None else None) \
+            or display.get_primary_monitor() or display.get_monitor(0)
+        work = monitor.get_workarea()
+        whole = monitor.get_geometry()
+    except Exception:
+        return None
+    panel = 56 if (work.width, work.height) == (whole.width, whole.height) else 0
+    return work.width - 24, work.height - 24 - panel
+
+
 def _fit_to_screen(window: Gtk.Window):
     """A window bigger than the screen (a laptop at 175-200 %: 960 x 540
     logical px) ran off it - its buttons out of reach. Then its content
@@ -241,19 +260,10 @@ def _fit_to_screen(window: Gtk.Window):
     top bar)."""
     if hasattr(window, "_fit_default_size") or window.get_window_type() != Gtk.WindowType.TOPLEVEL:
         return
-    try:
-        display = Gdk.Display.get_default()
-        gdk_window = window.get_window()
-        monitor = (display.get_monitor_at_window(gdk_window) if gdk_window is not None else None) \
-            or display.get_primary_monitor() or display.get_monitor(0)
-        work = monitor.get_workarea()
-        whole = monitor.get_geometry()
-    except Exception:
+    room = screen_room(window)
+    if room is None:
         return
-    # Wayland doesn't tell GTK 3 where the panels are (the work area is the
-    # whole screen): room for one is left then
-    panel = 56 if (work.width, work.height) == (whole.width, whole.height) else 0
-    max_w, max_h = work.width - 24, work.height - 24 - panel
+    max_w, max_h = room
     if max_w < 200 or max_h < 200:
         return
     rw, rh = window.get_size_request()
@@ -270,10 +280,17 @@ def _fit_to_screen(window: Gtk.Window):
         return False
     window.connect("map", lambda *_: GLib.idle_add(shrink_when_shown))
     minimum, natural = window.get_preferred_size()
-    if minimum.width <= max_w and minimum.height <= max_h:
+    # the height it needs at the width it will have: wrapped lines make a narrower
+    # window taller than its minimum says (11-12: the bulk uninstall question, cut
+    # off at the bottom - its buttons gone - instead of scrolling)
+    need_h = window.get_preferred_height_for_width(min(natural.width, max_w))[0]
+    if minimum.width <= max_w and max(minimum.height, need_h) <= max_h:
         if natural.width > max_w or natural.height > max_h:
-            # it can be made that small: just not as big as it would like
-            window.resize(min(natural.width, max_w), min(natural.height, max_h))
+            # it can be made that small: just not as big as it would like (nor
+            # smaller than its default size where that fits - Ship's Controls
+            # came out 429 px high on a 768 px screen)
+            dw, dh = window.get_default_size()
+            window.resize(min(max(natural.width, dw), max_w), min(max(natural.height, dh), max_h))
         return
     child = window.get_child()
     if child is None or isinstance(child, Gtk.ScrolledWindow):

@@ -782,6 +782,10 @@ msgstr "Zaznaczono gier: {count}"
 msgid "bulk_unfavorite_btn"
 msgstr "Usuń z ulubionych"
 
+#. English: Uninstall selected
+msgid "bulk_uninstall_btn"
+msgstr "Odinstaluj zaznaczone"
+
 #. English: Clear selection
 msgid "clear_selection_btn"
 msgstr "Wyczyść zaznaczenie"
@@ -965,6 +969,10 @@ msgstr "Gry {size}"
 #. English: Games played
 msgid "dash_games_played"
 msgstr "Zagrane gry"
+
+#. English: Launchers {size}
+msgid "dash_harbors_legend"
+msgstr "Launchery {size}"
 
 #. English: Measuring the cargo hold…
 msgid "dash_measuring"
@@ -1362,6 +1370,10 @@ msgstr "Wybierz z SteamGridDB…"
 msgid "gp_goverlay_tooltip"
 msgstr "Skonfiguruj MangoHud i vkBasalt w GOverlay"
 
+#. English: Holds
+msgid "gp_holds"
+msgstr "Zawiera"
+
 #. English: Installed in
 msgid "gp_installed_in"
 msgstr "Zainstalowana w"
@@ -1517,6 +1529,18 @@ msgstr "Wgraj plik…"
 #. English: Version
 msgid "gp_version"
 msgstr "Wersja"
+
+#. English: {n} games · {size}
+msgid "harbor_games"
+msgstr "Gry: {n} · {size}"
+
+#. English: No games yet
+msgid "harbor_no_games"
+msgstr "Jeszcze bez gier"
+
+#. English: 1 game · {size}
+msgid "harbor_one_game"
+msgstr "1 gra · {size}"
 
 #. English: Keyboard & controller shortcuts
 msgid "help_btn_tooltip"
@@ -4946,6 +4970,46 @@ msgstr "Na pokładzie"
 msgid "tm_aboard_note"
 msgstr "zainstalowane - gotowe do wypłynięcia"
 
+#. English: Back up the saves first
+msgid "tm_bulk_backup"
+msgstr "Najpierw zrób kopię zapisów"
+
+#. English: saves not backed up, so it was kept ({why})
+msgid "tm_bulk_backup_failed"
+msgstr "zapisy nie skopiowane, więc zostało ({why})"
+
+#. English: {count} of the prefixes hold saves - they go to Bilge cleaning's backups, where you can put them back.
+msgid "tm_bulk_backup_sub"
+msgstr "{count} z prefiksów ma zapisy gry - trafią do kopii czyszczenia zęzy, skąd można je przywrócić."
+
+#. English: Frees {size}
+msgid "tm_bulk_free"
+msgstr "Zwalnia {size}"
+
+#. English: +{count} more
+msgid "tm_bulk_more"
+msgstr "+{count} więcej"
+
+#. English: Steam, Heroic and Faugus games can be uninstalled from PlunderHub - the others from their own launcher.
+msgid "tm_bulk_none_s"
+msgstr "Gry ze Steam, Heroic i Faugus można odinstalować z PlunderHub - pozostałe z ich własnego launchera."
+
+#. English: Nothing to uninstall from here
+msgid "tm_bulk_none_t"
+msgstr "Nie ma tu nic do odinstalowania"
+
+#. English: Delete their Wine prefixes too
+msgid "tm_bulk_rm_prefix"
+msgstr "Usuń też ich prefiksy Wine"
+
+#. English: Uninstall {count} games?
+msgid "tm_bulk_rm_t"
+msgstr "Odinstalować {count} gier?"
+
+#. English: Not from here (their own launcher): {names}
+msgid "tm_bulk_skipped"
+msgstr "Nie stąd (ich własny launcher): {names}"
+
 #. English: Buried
 msgid "tm_buried"
 msgstr "Zakopane"
@@ -5202,6 +5266,10 @@ msgstr "Inny plik…"
 msgid "tm_fg_phase_close_it"
 msgstr "Zamknij okno, by skończyć"
 
+#. English: Closing the installer's window
+msgid "tm_fg_phase_closing"
+msgstr "Zamykanie okna instalatora"
+
 #. English: Downloading the installer
 msgid "tm_fg_phase_download"
 msgstr "Pobieranie instalatora"
@@ -5230,6 +5298,10 @@ msgstr "Czekanie na zamknięcie Faugus"
 msgid "tm_fg_phase_signin"
 msgstr "Zaloguj się i zamknij okno"
 
+#. English: Starting {name}
+msgid "tm_fg_phase_start"
+msgstr "Uruchamianie: {name}"
+
 #. English: The installer of {name} left these. The likeliest is picked.
 msgid "tm_fg_pick_s"
 msgstr "Instalator {name} zostawił te pliki. Najbardziej prawdopodobny jest zaznaczony."
@@ -5245,6 +5317,22 @@ msgstr "PREFIKS  ·  domyślny folder Faugus + nazwa"
 #. English: PREVIEW
 msgid "tm_fg_preview"
 msgstr "PODGLĄD"
+
+#. English: {name} is ready
+msgid "tm_fg_prog_done"
+msgstr "{name} gotowy"
+
+#. English: Hide
+msgid "tm_fg_prog_hide"
+msgstr "Ukryj"
+
+#. English: It installs in the background - keep using PlunderHub. When it's done, it's added to Faugus and starts by itself.
+msgid "tm_fg_prog_sub"
+msgstr "Instaluje się w tle - możesz dalej korzystać z PlunderHub. Po zakończeniu trafi do Faugus i uruchomi się sam."
+
+#. English: Installing {name}
+msgid "tm_fg_prog_title"
+msgstr "Instalowanie: {name}"
 
 #. English: PROTON
 msgid "tm_fg_proton"
@@ -5302,13 +5390,25 @@ msgstr "Na pokładzie, w Faugus i w bibliotece"
 msgid "tm_fg_step_close"
 msgstr "Otworzy się na końcu - zamknij, by skończyć"
 
+#. English: Close
+msgid "tm_fg_step_closing"
+msgstr "Zamykanie"
+
 #. English: Downloads {name}'s installer from its maker
 msgid "tm_fg_step_dl"
 msgstr "Pobiera instalator {name} od producenta"
 
+#. English: Download
+msgid "tm_fg_step_download"
+msgstr "Pobieranie"
+
 #. English: Finds the game's .exe from the shortcuts it made
 msgid "tm_fg_step_find"
 msgstr "Znajduje .exe gry po utworzonych skrótach"
+
+#. English: Install
+msgid "tm_fg_step_install"
+msgstr "Instalacja"
 
 #. English: Keep the install folder it offers
 msgid "tm_fg_step_keep_path"
@@ -5338,13 +5438,21 @@ msgstr "Instaluje go po cichu w prefiksie"
 msgid "tm_fg_step_run_setup"
 msgstr "Uruchamia instalator w prefiksie - przeklikaj go jak zwykle"
 
-#. English: First time only: the game runtime (~700 MB) is fetched
+#. English: Runtime
 msgid "tm_fg_step_runtime"
-msgstr "Tylko za pierwszym razem: pobierane jest środowisko (~700 MB)"
+msgstr "Środowisko"
+
+#. English: Save
+msgid "tm_fg_step_save"
+msgstr "Zapis"
 
 #. English: Its sign-in window opens - sign in, then close it
 msgid "tm_fg_step_signin"
 msgstr "Otwiera się okno logowania - zaloguj się i je zamknij"
+
+#. English: Start
+msgid "tm_fg_step_start"
+msgstr "Start"
 
 #. English: Store launcher
 msgid "tm_fg_store_launcher"
