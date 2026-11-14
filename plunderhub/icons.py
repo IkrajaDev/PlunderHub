@@ -111,7 +111,16 @@ ICON_MAP: Dict[str, Tuple[str, str]] = {
     "trash-symbolic": ("trash.svg", "stroke"),
     "key-round-symbolic": ("key-round.svg", "stroke"),
     "sparkles-symbolic": ("sparkles.svg", "stroke"),
-    "rocket-symbolic": ("rocket.svg", "stroke"),
+    # PlunderHub's own (Lucide's style): the Bounty Board's wanted poster
+    "wanted-poster-symbolic": ("wanted-poster.svg", "stroke"),
+    # ... and the sidebar's: Favorites, Treasure Map, Harbors, Dashboard, Ship's Controls
+    "compass-star-symbolic": ("compass-star.svg", "stroke"),
+    "map-x-symbolic": ("map-x.svg", "stroke"),
+    "lighthouse-symbolic": ("lighthouse-waves.svg", "stroke"),
+    "spyglass-symbolic": ("spyglass-brass.svg", "stroke"),
+    "helm-symbolic": ("helm-real.svg", "stroke"),
+    "chest-symbolic": ("chest-closed.svg", "stroke"),      # the library: the plunder's chest
+    "rocket-symbolic": ("sail-ship.svg", "stroke"),       # PlunderHub's own: a little ship, not a rocket
     "message-circle-question-symbolic": ("message-circle-question-mark.svg", "stroke"),
     "app-window-symbolic": ("app-window.svg", "stroke"),
     "layout-dashboard-symbolic": ("layout-dashboard.svg", "stroke"),
@@ -126,7 +135,7 @@ ICON_MAP: Dict[str, Tuple[str, str]] = {
     "circle-question-symbolic": ("circle-question-mark.svg", "stroke"),
     "clock-symbolic": ("clock.svg", "stroke"),
     "type-symbolic": ("type.svg", "stroke"),
-    "droplets-symbolic": ("droplets.svg", "stroke"),
+    "droplets-symbolic": ("bubbles.svg", "stroke"),        # PlunderHub's own: the background bubbles
     "pause-symbolic": ("pause.svg", "stroke"),
     "moon-symbolic": ("moon.svg", "stroke"),
     "picture-in-picture-symbolic": ("picture-in-picture.svg", "stroke"),

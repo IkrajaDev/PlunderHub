@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="07-game-menu.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 8 / 18 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 8 / 20 &nbsp;·&nbsp;
   <a href="09-treasure-map-faugus.md"><b>Next →</b></a>
 </p>
 

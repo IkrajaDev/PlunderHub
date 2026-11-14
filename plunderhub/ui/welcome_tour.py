@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""The welcome window, a guided tour: the logo rising from the sea with
-who PlunderHub is, then a page per main feature (a picture and a few
-words), the keys worth knowing last.
+"""The welcome window, a short guided tour: the logo rising from the sea
+with who PlunderHub is, then five pages, each a group of features (a
+picture and one sentence), then Ready to sail with the keys worth knowing.
 
-The first time (forced) it is watched through: no way out but Next; Set
-sail! at the end is what marks it seen. Opened again from the sidebar's logo it is free: the dots
-jump, Esc and Close leave.
+The first time (forced) there is no Close, only a quiet Skip; Set sail!
+or Skip marks it seen. Opened again from the sidebar's logo it is free:
+the dots jump, Esc and Close leave.
 
 Nothing repaints once a page has settled: the logo, the splash and the
 Next fill run on tick callbacks that stop."""
@@ -49,21 +49,17 @@ WIDTH = 900                        # the card's column
 
 # (title key, text key, picture in assets/tour/ - made by PlunderHubDemos/tour_pictures.py)
 PAGES = [
-    ("wt_library_t", "wt_library_s", "library"),
-    ("wt_sail_t", "wt_sail_s", "sail"),
-    ("wt_map_t", "wt_map_s", "map"),
-    ("wt_tune_t", "wt_tune_s", "tune"),
-    ("wt_shipwright_t", "wt_shipwright_s", "shipwright"),
-    ("wt_bilge_t", "wt_bilge_s", "bilge"),
-    ("wt_dash_t", "wt_dash_s", "dash"),
-    ("wt_console_t", "wt_console_s", "console"),
-    ("wt_yours_t", "wt_yours_s", "yours"),
+    ("wt_games_t", "wt_games_s", "games"),        # library, Set sail, Harbors
+    ("wt_get_t", "wt_get_s", "get"),              # Treasure Map, Bounty Board
+    ("wt_fix_t", "wt_fix_s", "fix"),              # Launch options, What changed?, Performance
+    ("wt_ship_t", "wt_ship_s", "ship"),           # Shipwright, Ship inspection, Bilge cleaning
+    ("wt_couch_t", "wt_couch_s", "couch"),        # Console Mode, themes - and the keys
 ]
 PICTURES = Path(__file__).resolve().parent.parent / "assets" / "tour"
 
 def show(app, forced: bool = False):
     """The tour as a modal card over the main window; returns once closed.
-    forced: the first start's (watched through, Set sail! marks it seen)."""
+    forced: the first start's (Set sail! or Skip marks it seen)."""
     Tour(app, forced).run()
 
 
@@ -99,14 +95,16 @@ class Tour:
 
     def _picture_size(self):
         """16:9 as wide as the card, lower on a short screen (1366x768
-        must fit: the words and the buttons take about 300 px)."""
+        must fit: the words and the buttons take about 390 px)."""
         w = WIDTH - 2 * Picture.SHADOW         # the shadow round it stays inside the card's width
         h = round(w * 9 / 16)
         try:
             display = Gdk.Display.get_default()
             mon = display.get_monitor_at_window(self.app.get_window()) if self.app.get_window() else \
                 display.get_primary_monitor() or display.get_monitor(0)
-            room = mon.get_workarea().height - 320
+            # the title, two lines of words, the buttons and the card round it (measured
+            # at 1366x768 and 1280x720 @ 200 %: 320 left the buttons under the screen)
+            room = mon.get_workarea().height - 390
             if room < h:
                 h = max(240, room)
                 w = round(h * 16 / 9)
@@ -186,7 +184,9 @@ class Tour:
         quiet.pack_start(license_btn, False, False, 0)
         words.append(quiet)
 
-        page.pack_start(RisingLogo(self.app, 250, then=words), False, False, 0)
+        # the pages are as tall as the tallest: on a short screen (picture
+        # lower) the logo shrinks with it, so the buttons stay on the screen
+        page.pack_start(RisingLogo(self.app, max(150, min(250, self.pic_h - 170)), then=words), False, False, 0)
         for w in words:
             page.pack_start(w, False, False, 0)
         return page
@@ -214,10 +214,12 @@ class Tour:
 
     def _ready_page(self) -> Gtk.Widget:
         app = self.app
-        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        # a short screen (720 px high at 200 %): everything closer together, the logo smaller
+        short = self.pic_h < 420
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6 if short else 10)
         page.set_valign(Gtk.Align.CENTER)
         # already up here; Set sail! takes it back under the water
-        self.ready_logo = RisingLogo(app, 200, risen=True)
+        self.ready_logo = RisingLogo(app, max(70, min(200, self.pic_h - 290)), risen=True)
         page.pack_start(self.ready_logo, False, False, 0)
         title = Gtk.Label(label=self.t("wt_ready_t"))
         title.get_style_context().add_class("home-dialog-title")
@@ -227,29 +229,42 @@ class Tour:
         sub.get_style_context().add_class("dim-label")
         page.pack_start(sub, False, False, 0)
 
-        keys = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        keys = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6 if short else 10)
         keys.set_halign(Gtk.Align.CENTER)
-        keys.set_margin_top(14)
-        rows = [Gtk.Box(spacing=12), Gtk.Box(spacing=12)]
-        for r in rows:
-            r.set_halign(Gtk.Align.CENTER)
-            keys.pack_start(r, False, False, 0)
+        keys.set_margin_top(6 if short else 14)
         # their names as the app says them elsewhere (already translated)
-        for i, (cap, key) in enumerate((("A", "all_games_section"), ("T", "tm_title"), ("S", "sw_title"),
-                                        ("D", "dashboard_title"), ("C", "settings_console_group"),
-                                        ("O", "options"), ("F1", "wt_key_all"))):
-            row = Gtk.Box(spacing=12)
-            row.get_style_context().add_class("welcome-feature")
-            row.pack_start(app._shortcut_key(cap), False, False, 0)
-            label = Gtk.Label(label=self.t(key), xalign=0)
-            row.pack_start(label, True, True, 0)
-            rows[i // 4].pack_start(row, False, False, 0)
+        items = []
+        for cap, key in (("A", "all_games_section"), ("T", "tm_title"), ("B", "bb_title"), ("S", "sw_title"),
+                         ("D", "dashboard_title"), ("C", "settings_console_group"), ("O", "options"),
+                         ("F1", "wt_key_all")):
+            item = Gtk.Box(spacing=12)
+            item.get_style_context().add_class("welcome-feature")
+            item.pack_start(app._shortcut_key(cap), False, False, 0)
+            item.pack_start(Gtk.Label(label=self.t(key), xalign=0), True, True, 0)
+            item.show_all()
+            items.append(item)
+        # as many on a row as fit the card's width (two rows in English,
+        # three in Russian) - the pill's CSS padding isn't measured yet: + 36
+        lines, width = [[]], 0
+        for item in items:
+            w = item.get_preferred_width()[1] + 36 + 12
+            if lines[-1] and width + w > WIDTH - 40:
+                lines.append([])
+                width = 0
+            lines[-1].append(item)
+            width += w
+        for line in lines:
+            r = Gtk.Box(spacing=12)
+            r.set_halign(Gtk.Align.CENTER)
+            for item in line:
+                r.pack_start(item, False, False, 0)
+            keys.pack_start(r, False, False, 0)
         page.pack_start(keys, False, False, 0)
 
         # the ship is still being built: the BETA note and Report bug
         leaks = Gtk.Box(spacing=12)
         leaks.get_style_context().add_class("welcome-note")
-        leaks.set_margin_top(18)
+        leaks.set_margin_top(8 if short else 18)
         leaks.set_halign(Gtk.Align.CENTER)
         beta = Gtk.Label(label=app._("beta_badge").upper())
         beta.get_style_context().add_class("beta-pill")
@@ -276,7 +291,9 @@ class Tour:
         app = self.app
         foot = Gtk.Box(spacing=10)
         foot.set_margin_top(6)
-        self.close_btn = app._dialog_button(self.t("wt_close"), "ghost", "back", "Esc")
+        # forced (the first start): a quiet Skip instead of Close
+        self.close_btn = (app._dialog_button(self.t("wt_skip"), "ghost") if self.forced
+                          else app._dialog_button(self.t("wt_close"), "ghost", "back", "Esc"))
         self.close_btn.connect("clicked", lambda *_: self._close())
         foot.pack_start(self.close_btn, False, False, 0)
         self.back_btn = app._dialog_button("←  " + self.t("wt_back"), "ghost")
@@ -298,7 +315,7 @@ class Tour:
         inner = self.next_btn.get_child()
         inner.get_children()[0].set_text(label)
         self.back_btn.set_visible(self.page > 0)
-        self.close_btn.set_visible(not self.forced)
+        self.close_btn.set_visible(not (self.forced and self.page == len(self.pages) - 1))
         self.dots.set_page(self.page)
         self.seen.add(self.page)
 
@@ -326,8 +343,9 @@ class Tour:
             self.next()
 
     def _close(self):
-        if not self.forced or self.finished:
-            self.dlg.response(Gtk.ResponseType.CANCEL)
+        if self.forced:
+            self.finished = True        # Skip: seen, it won't come again at the next start
+        self.dlg.response(Gtk.ResponseType.CANCEL)
 
     def _on_key(self, _w, ev) -> bool:
         k = ev.keyval
@@ -336,7 +354,8 @@ class Tour:
         elif k in (Gdk.KEY_Left, Gdk.KEY_BackSpace, Gdk.KEY_Page_Up):
             self.go(self.page - 1)
         elif k == Gdk.KEY_Escape:
-            self._close()
+            if not self.forced:         # the first start: only the Skip button skips
+                self._close()
         else:
             return False
         return True
@@ -348,7 +367,7 @@ class Tour:
         elif action in ("left", "prev_tab"):
             self.go(self.page - 1)
         elif action == "back":
-            if self.page > 0 and self.forced:
+            if self.forced:
                 self.go(self.page - 1)
             else:
                 self._close()

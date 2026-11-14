@@ -266,6 +266,94 @@ msgstr "Copia guardada"
 msgid "backup_show_folder"
 msgstr "Mostrar en la carpeta"
 
+#. English: Already aboard
+msgid "bb_aboard"
+msgstr "Ya a bordo"
+
+#. English: Checked {when} ago
+msgid "bb_checked"
+msgstr "Revisado hace {when}"
+
+#. English: Looking…
+msgid "bb_checking"
+msgstr "Buscando…"
+
+#. English: Get it on {store}
+msgid "bb_claim"
+msgstr "Conseguir en {store}"
+
+#. English: {n} days left · till {until}
+msgid "bb_days_left"
+msgstr "quedan {n} días · hasta {until}"
+
+#. English: Ended
+msgid "bb_ended"
+msgstr "Terminó"
+
+#. English: FREE
+msgid "bb_free"
+msgstr "GRATIS"
+
+#. English: {n} h left · till {until}
+msgid "bb_hours_left"
+msgstr "quedan {n} h · hasta {until}"
+
+#. English: a moment
+msgid "bb_just_now"
+msgstr "un momento"
+
+#. English: only {n} min left
+msgid "bb_minutes_left"
+msgstr "solo quedan {n} min"
+
+#. English: No free games right now
+msgid "bb_none"
+msgstr "No hay juegos gratis ahora mismo"
+
+#. English: Nothing free here right now
+msgid "bb_none_here"
+msgstr "Nada gratis aquí ahora"
+
+#. English: New ones come every week - Epic's on Thursdays. The board looks again by itself every few hours.
+msgid "bb_none_sub"
+msgstr "Cada semana llegan nuevos (los de Epic, los jueves). El tablón vuelve a mirar solo cada pocas horas."
+
+#. English: The list couldn't be fetched
+msgid "bb_offline"
+msgstr "No se pudo obtener la lista"
+
+#. English: Open it on {store}
+msgid "bb_open_tip"
+msgstr "Abrir en {store}"
+
+#. English: Look again
+msgid "bb_refresh"
+msgstr "Volver a mirar"
+
+#. English: PC games free to keep right now on Steam, Epic Games, GOG and Humble, under the Treasure Map. Off: no row, and nothing is fetched.
+msgid "bb_setting_sub"
+msgstr "Juegos de PC gratis para siempre ahora en Steam, Epic Games, GOG y Humble, bajo el Mapa del tesoro. Desactivado: sin fila y sin descargas."
+
+#. English: Bounty Board in the sidebar
+msgid "bb_setting_title"
+msgstr "Bounty Board en la barra lateral"
+
+#. English: No bounty in {store}'s waters
+msgid "bb_store_empty"
+msgstr "Sin botín en las aguas de {store}"
+
+#. English: The crew turned over every crate on {store} - nothing free to plunder today. The lookout checks again every few hours, matey.
+msgid "bb_store_empty_sub"
+msgstr "La tripulación revolvió cada cofre de {store}: hoy no hay nada gratis que saquear. El vigía vuelve a mirar cada pocas horas, grumete."
+
+#. English: Free PC games to keep, right now · via <a href=\"https://eikowagenknecht.com/lootscraper/\">LootScraper</a>
+msgid "bb_sub"
+msgstr "Juegos de PC gratis para quedártelos, ahora · vía <a href=\"https://eikowagenknecht.com/lootscraper/\">LootScraper</a>"
+
+#. English: Bounty Board
+msgid "bb_title"
+msgstr "Bounty Board"
+
 #. English: Beta
 msgid "beta_badge"
 msgstr "Beta"
@@ -2050,6 +2138,34 @@ msgstr "Las carpetas de sus juegos"
 msgid "lm_running"
 msgstr "En ejecución"
 
+#. English: Alternative EXE to run
+msgid "lo_alt_exe"
+msgstr "Otro EXE a ejecutar"
+
+#. English: All files
+msgid "lo_alt_exe_any"
+msgstr "Todos los archivos"
+
+#. English: Back to the game's own
+msgid "lo_alt_exe_clear"
+msgstr "Volver al del juego"
+
+#. English: Windows programs
+msgid "lo_alt_exe_filter"
+msgstr "Programas de Windows"
+
+#. English: The game's own
+msgid "lo_alt_exe_none"
+msgstr "El del juego"
+
+#. English: Choose…
+msgid "lo_alt_exe_pick"
+msgstr "Elegir…"
+
+#. English: Heroic starts this file instead of the game's own
+msgid "lo_alt_exe_sub"
+msgstr "Heroic inicia este archivo en lugar del propio del juego"
+
 #. English: Game arguments
 msgid "lo_args_label"
 msgstr "Argumentos del juego"
@@ -2098,6 +2214,22 @@ msgstr "Valor"
 msgid "lo_esync"
 msgstr "Esync"
 
+#. English: Keep it - I'll give access
+msgid "lo_exe_unseen_keep"
+msgstr "Mantenerlo: daré acceso"
+
+#. English: Choose another
+msgid "lo_exe_unseen_other"
+msgstr "Elegir otro"
+
+#. English: {launcher} runs as a Flatpak and has no access to {folder}, so the game wouldn't start. Pick a file inside the game's folder, or give {launcher} access to it in Flatseal.
+msgid "lo_exe_unseen_s"
+msgstr "{launcher} se ejecuta como Flatpak y no tiene acceso a {folder}, así que el juego no arrancaría. Elige un archivo dentro de la carpeta del juego o da acceso a {launcher} en Flatseal."
+
+#. English: {launcher} can't see that folder
+msgid "lo_exe_unseen_t"
+msgstr "{launcher} no ve esa carpeta"
+
 #. English: FPS limit (DXVK)
 msgid "lo_fps_limit"
 msgstr "Límite de FPS (DXVK)"
@@ -2109,6 +2241,14 @@ msgstr "FSR (WINE_FULLSCREEN_FSR)"
 #. English: Fsync
 msgid "lo_fsync"
 msgstr "Fsync"
+
+#. English: The game's EXE
+msgid "lo_game_exe"
+msgstr "El EXE del juego"
+
+#. English: The file {launcher} starts - swap it for another one
+msgid "lo_game_exe_sub"
+msgstr "El archivo que inicia {launcher}: cámbialo por otro"
 
 #. English: GameMode
 msgid "lo_gamemode"
@@ -2358,6 +2498,10 @@ msgstr "Antitrampas"
 msgid "lo_section_compat"
 msgstr "Compatibilidad (Wine/Proton)"
 
+#. English: Executable
+msgid "lo_section_exe"
+msgstr "Ejecutable"
+
 #. English: Performance
 msgid "lo_section_performance"
 msgstr "Rendimiento"
@@ -2593,6 +2737,114 @@ msgstr "Valoraciones de ProtonDB"
 #. English: With Proton: {tier}
 msgid "pdb_with_proton"
 msgstr "Con Proton: {tier}"
+
+#. English: Average FPS
+msgid "pf_avg"
+msgstr "FPS medios"
+
+#. English: CPU load · max temp
+msgid "pf_cpu"
+msgstr "Carga CPU · temp. máx."
+
+#. English: Delete all
+msgid "pf_delete_all"
+msgstr "Eliminar todo"
+
+#. English: Delete the whole performance log?
+msgid "pf_delete_all_q"
+msgstr "¿Eliminar todo el registro de rendimiento?"
+
+#. English: Every recorded session of this game goes. Recording itself stays as it is.
+msgid "pf_delete_all_text"
+msgstr "Se eliminan todas las sesiones registradas de este juego. El registro en sí queda como está."
+
+#. English: Delete this session
+msgid "pf_delete_one"
+msgstr "Eliminar esta sesión"
+
+#. English: No sessions recorded yet
+msgid "pf_empty"
+msgstr "Aún no hay sesiones registradas"
+
+#. English: Switch recording on and play: each session of at least 20 seconds shows up here a few seconds after the game closes.
+msgid "pf_empty_sub"
+msgstr "Activa el registro y juega: cada sesión de al menos 20 segundos aparece aquí unos segundos después de cerrar el juego."
+
+#. English: Frame time (99th)
+msgid "pf_frametime"
+msgstr "Tiempo de fotograma (p99)"
+
+#. English: Install it in Shipwright
+msgid "pf_get_mangohud"
+msgstr "Instalarlo en Shipwright"
+
+#. English: GPU load · max temp
+msgid "pf_gpu"
+msgstr "Carga GPU · temp. máx."
+
+#. English: 0.1% low
+msgid "pf_low01"
+msgstr "0,1% mínimo"
+
+#. English: 1% low
+msgid "pf_low1"
+msgstr "1% mínimo"
+
+#. English: Proton / driver / game changed
+msgid "pf_marks"
+msgstr "Cambio de Proton / controlador / juego"
+
+#. English: Recording needs MangoHud, which isn't installed for this launcher yet.
+msgid "pf_need_mangohud"
+msgstr "Para registrar hace falta MangoHud, que aún no está instalado para este launcher."
+
+#. English: MangoHud left no log after the last session. MangoHud 0.7 or newer writes it while you play; older ones (Debian 12, Ubuntu 22.04) only when logging is switched off. Update MangoHud, or use a Flatpak launcher with MangoHud from Flathub.
+msgid "pf_no_log"
+msgstr "MangoHud no dejó registro tras la última sesión. MangoHud 0.7 o posterior lo escribe mientras juegas; los anteriores (Debian 12, Ubuntu 22.04), solo al desactivar el registro. Actualiza MangoHud o usa un launcher Flatpak con MangoHud de Flathub."
+
+#. English: Played
+msgid "pf_played"
+msgstr "Jugado"
+
+#. English: FPS range
+msgid "pf_range"
+msgstr "Rango de FPS"
+
+#. English: Record performance
+msgid "pf_record"
+msgstr "Registrar el rendimiento"
+
+#. English: MangoHud logs each session in the background.
+msgid "pf_record_sub"
+msgstr "MangoHud registra cada sesión en segundo plano."
+
+#. English: Same as the session before
+msgid "pf_same_as_before"
+msgstr "Igual que la sesión anterior"
+
+#. English: Session of {when}
+msgid "pf_session_of"
+msgstr "Sesión del {when}"
+
+#. English: Sessions
+msgid "pf_sessions"
+msgstr "Sesiones"
+
+#. English: Show MangoHud's overlay while playing
+msgid "pf_show_hud"
+msgstr "Mostrar la superposición de MangoHud al jugar"
+
+#. English: Performance
+msgid "pf_tab"
+msgstr "Rendimiento"
+
+#. English: VRAM peak
+msgid "pf_vram"
+msgstr "Pico de VRAM"
+
+#. English: vs. the session before
+msgid "pf_vs_before"
+msgstr "vs. la sesión anterior"
 
 #. English: Browse…
 msgid "pfx_browse"
@@ -5038,6 +5290,14 @@ msgstr "Desenterrar"
 msgid "tm_dig_up_with"
 msgstr "Desenterrar con {launcher}"
 
+#. English: Install all DLCs ({n})
+msgid "tm_dlc_all"
+msgstr "Instalar todos los DLC ({n})"
+
+#. English: DLCs to install
+msgid "tm_dlc_title"
+msgstr "DLC que se instalarán"
+
 #. English: Waiting for {launcher}'s install window - {game}
 msgid "tm_dock_asked"
 msgstr "Esperando la ventana de instalación de {launcher} - {game}"
@@ -6146,6 +6406,206 @@ msgstr "Vista de cuadrícula"
 msgid "view_list_tooltip"
 msgstr "Vista de lista"
 
+#. English: Back to {proton}
+msgid "wc_back_to"
+msgstr "Volver a {proton}"
+
+#. English: {name}: since the last good launch
+msgid "wc_by_hand"
+msgstr "{name}: desde el último inicio correcto"
+
+#. English: Changed
+msgid "wc_changed"
+msgstr "Cambió"
+
+#. English: {n} changed since then
+msgid "wc_changed_n"
+msgstr "{n} cambios desde entonces"
+
+#. English: {name} stopped after {time}
+msgid "wc_crashed"
+msgstr "{name} se detuvo tras {time}"
+
+#. English: GPU driver
+msgid "wc_f_driver"
+msgstr "Controlador de GPU"
+
+#. English: Game version
+msgid "wc_f_game"
+msgstr "Versión del juego"
+
+#. English: Kernel
+msgid "wc_f_kernel"
+msgstr "Kernel"
+
+#. English: Launch options
+msgid "wc_f_options"
+msgstr "Opciones de inicio"
+
+#. English: PlunderHub
+msgid "wc_f_plunderhub"
+msgstr "PlunderHub"
+
+#. English: Proton
+msgid "wc_f_proton"
+msgstr "Proton"
+
+#. English: {name} didn't start
+msgid "wc_failed"
+msgstr "{name} no se inició"
+
+#. English: Launch again
+msgid "wc_launch_again"
+msgstr "Iniciar de nuevo"
+
+#. English: No error lines in it.
+msgid "wc_log_clean"
+msgstr "No hay líneas de error."
+
+#. English: Write Proton's log
+msgid "wc_log_next"
+msgstr "Escribir el registro de Proton"
+
+#. English: The next launches write Proton's log to your home folder - its error lines show here if it goes wrong again. Switch it off once it's fixed: the log grows big.
+msgid "wc_log_next_tip"
+msgstr "Los próximos inicios escriben el registro de Proton en tu carpeta personal; si vuelve a fallar, sus errores aparecen aquí. Apágalo cuando esté arreglado: crece mucho."
+
+#. English: Open the log
+msgid "wc_log_open"
+msgstr "Abrir el registro"
+
+#. English: Proton's log
+msgid "wc_log_title"
+msgstr "Registro de Proton"
+
+#. English: What changed?
+msgid "wc_menu"
+msgstr "¿Qué ha cambiado?"
+
+#. English: Since the last good launch
+msgid "wc_menu_sub"
+msgstr "Desde el último inicio correcto"
+
+#. English: {n} min
+msgid "wc_minutes"
+msgstr "{n} min"
+
+#. English: Don't open by itself for this game
+msgid "wc_mute"
+msgstr "No abrir solo con este juego"
+
+#. English: Linux version (no Proton)
+msgid "wc_native"
+msgstr "Versión de Linux (sin Proton)"
+
+#. English: No good launch to compare with yet
+msgid "wc_no_good"
+msgstr "Aún no hay un inicio correcto para comparar"
+
+#. English: No launch from PlunderHub recorded yet
+msgid "wc_no_history"
+msgstr "Aún no hay inicios desde PlunderHub"
+
+#. English: PlunderHub notes what a game runs with every time it starts it from here. Launch it once, and this shows what changed the next time something goes wrong.
+msgid "wc_no_history_long"
+msgstr "PlunderHub anota con qué se ejecuta un juego cada vez que lo inicia desde aquí. Inícialo una vez y, la próxima vez que falle, verás aquí qué cambió."
+
+#. English: none
+msgid "wc_none"
+msgstr "ninguna"
+
+#. English: Nothing changed
+msgid "wc_nothing_changed"
+msgstr "Nada ha cambiado"
+
+#. English: The game runs with the same Proton, options, version and driver as when it last went well - the cause is likely somewhere else (its saves, a mod, the launcher).
+msgid "wc_nothing_changed_long"
+msgstr "El juego usa el mismo Proton, opciones, versión y controlador que la última vez que fue bien; la causa probablemente esté en otro sitio (partidas, un mod, el launcher)."
+
+#. English: Another Proton download is running - try again when it's done.
+msgid "wc_rescue_busy"
+msgstr "Hay otra descarga de Proton en curso: inténtalo cuando termine."
+
+#. English: Done - the game now runs on {proton}.
+msgid "wc_rescue_done"
+msgstr "Listo: el juego ahora usa {proton}."
+
+#. English: Not installed any more - PlunderHub downloads it and sets this game to it.
+msgid "wc_rescue_download"
+msgstr "Ya no está instalado: PlunderHub lo descarga y lo asigna a este juego."
+
+#. English: Downloading {proton} · {pct}%
+msgid "wc_rescue_downloading"
+msgstr "Descargando {proton} · {pct}%"
+
+#. English: The download didn't work: {why}
+msgid "wc_rescue_failed"
+msgstr "La descarga falló: {why}"
+
+#. English: Looking for {proton}…
+msgid "wc_rescue_finding"
+msgstr "Buscando {proton}…"
+
+#. English: {proton} can't be found or downloaded any more - pick another one in Launch options.
+msgid "wc_rescue_gone"
+msgstr "{proton} ya no se encuentra ni se puede descargar: elige otro en Opciones de inicio."
+
+#. English: {proton} is downloaded, but {launcher} doesn't list it yet - restart {launcher}, then pick it in Launch options.
+msgid "wc_rescue_not_listed"
+msgstr "{proton} está descargado, pero {launcher} aún no lo muestra: reinicia {launcher} y elígelo en Opciones de inicio."
+
+#. English: It's still installed - one click sets this game to it.
+msgid "wc_rescue_there"
+msgstr "Sigue instalado: un clic y este juego lo usará."
+
+#. English: It ran fine on {proton}
+msgid "wc_rescue_title"
+msgstr "Funcionaba bien con {proton}"
+
+#. English: What it runs with now
+msgid "wc_runs_with"
+msgstr "Con qué se ejecuta ahora"
+
+#. English: {n} stayed the same
+msgid "wc_same_n"
+msgstr "{n} sin cambios"
+
+#. English: {n} s
+msgid "wc_seconds"
+msgstr "{n} s"
+
+#. English: Opens by itself when a game doesn't start or crashes: what changed since its last good launch, and the way back to the Proton it ran on. Switching it on again also brings it back for the games it was told to leave alone.
+msgid "wc_setting_sub"
+msgstr "Se abre solo cuando un juego no arranca o se cierra de golpe: qué cambió desde el último inicio correcto y cómo volver al Proton con el que funcionaba. Al reactivarlo vuelve también en los juegos donde se desactivó."
+
+#. English: \"What changed?\" when a game won't start
+msgid "wc_setting_title"
+msgstr "«¿Qué ha cambiado?» si un juego no arranca"
+
+#. English: Compared with the last good launch: {when}, played {time}
+msgid "wc_since"
+msgstr "Comparado con el último inicio correcto: {when}, jugado {time}"
+
+#. English: What changed?
+msgid "wc_title"
+msgstr "¿Qué ha cambiado?"
+
+#. English: today {time}
+msgid "wc_today"
+msgstr "hoy {time}"
+
+#. English: Put the launch options back
+msgid "wc_undo_options"
+msgstr "Restaurar las opciones de inicio"
+
+#. English: Put back as they were
+msgid "wc_undone"
+msgstr "Restauradas"
+
+#. English: yesterday {time}
+msgid "wc_yesterday"
+msgstr "ayer {time}"
+
 #. English: Continue
 msgid "welcome_continue"
 msgstr "Continuar"
@@ -6238,53 +6698,45 @@ msgstr "¡Ahoy! ¡Bienvenido a PlunderHub!"
 msgid "wt_back"
 msgstr "Atrás"
 
-#. English: Finds what uninstalled games left behind and frees the space. Before anything goes, it can back up your saves, settings, profiles and registry keys - and put them back later.
-msgid "wt_bilge_s"
-msgstr "Encuentra lo que dejaron atrás los juegos desinstalados y libera el espacio. Antes de borrar nada, puede respaldar tus partidas guardadas, ajustes, perfiles y claves del registro - y devolverlos después."
-
-#. English: Bilge cleaning
-msgid "wt_bilge_t"
-msgstr "Limpieza de sentina"
-
 #. English: Close
 msgid "wt_close"
 msgstr "Cerrar"
 
-#. English: The big screen, made for controllers. Hold View + Start to switch between a game and PlunderHub.
-msgid "wt_console_s"
-msgstr "La pantalla grande, hecha para mandos. Mantén View + Start para cambiar entre un juego y PlunderHub."
+#. English: Console Mode for controllers, 15 themes and animated covers.
+msgid "wt_couch_s"
+msgstr "Modo consola para mandos, 15 temas y portadas animadas."
 
-#. English: Console Mode
-msgid "wt_console_t"
-msgstr "Modo consola"
+#. English: From the couch, your way
+msgid "wt_couch_t"
+msgstr "Desde el sofá, a tu estilo"
 
-#. English: Your playtime and storage at a glance.
-msgid "wt_dash_s"
-msgstr "Tu tiempo de juego y tu almacenamiento de un vistazo."
+#. English: Launch options for each game. If one won't start, What changed? shows what changed and what broke it. Performance logs its FPS.
+msgid "wt_fix_s"
+msgstr "Opciones de inicio para cada juego. Si uno no arranca, ¿Qué ha cambiado? muestra qué cambió y qué lo rompió. Rendimiento registra sus FPS."
 
-#. English: Captain's Dashboard
-msgid "wt_dash_t"
-msgstr "Panel del Capitán"
+#. English: When a game acts up
+msgid "wt_fix_t"
+msgstr "Cuando un juego falla"
+
+#. English: Steam, Heroic, Lutris, Bottles and Faugus, found on their own - launchers installed with Faugus in Harbors. Click a cover to play.
+msgid "wt_games_s"
+msgstr "Steam, Heroic, Lutris, Bottles y Faugus, encontrados solos - los lanzadores instalados con Faugus en Puertos. Haz clic en una portada para jugar."
+
+#. English: All your games, one place
+msgid "wt_games_t"
+msgstr "Todos tus juegos en un solo lugar"
+
+#. English: Treasure Map: every game you own, installed with a click. Bounty Board: games free to keep right now.
+msgid "wt_get_s"
+msgstr "Mapa del tesoro: todos tus juegos, instalados con un clic. Bounty Board: juegos gratis para quedártelos ahora mismo."
+
+#. English: Find new plunder
+msgid "wt_get_t"
+msgstr "Encuentra nuevo botín"
 
 #. English: All shortcuts
 msgid "wt_key_all"
 msgstr "Todos los atajos"
-
-#. English: Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles and Faugus - found on their own, native or Flatpak.
-msgid "wt_library_s"
-msgstr "Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles y Faugus - los encuentra por sí solo, nativos o Flatpak."
-
-#. English: One harbour for every game
-msgid "wt_library_t"
-msgstr "Un puerto para cada juego"
-
-#. English: Every game you own, installed or not. Dig one up and it installs - no launcher window needed.
-msgid "wt_map_s"
-msgstr "Todos los juegos que tienes, instalados o no. Desentierra uno y se instala - sin ninguna ventana del lanzador."
-
-#. English: Treasure Map
-msgid "wt_map_t"
-msgstr "Mapa del tesoro"
 
 #. English: Next
 msgid "wt_next"
@@ -6298,29 +6750,25 @@ msgstr "Algunas teclas útiles - F1 las muestra todas."
 msgid "wt_ready_t"
 msgstr "Listo para zarpar"
 
-#. English: Click a cover to play. PlunderHub shows what's starting, running or syncing, and can stop a game that hangs.
-msgid "wt_sail_s"
-msgstr "Haz clic en una portada para jugar. PlunderHub muestra lo que se está iniciando, ejecutando o sincronizando, y puede detener un juego que se cuelga."
-
-#. English: Set sail
-msgid "wt_sail_t"
-msgstr "Zarpar"
-
 #. English: Set sail!
 msgid "wt_set_sail"
 msgstr "¡Zarpar!"
 
-#. English: Launchers, tools and Proton-GE / Proton-CachyOS in one place. Ship inspection finds missing drivers and libraries and fixes them.
-msgid "wt_shipwright_s"
-msgstr "Lanzadores, herramientas y Proton-GE / Proton-CachyOS en un solo lugar. La inspección del barco encuentra drivers y bibliotecas que faltan y los arregla."
+#. English: Shipwright installs launchers, tools and Proton, fixes missing drivers and cleans up what removed games left behind.
+msgid "wt_ship_s"
+msgstr "El Astillero instala lanzadores, herramientas y Proton, arregla drivers que faltan y limpia lo que dejan los juegos borrados."
 
-#. English: Shipwright
-msgid "wt_shipwright_t"
-msgstr "Astillero"
+#. English: Keep the ship in shape
+msgid "wt_ship_t"
+msgstr "Mantén el barco a punto"
 
 #. English: Show me around
 msgid "wt_show_around"
 msgstr "Enséñame todo"
+
+#. English: Skip tour
+msgid "wt_skip"
+msgstr "Saltar el recorrido"
 
 #. English: One ship for all your plunder.
 msgid "wt_slogan"
@@ -6329,19 +6777,3 @@ msgstr "Un barco para todo tu botín."
 #. English: A Linux game launcher for your Steam, Heroic, Lutris, Bottles and Faugus games.
 msgid "wt_tagline"
 msgstr "Un lanzador de juegos para Linux para tus juegos de Steam, Heroic, Lutris, Bottles y Faugus."
-
-#. English: Proton, gamescope, MangoHud, performance tweaks, anti-cheat fixes, environment variables and much more, for each game on its own - with a Recommended preset and the game's ProtonDB rating.
-msgid "wt_tune_s"
-msgstr "Proton, gamescope, MangoHud, ajustes de rendimiento, arreglos para anti-trampas, variables de entorno y mucho más, para cada juego por separado - con una configuración recomendada y la valoración de ProtonDB del juego."
-
-#. English: Tune each game
-msgid "wt_tune_t"
-msgstr "Ajusta cada juego"
-
-#. English: 15 themes, covers from your launchers or SteamGridDB - even animated ones.
-msgid "wt_yours_s"
-msgstr "15 temas, portadas de tus lanzadores o de SteamGridDB - incluso animadas."
-
-#. English: Make it yours
-msgid "wt_yours_t"
-msgstr "Hazlo tuyo"

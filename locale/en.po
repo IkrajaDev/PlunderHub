@@ -204,6 +204,72 @@ msgstr "Backup saved"
 msgid "backup_show_folder"
 msgstr "Show in folder"
 
+msgid "bb_aboard"
+msgstr "Already aboard"
+
+msgid "bb_checked"
+msgstr "Checked {when} ago"
+
+msgid "bb_checking"
+msgstr "Looking…"
+
+msgid "bb_claim"
+msgstr "Get it on {store}"
+
+msgid "bb_days_left"
+msgstr "{n} days left · till {until}"
+
+msgid "bb_ended"
+msgstr "Ended"
+
+msgid "bb_free"
+msgstr "FREE"
+
+msgid "bb_hours_left"
+msgstr "{n} h left · till {until}"
+
+msgid "bb_just_now"
+msgstr "a moment"
+
+msgid "bb_minutes_left"
+msgstr "only {n} min left"
+
+msgid "bb_none"
+msgstr "No free games right now"
+
+msgid "bb_none_here"
+msgstr "Nothing free here right now"
+
+msgid "bb_none_sub"
+msgstr "New ones come every week - Epic's on Thursdays. The board looks again by itself every few hours."
+
+msgid "bb_offline"
+msgstr "The list couldn't be fetched"
+
+msgid "bb_open_tip"
+msgstr "Open it on {store}"
+
+msgid "bb_refresh"
+msgstr "Look again"
+
+msgid "bb_setting_sub"
+msgstr "PC games free to keep right now on Steam, Epic Games, GOG and Humble, under the Treasure Map. Off: no row, and nothing is fetched."
+
+msgid "bb_setting_title"
+msgstr "Bounty Board in the sidebar"
+
+msgid "bb_store_empty"
+msgstr "No bounty in {store}'s waters"
+
+msgid "bb_store_empty_sub"
+msgstr "The crew turned over every crate on {store} - nothing free to plunder today. The lookout checks again every few hours, matey."
+
+msgid "bb_sub"
+msgstr "Free PC games to keep, right now · via <a href=\"https://eikowagenknecht.com/lootscraper/\">LootScraper</a>"
+
+msgid "bb_title"
+msgstr "Bounty Board"
+
 msgid "beta_badge"
 msgstr "Beta"
 
@@ -1542,6 +1608,27 @@ msgstr "The folders its games are in"
 msgid "lm_running"
 msgstr "Running"
 
+msgid "lo_alt_exe"
+msgstr "Alternative EXE to run"
+
+msgid "lo_alt_exe_any"
+msgstr "All files"
+
+msgid "lo_alt_exe_clear"
+msgstr "Back to the game's own"
+
+msgid "lo_alt_exe_filter"
+msgstr "Windows programs"
+
+msgid "lo_alt_exe_none"
+msgstr "The game's own"
+
+msgid "lo_alt_exe_pick"
+msgstr "Choose…"
+
+msgid "lo_alt_exe_sub"
+msgstr "Heroic starts this file instead of the game's own"
+
 msgid "lo_args_label"
 msgstr "Game arguments"
 
@@ -1578,6 +1665,18 @@ msgstr "Value"
 msgid "lo_esync"
 msgstr "Esync"
 
+msgid "lo_exe_unseen_keep"
+msgstr "Keep it - I'll give access"
+
+msgid "lo_exe_unseen_other"
+msgstr "Choose another"
+
+msgid "lo_exe_unseen_s"
+msgstr "{launcher} runs as a Flatpak and has no access to {folder}, so the game wouldn't start. Pick a file inside the game's folder, or give {launcher} access to it in Flatseal."
+
+msgid "lo_exe_unseen_t"
+msgstr "{launcher} can't see that folder"
+
 msgid "lo_fps_limit"
 msgstr "FPS limit (DXVK)"
 
@@ -1586,6 +1685,12 @@ msgstr "FSR (WINE_FULLSCREEN_FSR)"
 
 msgid "lo_fsync"
 msgstr "Fsync"
+
+msgid "lo_game_exe"
+msgstr "The game's EXE"
+
+msgid "lo_game_exe_sub"
+msgstr "The file {launcher} starts - swap it for another one"
 
 msgid "lo_gamemode"
 msgstr "GameMode"
@@ -1773,6 +1878,9 @@ msgstr "Anti-cheat"
 msgid "lo_section_compat"
 msgstr "Compatibility (Wine/Proton)"
 
+msgid "lo_section_exe"
+msgstr "Executable"
+
 msgid "lo_section_performance"
 msgstr "Performance"
 
@@ -1949,6 +2057,87 @@ msgstr "ProtonDB ratings"
 
 msgid "pdb_with_proton"
 msgstr "With Proton: {tier}"
+
+msgid "pf_avg"
+msgstr "Average FPS"
+
+msgid "pf_cpu"
+msgstr "CPU load · max temp"
+
+msgid "pf_delete_all"
+msgstr "Delete all"
+
+msgid "pf_delete_all_q"
+msgstr "Delete the whole performance log?"
+
+msgid "pf_delete_all_text"
+msgstr "Every recorded session of this game goes. Recording itself stays as it is."
+
+msgid "pf_delete_one"
+msgstr "Delete this session"
+
+msgid "pf_empty"
+msgstr "No sessions recorded yet"
+
+msgid "pf_empty_sub"
+msgstr "Switch recording on and play: each session of at least 20 seconds shows up here a few seconds after the game closes."
+
+msgid "pf_frametime"
+msgstr "Frame time (99th)"
+
+msgid "pf_get_mangohud"
+msgstr "Install it in Shipwright"
+
+msgid "pf_gpu"
+msgstr "GPU load · max temp"
+
+msgid "pf_low01"
+msgstr "0.1% low"
+
+msgid "pf_low1"
+msgstr "1% low"
+
+msgid "pf_marks"
+msgstr "Proton / driver / game changed"
+
+msgid "pf_need_mangohud"
+msgstr "Recording needs MangoHud, which isn't installed for this launcher yet."
+
+msgid "pf_no_log"
+msgstr "MangoHud left no log after the last session. MangoHud 0.7 or newer writes it while you play; older ones (Debian 12, Ubuntu 22.04) only when logging is switched off. Update MangoHud, or use a Flatpak launcher with MangoHud from Flathub."
+
+msgid "pf_played"
+msgstr "Played"
+
+msgid "pf_range"
+msgstr "FPS range"
+
+msgid "pf_record"
+msgstr "Record performance"
+
+msgid "pf_record_sub"
+msgstr "MangoHud logs each session in the background."
+
+msgid "pf_same_as_before"
+msgstr "Same as the session before"
+
+msgid "pf_session_of"
+msgstr "Session of {when}"
+
+msgid "pf_sessions"
+msgstr "Sessions"
+
+msgid "pf_show_hud"
+msgstr "Show MangoHud's overlay while playing"
+
+msgid "pf_tab"
+msgstr "Performance"
+
+msgid "pf_vram"
+msgstr "VRAM peak"
+
+msgid "pf_vs_before"
+msgstr "vs. the session before"
 
 msgid "pfx_browse"
 msgstr "Browse…"
@@ -3783,6 +3972,12 @@ msgstr "Dig up"
 msgid "tm_dig_up_with"
 msgstr "Dig up with {launcher}"
 
+msgid "tm_dlc_all"
+msgstr "Install all DLCs ({n})"
+
+msgid "tm_dlc_title"
+msgstr "DLCs to install"
+
 msgid "tm_dock_asked"
 msgstr "Waiting for {launcher}'s install window - {game}"
 
@@ -4614,6 +4809,156 @@ msgstr "Grid view"
 msgid "view_list_tooltip"
 msgstr "List view"
 
+msgid "wc_back_to"
+msgstr "Back to {proton}"
+
+msgid "wc_by_hand"
+msgstr "{name}: since the last good launch"
+
+msgid "wc_changed"
+msgstr "Changed"
+
+msgid "wc_changed_n"
+msgstr "{n} changed since then"
+
+msgid "wc_crashed"
+msgstr "{name} stopped after {time}"
+
+msgid "wc_f_driver"
+msgstr "GPU driver"
+
+msgid "wc_f_game"
+msgstr "Game version"
+
+msgid "wc_f_kernel"
+msgstr "Kernel"
+
+msgid "wc_f_options"
+msgstr "Launch options"
+
+msgid "wc_f_plunderhub"
+msgstr "PlunderHub"
+
+msgid "wc_f_proton"
+msgstr "Proton"
+
+msgid "wc_failed"
+msgstr "{name} didn't start"
+
+msgid "wc_launch_again"
+msgstr "Launch again"
+
+msgid "wc_log_clean"
+msgstr "No error lines in it."
+
+msgid "wc_log_next"
+msgstr "Write Proton's log"
+
+msgid "wc_log_next_tip"
+msgstr "The next launches write Proton's log to your home folder - its error lines show here if it goes wrong again. Switch it off once it's fixed: the log grows big."
+
+msgid "wc_log_open"
+msgstr "Open the log"
+
+msgid "wc_log_title"
+msgstr "Proton's log"
+
+msgid "wc_menu"
+msgstr "What changed?"
+
+msgid "wc_menu_sub"
+msgstr "Since the last good launch"
+
+msgid "wc_minutes"
+msgstr "{n} min"
+
+msgid "wc_mute"
+msgstr "Don't open by itself for this game"
+
+msgid "wc_native"
+msgstr "Linux version (no Proton)"
+
+msgid "wc_no_good"
+msgstr "No good launch to compare with yet"
+
+msgid "wc_no_history"
+msgstr "No launch from PlunderHub recorded yet"
+
+msgid "wc_no_history_long"
+msgstr "PlunderHub notes what a game runs with every time it starts it from here. Launch it once, and this shows what changed the next time something goes wrong."
+
+msgid "wc_none"
+msgstr "none"
+
+msgid "wc_nothing_changed"
+msgstr "Nothing changed"
+
+msgid "wc_nothing_changed_long"
+msgstr "The game runs with the same Proton, options, version and driver as when it last went well - the cause is likely somewhere else (its saves, a mod, the launcher)."
+
+msgid "wc_rescue_busy"
+msgstr "Another Proton download is running - try again when it's done."
+
+msgid "wc_rescue_done"
+msgstr "Done - the game now runs on {proton}."
+
+msgid "wc_rescue_download"
+msgstr "Not installed any more - PlunderHub downloads it and sets this game to it."
+
+msgid "wc_rescue_downloading"
+msgstr "Downloading {proton} · {pct}%"
+
+msgid "wc_rescue_failed"
+msgstr "The download didn't work: {why}"
+
+msgid "wc_rescue_finding"
+msgstr "Looking for {proton}…"
+
+msgid "wc_rescue_gone"
+msgstr "{proton} can't be found or downloaded any more - pick another one in Launch options."
+
+msgid "wc_rescue_not_listed"
+msgstr "{proton} is downloaded, but {launcher} doesn't list it yet - restart {launcher}, then pick it in Launch options."
+
+msgid "wc_rescue_there"
+msgstr "It's still installed - one click sets this game to it."
+
+msgid "wc_rescue_title"
+msgstr "It ran fine on {proton}"
+
+msgid "wc_runs_with"
+msgstr "What it runs with now"
+
+msgid "wc_same_n"
+msgstr "{n} stayed the same"
+
+msgid "wc_seconds"
+msgstr "{n} s"
+
+msgid "wc_setting_sub"
+msgstr "Opens by itself when a game doesn't start or crashes: what changed since its last good launch, and the way back to the Proton it ran on. Switching it on again also brings it back for the games it was told to leave alone."
+
+msgid "wc_setting_title"
+msgstr "\"What changed?\" when a game won't start"
+
+msgid "wc_since"
+msgstr "Compared with the last good launch: {when}, played {time}"
+
+msgid "wc_title"
+msgstr "What changed?"
+
+msgid "wc_today"
+msgstr "today {time}"
+
+msgid "wc_undo_options"
+msgstr "Put the launch options back"
+
+msgid "wc_undone"
+msgstr "Put back as they were"
+
+msgid "wc_yesterday"
+msgstr "yesterday {time}"
+
 msgid "welcome_continue"
 msgstr "Continue"
 
@@ -4683,41 +5028,35 @@ msgstr "Ahoy! Welcome to PlunderHub!"
 msgid "wt_back"
 msgstr "Back"
 
-msgid "wt_bilge_s"
-msgstr "Finds what uninstalled games left behind and frees the space. Before anything goes, it can back up your saves, settings, profiles and registry keys - and put them back later."
-
-msgid "wt_bilge_t"
-msgstr "Bilge cleaning"
-
 msgid "wt_close"
 msgstr "Close"
 
-msgid "wt_console_s"
-msgstr "The big screen, made for controllers. Hold View + Start to switch between a game and PlunderHub."
+msgid "wt_couch_s"
+msgstr "Console Mode for controllers, 15 themes and animated covers."
 
-msgid "wt_console_t"
-msgstr "Console Mode"
+msgid "wt_couch_t"
+msgstr "From the couch, your way"
 
-msgid "wt_dash_s"
-msgstr "Your playtime and storage at a glance."
+msgid "wt_fix_s"
+msgstr "Launch options for each game. If one won't start, What changed? shows what changed and what broke it. Performance logs its FPS."
 
-msgid "wt_dash_t"
-msgstr "Captain's Dashboard"
+msgid "wt_fix_t"
+msgstr "When a game acts up"
+
+msgid "wt_games_s"
+msgstr "Steam, Heroic, Lutris, Bottles and Faugus, found on their own - launchers installed with Faugus in Harbors. Click a cover to play."
+
+msgid "wt_games_t"
+msgstr "All your games, one place"
+
+msgid "wt_get_s"
+msgstr "Treasure Map: every game you own, installed with a click. Bounty Board: games free to keep right now."
+
+msgid "wt_get_t"
+msgstr "Find new plunder"
 
 msgid "wt_key_all"
 msgstr "All shortcuts"
-
-msgid "wt_library_s"
-msgstr "Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles and Faugus - found on their own, native or Flatpak."
-
-msgid "wt_library_t"
-msgstr "One harbour for every game"
-
-msgid "wt_map_s"
-msgstr "Every game you own, installed or not. Dig one up and it installs - no launcher window needed."
-
-msgid "wt_map_t"
-msgstr "Treasure Map"
 
 msgid "wt_next"
 msgstr "Next"
@@ -4728,38 +5067,23 @@ msgstr "A few keys worth knowing - F1 shows them all."
 msgid "wt_ready_t"
 msgstr "Ready to sail"
 
-msgid "wt_sail_s"
-msgstr "Click a cover to play. PlunderHub shows what's starting, running or syncing, and can stop a game that hangs."
-
-msgid "wt_sail_t"
-msgstr "Set sail"
-
 msgid "wt_set_sail"
 msgstr "Set sail!"
 
-msgid "wt_shipwright_s"
-msgstr "Launchers, tools and Proton-GE / Proton-CachyOS in one place. Ship inspection finds missing drivers and libraries and fixes them."
+msgid "wt_ship_s"
+msgstr "Shipwright installs launchers, tools and Proton, fixes missing drivers and cleans up what removed games left behind."
 
-msgid "wt_shipwright_t"
-msgstr "Shipwright"
+msgid "wt_ship_t"
+msgstr "Keep the ship in shape"
 
 msgid "wt_show_around"
 msgstr "Show me around"
+
+msgid "wt_skip"
+msgstr "Skip tour"
 
 msgid "wt_slogan"
 msgstr "One ship for all your plunder."
 
 msgid "wt_tagline"
 msgstr "A Linux game launcher for your Steam, Heroic, Lutris, Bottles and Faugus games."
-
-msgid "wt_tune_s"
-msgstr "Proton, gamescope, MangoHud, performance tweaks, anti-cheat fixes, environment variables and much more, for each game on its own - with a Recommended preset and the game's ProtonDB rating."
-
-msgid "wt_tune_t"
-msgstr "Tune each game"
-
-msgid "wt_yours_s"
-msgstr "15 themes, covers from your launchers or SteamGridDB - even animated ones."
-
-msgid "wt_yours_t"
-msgstr "Make it yours"

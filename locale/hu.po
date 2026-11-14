@@ -266,6 +266,94 @@ msgstr "Mentés kész"
 msgid "backup_show_folder"
 msgstr "Megnyitás a mappában"
 
+#. English: Already aboard
+msgid "bb_aboard"
+msgstr "Már a fedélzeten"
+
+#. English: Checked {when} ago
+msgid "bb_checked"
+msgstr "{when} ezelőtt nézve"
+
+#. English: Looking…
+msgid "bb_checking"
+msgstr "Keresés…"
+
+#. English: Get it on {store}
+msgid "bb_claim"
+msgstr "Megszerzés: {store}"
+
+#. English: {n} days left · till {until}
+msgid "bb_days_left"
+msgstr "még {n} nap · {until}-ig"
+
+#. English: Ended
+msgid "bb_ended"
+msgstr "Lejárt"
+
+#. English: FREE
+msgid "bb_free"
+msgstr "INGYEN"
+
+#. English: {n} h left · till {until}
+msgid "bb_hours_left"
+msgstr "még {n} óra · {until}-ig"
+
+#. English: a moment
+msgid "bb_just_now"
+msgstr "egy pillanattal"
+
+#. English: only {n} min left
+msgid "bb_minutes_left"
+msgstr "már csak {n} perc"
+
+#. English: No free games right now
+msgid "bb_none"
+msgstr "Most nincs ingyenes játék"
+
+#. English: Nothing free here right now
+msgid "bb_none_here"
+msgstr "Itt most nincs ingyenes játék"
+
+#. English: New ones come every week - Epic's on Thursdays. The board looks again by itself every few hours.
+msgid "bb_none_sub"
+msgstr "Hetente jönnek újak - az Epicé csütörtökönként. A tábla pár óránként magától újranéz."
+
+#. English: The list couldn't be fetched
+msgid "bb_offline"
+msgstr "A lista nem tölthető le"
+
+#. English: Open it on {store}
+msgid "bb_open_tip"
+msgstr "Megnyitás itt: {store}"
+
+#. English: Look again
+msgid "bb_refresh"
+msgstr "Újra megnézem"
+
+#. English: PC games free to keep right now on Steam, Epic Games, GOG and Humble, under the Treasure Map. Off: no row, and nothing is fetched.
+msgid "bb_setting_sub"
+msgstr "A most ingyen megtartható PC-s játékok a Steamen, az Epic Gamesen, a GOG-on és a Humble-ön, a Kincses térkép alatt. Kikapcsolva nincs sor, és nem tölt le semmit."
+
+#. English: Bounty Board in the sidebar
+msgid "bb_setting_title"
+msgstr "Bounty Board az oldalsávban"
+
+#. English: No bounty in {store}'s waters
+msgid "bb_store_empty"
+msgstr "{store}: üres a kincsesláda"
+
+#. English: The crew turned over every crate on {store} - nothing free to plunder today. The lookout checks again every few hours, matey.
+msgid "bb_store_empty_sub"
+msgstr "A legénység itt minden ládát felforgatott - ma nincs ingyen zsákmány. Az árbockosárból pár óránként újra körbenéznek, pajtás."
+
+#. English: Free PC games to keep, right now · via <a href=\"https://eikowagenknecht.com/lootscraper/\">LootScraper</a>
+msgid "bb_sub"
+msgstr "Most ingyen megtartható PC-s játékok · forrás: <a href=\"https://eikowagenknecht.com/lootscraper/\">LootScraper</a>"
+
+#. English: Bounty Board
+msgid "bb_title"
+msgstr "Bounty Board"
+
 #. English: Beta
 msgid "beta_badge"
 msgstr "Béta"
@@ -2050,6 +2138,34 @@ msgstr "A játékai mappái"
 msgid "lm_running"
 msgstr "Fut"
 
+#. English: Alternative EXE to run
+msgid "lo_alt_exe"
+msgstr "Másik EXE futtatása"
+
+#. English: All files
+msgid "lo_alt_exe_any"
+msgstr "Minden fájl"
+
+#. English: Back to the game's own
+msgid "lo_alt_exe_clear"
+msgstr "Vissza a játék sajátjára"
+
+#. English: Windows programs
+msgid "lo_alt_exe_filter"
+msgstr "Windows programok"
+
+#. English: The game's own
+msgid "lo_alt_exe_none"
+msgstr "A játék sajátja"
+
+#. English: Choose…
+msgid "lo_alt_exe_pick"
+msgstr "Kiválasztás…"
+
+#. English: Heroic starts this file instead of the game's own
+msgid "lo_alt_exe_sub"
+msgstr "A Heroic ezt indítja a játék saját fájlja helyett"
+
 #. English: Game arguments
 msgid "lo_args_label"
 msgstr "Játék argumentumai"
@@ -2098,6 +2214,22 @@ msgstr "Érték"
 msgid "lo_esync"
 msgstr "Esync"
 
+#. English: Keep it - I'll give access
+msgid "lo_exe_unseen_keep"
+msgstr "Megtartom - adok hozzáférést"
+
+#. English: Choose another
+msgid "lo_exe_unseen_other"
+msgstr "Másikat választok"
+
+#. English: {launcher} runs as a Flatpak and has no access to {folder}, so the game wouldn't start. Pick a file inside the game's folder, or give {launcher} access to it in Flatseal.
+msgid "lo_exe_unseen_s"
+msgstr "A {launcher} Flatpakként fut, és nincs hozzáférése ehhez: {folder}, így a játék nem indulna el. Válassz fájlt a játék mappáján belül, vagy adj hozzáférést a {launcher}-nek a Flatsealben."
+
+#. English: {launcher} can't see that folder
+msgid "lo_exe_unseen_t"
+msgstr "A {launcher} nem látja ezt a mappát"
+
 #. English: FPS limit (DXVK)
 msgid "lo_fps_limit"
 msgstr "FPS-korlát (DXVK)"
@@ -2109,6 +2241,14 @@ msgstr "FSR (WINE_FULLSCREEN_FSR)"
 #. English: Fsync
 msgid "lo_fsync"
 msgstr "Fsync"
+
+#. English: The game's EXE
+msgid "lo_game_exe"
+msgstr "A játék EXE-je"
+
+#. English: The file {launcher} starts - swap it for another one
+msgid "lo_game_exe_sub"
+msgstr "A fájl, amit a {launcher} elindít - cseréld egy másikra"
 
 #. English: GameMode
 msgid "lo_gamemode"
@@ -2358,6 +2498,10 @@ msgstr "Csalásvédelem"
 msgid "lo_section_compat"
 msgstr "Kompatibilitás (Wine/Proton)"
 
+#. English: Executable
+msgid "lo_section_exe"
+msgstr "Futtatható fájl"
+
 #. English: Performance
 msgid "lo_section_performance"
 msgstr "Teljesítmény"
@@ -2593,6 +2737,114 @@ msgstr "ProtonDB-értékelés"
 #. English: With Proton: {tier}
 msgid "pdb_with_proton"
 msgstr "Protonnal: {tier}"
+
+#. English: Average FPS
+msgid "pf_avg"
+msgstr "Átlag FPS"
+
+#. English: CPU load · max temp
+msgid "pf_cpu"
+msgstr "CPU terhelés · max hő"
+
+#. English: Delete all
+msgid "pf_delete_all"
+msgstr "Összes törlése"
+
+#. English: Delete the whole performance log?
+msgid "pf_delete_all_q"
+msgstr "Törlöd a teljes teljesítménynaplót?"
+
+#. English: Every recorded session of this game goes. Recording itself stays as it is.
+msgid "pf_delete_all_text"
+msgstr "A játék összes rögzített játékmenete törlődik. A rögzítés be- vagy kikapcsolt állapota nem változik."
+
+#. English: Delete this session
+msgid "pf_delete_one"
+msgstr "Játékmenet törlése"
+
+#. English: No sessions recorded yet
+msgid "pf_empty"
+msgstr "Még nincs rögzített játékmenet"
+
+#. English: Switch recording on and play: each session of at least 20 seconds shows up here a few seconds after the game closes.
+msgid "pf_empty_sub"
+msgstr "Kapcsold be a rögzítést, és játssz: minden legalább 20 másodperces játékmenet pár másodperccel a játék bezárása után itt megjelenik."
+
+#. English: Frame time (99th)
+msgid "pf_frametime"
+msgstr "Frametime (99%)"
+
+#. English: Install it in Shipwright
+msgid "pf_get_mangohud"
+msgstr "Telepítés a Shipwrightban"
+
+#. English: GPU load · max temp
+msgid "pf_gpu"
+msgstr "GPU terhelés · max hő"
+
+#. English: 0.1% low
+msgid "pf_low01"
+msgstr "0,1% low"
+
+#. English: 1% low
+msgid "pf_low1"
+msgstr "1% low"
+
+#. English: Proton / driver / game changed
+msgid "pf_marks"
+msgstr "Proton / driver / játék változott"
+
+#. English: Recording needs MangoHud, which isn't installed for this launcher yet.
+msgid "pf_need_mangohud"
+msgstr "A rögzítéshez MangoHud kell, ami ehhez a launcherhez még nincs telepítve."
+
+#. English: MangoHud left no log after the last session. MangoHud 0.7 or newer writes it while you play; older ones (Debian 12, Ubuntu 22.04) only when logging is switched off. Update MangoHud, or use a Flatpak launcher with MangoHud from Flathub.
+msgid "pf_no_log"
+msgstr "A MangoHud nem hagyott naplót a legutóbbi játékmenet után. A 0.7-es vagy újabb MangoHud játék közben írja, a régebbiek (Debian 12, Ubuntu 22.04) csak a naplózás kikapcsolásakor. Frissítsd a MangoHudot, vagy használj Flatpak launchert a Flathubos MangoHuddal."
+
+#. English: Played
+msgid "pf_played"
+msgstr "Játékidő"
+
+#. English: FPS range
+msgid "pf_range"
+msgstr "FPS tartomány"
+
+#. English: Record performance
+msgid "pf_record"
+msgstr "Teljesítmény rögzítése"
+
+#. English: MangoHud logs each session in the background.
+msgid "pf_record_sub"
+msgstr "A MangoHud a háttérben naplózza a játékmeneteket."
+
+#. English: Same as the session before
+msgid "pf_same_as_before"
+msgstr "Ugyanannyi, mint előzőleg"
+
+#. English: Session of {when}
+msgid "pf_session_of"
+msgstr "Játékmenet: {when}"
+
+#. English: Sessions
+msgid "pf_sessions"
+msgstr "Játékmenetek"
+
+#. English: Show MangoHud's overlay while playing
+msgid "pf_show_hud"
+msgstr "MangoHud kijelzőjének mutatása játék közben"
+
+#. English: Performance
+msgid "pf_tab"
+msgstr "Teljesítmény"
+
+#. English: VRAM peak
+msgid "pf_vram"
+msgstr "VRAM csúcs"
+
+#. English: vs. the session before
+msgid "pf_vs_before"
+msgstr "az előzőhöz képest"
 
 #. English: Browse…
 msgid "pfx_browse"
@@ -5038,6 +5290,14 @@ msgstr "Kiásás"
 msgid "tm_dig_up_with"
 msgstr "Kiásás: {launcher}"
 
+#. English: Install all DLCs ({n})
+msgid "tm_dlc_all"
+msgstr "Az összes DLC telepítése ({n})"
+
+#. English: DLCs to install
+msgid "tm_dlc_title"
+msgstr "Telepítendő DLC-k"
+
 #. English: Waiting for {launcher}'s install window - {game}
 msgid "tm_dock_asked"
 msgstr "A {launcher} telepítő ablakára várunk - {game}"
@@ -6146,6 +6406,206 @@ msgstr "Rácsnézet"
 msgid "view_list_tooltip"
 msgstr "Listanézet"
 
+#. English: Back to {proton}
+msgid "wc_back_to"
+msgstr "Vissza: {proton}"
+
+#. English: {name}: since the last good launch
+msgid "wc_by_hand"
+msgstr "{name}: a legutóbbi jó indítás óta"
+
+#. English: Changed
+msgid "wc_changed"
+msgstr "Változott"
+
+#. English: {n} changed since then
+msgid "wc_changed_n"
+msgstr "Azóta {n} dolog változott"
+
+#. English: {name} stopped after {time}
+msgid "wc_crashed"
+msgstr "A(z) {name} {time} után leállt"
+
+#. English: GPU driver
+msgid "wc_f_driver"
+msgstr "GPU driver"
+
+#. English: Game version
+msgid "wc_f_game"
+msgstr "Játék verziója"
+
+#. English: Kernel
+msgid "wc_f_kernel"
+msgstr "Kernel"
+
+#. English: Launch options
+msgid "wc_f_options"
+msgstr "Indítási beállítások"
+
+#. English: PlunderHub
+msgid "wc_f_plunderhub"
+msgstr "PlunderHub"
+
+#. English: Proton
+msgid "wc_f_proton"
+msgstr "Proton"
+
+#. English: {name} didn't start
+msgid "wc_failed"
+msgstr "A(z) {name} nem indult el"
+
+#. English: Launch again
+msgid "wc_launch_again"
+msgstr "Újraindítás"
+
+#. English: No error lines in it.
+msgid "wc_log_clean"
+msgstr "Nincs benne hibasor."
+
+#. English: Write Proton's log
+msgid "wc_log_next"
+msgstr "Proton-napló írása"
+
+#. English: The next launches write Proton's log to your home folder - its error lines show here if it goes wrong again. Switch it off once it's fixed: the log grows big.
+msgid "wc_log_next_tip"
+msgstr "A következő indítások a saját mappádba írják a Proton naplóját - ha újra gond van, itt látod a hibasorait. Ha megjavult, kapcsold ki: a napló nagyra nő."
+
+#. English: Open the log
+msgid "wc_log_open"
+msgstr "Napló megnyitása"
+
+#. English: Proton's log
+msgid "wc_log_title"
+msgstr "Proton naplója"
+
+#. English: What changed?
+msgid "wc_menu"
+msgstr "Mi változott?"
+
+#. English: Since the last good launch
+msgid "wc_menu_sub"
+msgstr "A legutóbbi jó indítás óta"
+
+#. English: {n} min
+msgid "wc_minutes"
+msgstr "{n} perc"
+
+#. English: Don't open by itself for this game
+msgid "wc_mute"
+msgstr "Ennél a játéknál ne nyíljon meg magától"
+
+#. English: Linux version (no Proton)
+msgid "wc_native"
+msgstr "Linuxos verzió (Proton nélkül)"
+
+#. English: No good launch to compare with yet
+msgid "wc_no_good"
+msgstr "Még nincs jó indítás, amivel össze lehetne vetni"
+
+#. English: No launch from PlunderHub recorded yet
+msgid "wc_no_history"
+msgstr "Még nincs PlunderHubból indítás feljegyezve"
+
+#. English: PlunderHub notes what a game runs with every time it starts it from here. Launch it once, and this shows what changed the next time something goes wrong.
+msgid "wc_no_history_long"
+msgstr "A PlunderHub minden innen indított játéknál feljegyzi, mivel fut. Indítsd el egyszer, és ha legközelebb gond van, itt látod, mi változott."
+
+#. English: none
+msgid "wc_none"
+msgstr "nincs"
+
+#. English: Nothing changed
+msgid "wc_nothing_changed"
+msgstr "Semmi nem változott"
+
+#. English: The game runs with the same Proton, options, version and driver as when it last went well - the cause is likely somewhere else (its saves, a mod, the launcher).
+msgid "wc_nothing_changed_long"
+msgstr "A játék ugyanazzal a Protonnal, beállításokkal, verzióval és driverrel fut, mint legutóbb, amikor jól ment - az ok valószínűleg máshol van (mentések, mod, launcher)."
+
+#. English: Another Proton download is running - try again when it's done.
+msgid "wc_rescue_busy"
+msgstr "Egy másik Proton letöltése fut - próbáld újra, ha végzett."
+
+#. English: Done - the game now runs on {proton}.
+msgid "wc_rescue_done"
+msgstr "Kész - a játék mostantól {proton} alatt fut."
+
+#. English: Not installed any more - PlunderHub downloads it and sets this game to it.
+msgid "wc_rescue_download"
+msgstr "Már nincs telepítve - a PlunderHub letölti, és beállítja erre a játékra."
+
+#. English: Downloading {proton} · {pct}%
+msgid "wc_rescue_downloading"
+msgstr "{proton} letöltése · {pct}%"
+
+#. English: The download didn't work: {why}
+msgid "wc_rescue_failed"
+msgstr "A letöltés nem sikerült: {why}"
+
+#. English: Looking for {proton}…
+msgid "wc_rescue_finding"
+msgstr "{proton} keresése…"
+
+#. English: {proton} can't be found or downloaded any more - pick another one in Launch options.
+msgid "wc_rescue_gone"
+msgstr "A(z) {proton} már nem található és nem tölthető le - válassz másikat az indítási beállításokban."
+
+#. English: {proton} is downloaded, but {launcher} doesn't list it yet - restart {launcher}, then pick it in Launch options.
+msgid "wc_rescue_not_listed"
+msgstr "A(z) {proton} letöltve, de a(z) {launcher} még nem listázza - indítsd újra, majd válaszd ki az indítási beállításokban."
+
+#. English: It's still installed - one click sets this game to it.
+msgid "wc_rescue_there"
+msgstr "Még telepítve van - egy kattintás, és ez a játék azzal fut."
+
+#. English: It ran fine on {proton}
+msgid "wc_rescue_title"
+msgstr "{proton} alatt még jól futott"
+
+#. English: What it runs with now
+msgid "wc_runs_with"
+msgstr "Amivel most fut"
+
+#. English: {n} stayed the same
+msgid "wc_same_n"
+msgstr "{n} dolog nem változott"
+
+#. English: {n} s
+msgid "wc_seconds"
+msgstr "{n} mp"
+
+#. English: Opens by itself when a game doesn't start or crashes: what changed since its last good launch, and the way back to the Proton it ran on. Switching it on again also brings it back for the games it was told to leave alone.
+msgid "wc_setting_sub"
+msgstr "Magától megnyílik, ha egy játék nem indul vagy összeomlik: mi változott a legutóbbi jó indítás óta, és vissza lehet lépni arra a Protonra, amivel még ment. Újra bekapcsolva azoknál a játékoknál is visszajön, ahol letiltottad."
+
+#. English: \"What changed?\" when a game won't start
+msgid "wc_setting_title"
+msgstr "„Mi változott?”, ha egy játék nem indul"
+
+#. English: Compared with the last good launch: {when}, played {time}
+msgid "wc_since"
+msgstr "Összevetve a legutóbbi jó indítással: {when}, {time} játék"
+
+#. English: What changed?
+msgid "wc_title"
+msgstr "Mi változott?"
+
+#. English: today {time}
+msgid "wc_today"
+msgstr "ma {time}"
+
+#. English: Put the launch options back
+msgid "wc_undo_options"
+msgstr "Indítási beállítások visszaállítása"
+
+#. English: Put back as they were
+msgid "wc_undone"
+msgstr "Visszaállítva"
+
+#. English: yesterday {time}
+msgid "wc_yesterday"
+msgstr "tegnap {time}"
+
 #. English: Continue
 msgid "welcome_continue"
 msgstr "Tovább"
@@ -6238,53 +6698,45 @@ msgstr "Ahoj! Üdv a PlunderHub fedélzetén!"
 msgid "wt_back"
 msgstr "Vissza"
 
-#. English: Finds what uninstalled games left behind and frees the space. Before anything goes, it can back up your saves, settings, profiles and registry keys - and put them back later.
-msgid "wt_bilge_s"
-msgstr "Megtalálja, mit hagytak maguk után a törölt játékok, és felszabadítja a helyet. Előtte el tudja menteni a mentéseidet, beállításaidat, profiljaidat és registry kulcsaidat - és később vissza is teszi őket."
-
-#. English: Bilge cleaning
-msgid "wt_bilge_t"
-msgstr "Hajófenék-takarítás"
-
 #. English: Close
 msgid "wt_close"
 msgstr "Bezárás"
 
-#. English: The big screen, made for controllers. Hold View + Start to switch between a game and PlunderHub.
-msgid "wt_console_s"
-msgstr "A nagy képernyő, kontrollerre szabva. A View + Start nyomva tartásával válthatsz a játék és a PlunderHub között."
+#. English: Console Mode for controllers, 15 themes and animated covers.
+msgid "wt_couch_s"
+msgstr "Konzol mód kontrollerre, 15 téma és animált borítók."
 
-#. English: Console Mode
-msgid "wt_console_t"
-msgstr "Konzol mód"
+#. English: From the couch, your way
+msgid "wt_couch_t"
+msgstr "A kanapéról, a saját stílusodban"
 
-#. English: Your playtime and storage at a glance.
-msgid "wt_dash_s"
-msgstr "A játékidőd és a tárhelyed egy pillantásra."
+#. English: Launch options for each game. If one won't start, What changed? shows what changed and what broke it. Performance logs its FPS.
+msgid "wt_fix_s"
+msgstr "Indítási beállítások minden játékhoz. Ha egy játék nem indul, a Mi változott? kiírja, mi változott és mi rontotta el. A Teljesítmény naplózza az FPS-t."
 
-#. English: Captain's Dashboard
-msgid "wt_dash_t"
-msgstr "Kapitányi műszerfal"
+#. English: When a game acts up
+msgid "wt_fix_t"
+msgstr "Ha egy játék rakoncátlankodik"
+
+#. English: Steam, Heroic, Lutris, Bottles and Faugus, found on their own - launchers installed with Faugus in Harbors. Click a cover to play.
+msgid "wt_games_s"
+msgstr "Steam, Heroic, Lutris, Bottles és Faugus - magától megtalálja őket, a Faugusszal telepített launchereket a Kikötőkben. Kattints egy borítóra, és indulhat."
+
+#. English: All your games, one place
+msgid "wt_games_t"
+msgstr "Minden játékod egy helyen"
+
+#. English: Treasure Map: every game you own, installed with a click. Bounty Board: games free to keep right now.
+msgid "wt_get_s"
+msgstr "Kincses térkép: minden játékod, egy kattintással telepítve. Bounty Board: most ingyen megtartható játékok."
+
+#. English: Find new plunder
+msgid "wt_get_t"
+msgstr "Új zsákmány"
 
 #. English: All shortcuts
 msgid "wt_key_all"
 msgstr "Összes gyorsbillentyű"
-
-#. English: Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles and Faugus - found on their own, native or Flatpak.
-msgid "wt_library_s"
-msgstr "Steam, Heroic (Epic, GOG, Amazon), Lutris, Bottles és Faugus - magától megtalálja őket, natívan vagy Flatpakként."
-
-#. English: One harbour for every game
-msgid "wt_library_t"
-msgstr "Egy kikötő minden játéknak"
-
-#. English: Every game you own, installed or not. Dig one up and it installs - no launcher window needed.
-msgid "wt_map_s"
-msgstr "Minden játékod, telepítve vagy sem. Áss ki egyet, és már települ is - launcher ablak nélkül."
-
-#. English: Treasure Map
-msgid "wt_map_t"
-msgstr "Kincses térkép"
 
 #. English: Next
 msgid "wt_next"
@@ -6298,29 +6750,25 @@ msgstr "Néhány hasznos billentyű - az F1 mindet megmutatja."
 msgid "wt_ready_t"
 msgstr "Indulásra kész"
 
-#. English: Click a cover to play. PlunderHub shows what's starting, running or syncing, and can stop a game that hangs.
-msgid "wt_sail_s"
-msgstr "Kattints egy borítóra, és indul a játék. A PlunderHub mutatja, mi indul, mi fut vagy szinkronizál, és le tudja állítani a lefagyott játékot."
-
-#. English: Set sail
-msgid "wt_sail_t"
-msgstr "Kihajózás"
-
 #. English: Set sail!
 msgid "wt_set_sail"
 msgstr "Kihajózás!"
 
-#. English: Launchers, tools and Proton-GE / Proton-CachyOS in one place. Ship inspection finds missing drivers and libraries and fixes them.
-msgid "wt_shipwright_s"
-msgstr "Launcherek, eszközök és Proton-GE / Proton-CachyOS egy helyen. A Hajószemle megtalálja és pótolja a hiányzó drivereket és könyvtárakat."
+#. English: Shipwright installs launchers, tools and Proton, fixes missing drivers and cleans up what removed games left behind.
+msgid "wt_ship_s"
+msgstr "A Hajóács telepíti a launchereket, eszközöket és a Protont, pótolja a hiányzó drivereket, és eltakarítja, amit a törölt játékok hagytak."
 
-#. English: Shipwright
-msgid "wt_shipwright_t"
-msgstr "Hajóács"
+#. English: Keep the ship in shape
+msgid "wt_ship_t"
+msgstr "Tartsd rendben a hajót"
 
 #. English: Show me around
 msgid "wt_show_around"
 msgstr "Mutasd körbe"
+
+#. English: Skip tour
+msgid "wt_skip"
+msgstr "Túra kihagyása"
 
 #. English: One ship for all your plunder.
 msgid "wt_slogan"
@@ -6329,19 +6777,3 @@ msgstr "Egy hajó minden zsákmányodnak."
 #. English: A Linux game launcher for your Steam, Heroic, Lutris, Bottles and Faugus games.
 msgid "wt_tagline"
 msgstr "Linuxos játékindító a Steam, Heroic, Lutris, Bottles és Faugus játékaidhoz."
-
-#. English: Proton, gamescope, MangoHud, performance tweaks, anti-cheat fixes, environment variables and much more, for each game on its own - with a Recommended preset and the game's ProtonDB rating.
-msgid "wt_tune_s"
-msgstr "Proton, gamescope, MangoHud, teljesítményhangolás, anti-cheat javítások, környezeti változók és még sok más, minden játékra külön - ajánlott beállításokkal és a játék ProtonDB értékelésével."
-
-#. English: Tune each game
-msgid "wt_tune_t"
-msgstr "Hangold minden játékra"
-
-#. English: 15 themes, covers from your launchers or SteamGridDB - even animated ones.
-msgid "wt_yours_s"
-msgstr "15 téma, borítók a launcherekből vagy a SteamGridDB-ről - akár animáltak is."
-
-#. English: Make it yours
-msgid "wt_yours_t"
-msgstr "Legyen a tiéd"

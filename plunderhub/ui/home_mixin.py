@@ -297,42 +297,6 @@ def _soft_shadow(w: int, h: int, radius: float, layers: Tuple) -> Tuple[cairo.Im
     return out, pad
 
 
-_hero_lights: Dict[Tuple, cairo.ImageSurface] = {}
-
-
-def _paint_hero_light(cr, w: float, h: float, accent: Tuple[float, float, float], strength: float,
-                      cx: float = 0.08, cy: float = 1.05, radius: float = 0.75):
-    """The accent's light rising from behind a hero's text (centred at
-    cx, cy of w x h; bottom left by default) - made once at a quarter of
-    the size (it's all soft) and scaled up: a radial gradient over the
-    whole hero cost a frame's worth of time on every frame of an animated
-    one."""
-    sw, sh = max(1, int(w / 4)), max(1, int(h / 4))
-    key = (sw, sh, accent, strength, cx, cy, radius)
-    light = _hero_lights.get(key)
-    if light is None:
-        light = cairo.ImageSurface(cairo.FORMAT_ARGB32, sw, sh)
-        lc = cairo.Context(light)
-        lc.scale(sw, sh)
-        glow = cairo.RadialGradient(cx / 0.6, cy, 0, cx / 0.6, cy, radius)
-        glow.add_color_stop_rgba(0, *accent, strength)
-        glow.add_color_stop_rgba(0.45, *accent, strength * 0.4)
-        glow.add_color_stop_rgba(1, *accent, 0)
-        lc.scale(0.6, 1)
-        lc.set_source(glow)
-        lc.paint()
-        if len(_hero_lights) > 8:
-            _hero_lights.clear()
-        _hero_lights[key] = light
-    cr.save()
-    cr.scale(w / sw, h / sh)
-    pattern = cairo.SurfacePattern(light)
-    pattern.set_filter(cairo.FILTER_BILINEAR)
-    cr.set_source(pattern)
-    cr.paint()
-    cr.restore()
-
-
 def _draw_hero_glyph(cr, kind: str, x: float, y: float, size: float, rgba: Tuple[float, float, float, float]):
     """The hero's small line icons, drawn rather than taken from the icon
     theme (which differs from desktop to desktop): "clock", "calendar",
@@ -1388,11 +1352,11 @@ class HomeMixin:
         self.home_nav_main = Gtk.ListBox()
         self.home_nav_main.get_style_context().add_class("home-nav")
         for key, icon, text_key in (("all", "view-grid-symbolic", "all_games_section"),
-                                    ("fav", "starred-symbolic", "home_nav_favorites"),
+                                    ("fav", "compass-star-symbolic", "home_nav_favorites"),
                                     ("recent", "clock-symbolic", "home_nav_recent")):
             self.home_nav_main.add(self._home_nav_row(key, self._icon_image_at_size(icon, 18), text_key))
         # the stores' own launchers, a click (or H) away; only when there are some
-        self.home_nav_harbors = self._home_nav_row("harbors", self._icon_image_at_size("anchor-symbolic", 18),
+        self.home_nav_harbors = self._home_nav_row("harbors", self._icon_image_at_size("lighthouse-symbolic", 18),
                                                    "section_harbors")
         self.home_nav_harbors.show_all()
         self.home_nav_harbors.set_no_show_all(True)
@@ -1454,9 +1418,9 @@ class HomeMixin:
             self._shipwright_badges.pack_start(badge, False, False, 0)
         for key, icon, text_key, action in (
                 ("shipwright", "hammer-symbolic", "sw_title", lambda: self.show_shipwright()),
-                ("dashboard", "office-chart-bar-symbolic", "dashboard_title", lambda: self.show_dashboard()),
+                ("dashboard", "spyglass-symbolic", "dashboard_title", lambda: self.show_dashboard()),
                 ("console", "input-gaming-symbolic", "console_mode_tooltip", lambda: self._toggle_console_mode()),
-                ("settings", "preferences-system-symbolic", "options", lambda: self.show_options())):
+                ("settings", "helm-symbolic", "options", lambda: self.show_options())):
             row = self._home_nav_row(key, self._icon_image_at_size(icon, 18), text_key, with_count=False,
                                      extra=self._shipwright_badges if key == "shipwright" else None)
             self._home_bottom_actions[row] = action
@@ -1885,6 +1849,15 @@ class HomeMixin:
         self._refresh_home_counts()
 
     def _home_select_nav_row(self):
+        from plunderhub.ui import bounty_board
+        if bounty_board.shown(self) is not None:
+            self._home_nav_updating = True
+            try:
+                self.home_nav_launchers.unselect_all()
+                self.home_nav_main.select_row(self._bb_row)
+            finally:
+                self._home_nav_updating = False
+            return
         if _treasure_map().shown(self) is not None:
             # the map: its own row in the main list, nothing among the launchers
             # (the one picked before folds its Open and menu buttons away)
@@ -1932,6 +1905,8 @@ class HomeMixin:
                 key = f"s:{g.store_platform or 'epic'}"
                 counts[key] = counts.get(key, 0) + 1
         counts["map"] = _treasure_map().map_count(self)
+        board = getattr(self, "_bb_view", None)
+        counts["bounty"] = board.count() if board is not None else 0
         for key, label in self._home_count_labels.items():
             n = counts.get(key, 0)
             label.set_text(str(n) if n else "")
@@ -1949,6 +1924,16 @@ class HomeMixin:
     def _set_home_nav(self, key: str):
         # the Treasure Map is shown over the page picked last (home_nav is
         # never "map": the app still starts on a library page)
+        from plunderhub.ui import bounty_board
+        if key == "bounty":
+            _treasure_map().show_map(self, False)
+            bounty_board.show_board(self, True)
+            return
+        if bounty_board.shown(self) is not None:
+            bounty_board.show_board(self, False)
+            if key == self.home_nav:
+                self._home_select_nav_row()
+                return
         if key == "map":
             _treasure_map().show_map(self, True)
             return
@@ -2017,8 +2002,21 @@ class HomeMixin:
         if not self.reorder_mode:
             return False
         focused = self.get_focus()
+        grids = [g for g in getattr(self, "_reorder_grids", []) if g.get_mapped()]
         grid = getattr(self, "_reorder_grid", None)
         grid = grid if grid is not None and grid.get_mapped() else None
+        if focused is not None and focused in grids and focused is not grid:
+            # the Harbors' grid under the games': up from its top goes back to them
+            leave = focused.handle(action)
+            if leave is None:
+                return True
+            if leave == "back":
+                self._exit_reorder_mode()
+            elif leave == "up" and grid is not None:
+                self._grab_keyboard_focus(grid)
+            elif leave == "left":
+                self._home_focus_sidebar()
+            return True
         order_list = self.home_launcher_order if self.home_launcher_order.get_visible() else None
         buttons = [b for b in getattr(self, "_reorder_buttons", []) if b.get_mapped()]
         main_rows = [r for r in self.home_nav_main.get_children() if r.get_visible()]
@@ -2030,7 +2028,9 @@ class HomeMixin:
             if leave == "back":
                 self._exit_reorder_mode()
             elif focused is grid:
-                if leave == "up" and buttons:
+                if leave == "down" and len(grids) > 1:
+                    self._grab_keyboard_focus(grids[1])      # down to the Harbors
+                elif leave == "up" and buttons:
                     self._grab_keyboard_focus(buttons[-1])
                 elif leave == "left":
                     if order_list is not None and self.home_nav.startswith("l:"):
@@ -2407,6 +2407,16 @@ class HomeMixin:
             return
         self._set_home_nav(self.home_nav if _treasure_map().shown(self) is not None else "map")
         self._home_select_nav_row()
+
+    def _toggle_bounty_board(self) -> bool:
+        """B: the Bounty Board, and back to the library page it was over
+        (nothing when it's turned off in Settings)."""
+        from plunderhub.ui import bounty_board
+        if not bounty_board.enabled(self) or getattr(self, "_bb_view", None) is None:
+            return False
+        self._set_home_nav(self.home_nav if bounty_board.shown(self) is not None else "bounty")
+        self._home_select_nav_row()
+        return True
 
     def _launch_first_search_hit(self):
         view = _treasure_map().shown(self)
@@ -3434,30 +3444,49 @@ class HomeMixin:
             # the library's name plates: a cover's width, about half as tall
             card_w = round(cover_h * 3 / 4)
             card_h = round(card_w * 0.56)
-        if self.card_view_mode == "list":
-            # the list view's rows, in its column
-            from plunderhub.ui.reorder_view import ReorderList
-            width = LIST_COLUMN_WIDTH + 2 * ReorderList.PAD_X
-            room = self.scroller.get_allocated_width() - 40 if hasattr(self, "scroller") else 0
-            if room > 400:
-                width = min(width, room)        # a narrow screen (see _CappedBox)
-            grid = ReorderList(self, games, width, on_change=store)
-            holder = Gtk.Box()
-            holder.set_halign(Gtk.Align.CENTER)
-            holder.set_size_request(width, -1)
-            holder.pack_start(grid, True, True, 0)
-        else:
-            grid = holder = ReorderGrid(self, games, card_w, card_h, on_change=store)
+        def make_grid(items):
+            if self.card_view_mode == "list":
+                # the list view's rows, in its column
+                from plunderhub.ui.reorder_view import ReorderList
+                width = LIST_COLUMN_WIDTH + 2 * ReorderList.PAD_X
+                room = self.scroller.get_allocated_width() - 40 if hasattr(self, "scroller") else 0
+                if room > 400:
+                    width = min(width, room)        # a narrow screen (see _CappedBox)
+                made = ReorderList(self, items, width, on_change=store)
+                box = Gtk.Box()
+                box.set_halign(Gtk.Align.CENTER)
+                box.set_size_request(width, -1)
+                box.pack_start(made, True, True, 0)
+                return made, box
+            made = ReorderGrid(self, items, card_w, card_h, on_change=store)
+            return made, made
+
+        # the Harbors' launchers apart, as on All Plunder: their own heading and
+        # grid, moved among themselves (each grid's order is stored on its own -
+        # _merge_order keeps the rest where it is)
+        ships = [g for g in games if g.store_platform != "store-launcher"]
+        harbors = [g for g in games if g.store_platform == "store-launcher"]
+        if not ships:
+            ships, harbors = harbors, []
+        grid, holder = make_grid(ships)
+        grids = [grid]
+        self.content.pack_start(holder, False, False, 0)
+        if harbors:
+            self.content.pack_start(self._home_section_heading(self._("section_harbors")), False, False, 0)
+            harbor_grid, harbor_holder = make_grid(harbors)
+            grids.append(harbor_grid)
+            self.content.pack_start(harbor_holder, False, False, 0)
         # for the keyboard / controller (see _reorder_input)
         self._reorder_grid = grid
+        self._reorder_grids = grids
         self._reorder_buttons = [reset, done]
 
         def reset_alpha(_b):
-            grid.order.sort(key=lambda g: g.title.lower())
-            grid._start_tick()
-            store([g.uid for g in grid.order])
+            for each in grids:
+                each.order.sort(key=lambda g: g.title.lower())
+                each._start_tick()
+                store([g.uid for g in each.order])
         reset.connect("clicked", reset_alpha)
-        self.content.pack_start(holder, False, False, 0)
         GLib.idle_add(lambda: (grid.grab_focus(), False)[1])
 
     def _on_launchers_reordered(self, names: List[str]):
@@ -3705,9 +3734,6 @@ class HomeMixin:
         fade.add_color_stop_rgba(1, 0, 0, 0, 0.1)
         cr.set_source(fade)
         cr.paint()
-        accent = _accent_rgb(widget)
-        live = self._home_phase(game.uid) == "running"
-        _paint_hero_light(cr, w, h, accent, 0.4 if live else 0.26)
         cr.pop_group_to_source()
         _rounded(cr, 0, 0, w, h, 18)
         cr.fill()

@@ -94,6 +94,16 @@
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
+      <a href="docs/gallery/19-bounty-board.md"><img src="docs/screenshots/19-bounty-board.png" alt="Bounty Board" width="400"></a><br>
+      <sub>Bounty Board: free games right now</sub>
+    </td>
+    <td align="center" valign="top" width="50%">
+      <a href="docs/gallery/20-performance.md"><img src="docs/screenshots/20-performance.png" alt="Performance" width="400"></a><br>
+      <sub>Performance, session by session</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%">
       <a href="docs/gallery/11-proton-versions.md"><img src="docs/screenshots/11-proton-versions.png" alt="Proton versions" width="400"></a><br>
       <sub>Proton versions</sub>
     </td>
@@ -205,23 +215,60 @@
       <sub>Idles&nbsp;when&nbsp;unused</sub>
     </td>
   </tr>
+  <tr>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/bounty.svg" width="40" height="40" alt=""><br>
+      <b>Bounty&nbsp;Board</b><br>
+      <sub>Free&nbsp;games&nbsp;right&nbsp;now</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/performance.svg" width="40" height="40" alt=""><br>
+      <b>Performance</b><br>
+      <sub>FPS&nbsp;log&nbsp;per&nbsp;game</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/changes.svg" width="40" height="40" alt=""><br>
+      <b>What&nbsp;changed?</b><br>
+      <sub>When&nbsp;a&nbsp;game&nbsp;breaks</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/exe.svg" width="40" height="40" alt=""><br>
+      <b>Game&nbsp;EXE</b><br>
+      <sub>Swap&nbsp;what&nbsp;starts</sub>
+    </td>
+  </tr>
 </table>
 
 <details>
   <summary>More</summary>
 
+#### Your games and stores
+
 - **Treasure Map**: every game you own on Steam, Epic, GOG and Amazon on one page, installed or not. Install or uninstall one with a click. Right-click an installed game for the same menu as in your library.
+- **Harbors**: Battle.net, EA app, Epic, GOG Galaxy, Ubisoft Connect, Rockstar, Amazon and Wargaming get a row of their own under your games, one click away.
+- **Faugus**: install store launchers, Windows games or Linux games from the Treasure Map, each in its own Wine prefix.
+- **Games from store launchers**: games installed with them get their own card, cover, launch options and playtime.
+- **Bounty Board**: PC games that are free to keep right now on Steam, Epic, GOG and Humble, with how long they stay free. A click opens the store page. Turn it off in Settings if you don't want it.
+
+#### Proton and fixing things
+
 - **Proton**: Proton-GE and Proton-CachyOS, downloaded once and used by every launcher, native or Flatpak. A new Proton-GE shows up at the bottom left and downloads when you press Download.
-- **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and patch notes links. Launch options with a Recommended preset; winecfg, winetricks and running an .exe in the game's prefix.
+- **What changed?**: when a game doesn't start or crashes, PlunderHub shows what changed since it last ran fine (Proton, launch options, game version, GPU driver, kernel) and takes it back to the Proton it worked with, downloading it if it's gone.
 - **Ship inspection**: checks Vulkan drivers (AMD, NVIDIA, Intel, hybrid laptops), 32-bit libraries, the memory map limit, ntsync and fonts, and fixes them in one click.
 - **Shipwright**: installs launchers (native or Flathub) and tools like GameMode, MangoHud, gamescope, controller drivers and much more.
 - **Bilge cleaning**: finds what removed games left behind - Wine prefixes, shader caches, unused Proton versions - with their size. You pick what goes, to the Trash or for good. Backs up the saves in them first and can put them back later.
-- **Harbors**: Battle.net, EA app, Epic, GOG Galaxy, Ubisoft Connect, Rockstar, Amazon and Wargaming get a row of their own under your games, one click (or <kbd>H</kbd>) away. In Console Mode they have their own shelf.
-- **Faugus**: the Treasure Map's Faugus tab installs those store launchers, a Windows game from its installer or .exe, or a Linux game, each in its own Wine prefix. Remove any of them from its menu: the prefix goes to the Trash, is deleted for good or stays - you pick.
-- **Games from store launchers** (new, please report problems): a game you install with one of those launchers gets its own card, cover and launch options, starts through its launcher, and PlunderHub counts its playtime. Launchers themselves count no playtime.
+
+#### Each game
+
+- **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and patch notes links. Launch options with a Recommended preset; winecfg, winetricks and running an .exe in the game's prefix.
+- **Game EXE**: start another .exe for a Heroic game, or swap a Faugus or Lutris game's file, in Launch options.
+- **Performance**: switch it on for a game and MangoHud logs every session in the background. The game page shows FPS, 1% lows and frame times session by session, marked where Proton or the driver changed.
 - **Live status**: see what's running, stop it anytime.
 - **Art**: covers, banners and icons from your launchers, even animated. Add a free SteamGridDB key for more.
 - **Saves**: Heroic cloud sync, backup and restore.
+
+#### Everyday comfort
+
 - **Steam Deck and Big Picture**: adds PlunderHub to Steam as a non-Steam game (Settings > Library).
 - **Controllers**: Xbox, PlayStation, Switch Pro, 8BitDo and more, with matching button icons. Hold View + Start to switch between a game and PlunderHub.
 - **Welcome tour**: a short guided tour on the first start - open it again from the logo in the sidebar.
@@ -359,6 +406,7 @@ PlunderHub collects no data. It only connects to:
 - SteamGridDB, only with your key
 - ProtonDB, with a game's Steam ID, for its rating on the game page (a game not from Steam is first looked up by its title in Steam's store search; you can turn this off in Settings)
 - GitHub, for updates and Proton downloads
+- LootScraper's feeds (feed.eikowagenknecht.com) every few hours, for the Bounty Board, and the stores' image servers for its pictures - nothing about you is sent (you can turn it off in Settings)
 - Your distro's repositories, the AUR, Flathub, Launchpad (Ubuntu PPAs) or RPM Fusion (Fedora), when you install something
 
 Settings are stored in <code>~/.config/plunderhub</code>. The SteamGridDB key goes to your system's password manager when there is one.

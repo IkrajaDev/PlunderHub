@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="16-settings-appearance.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 17 / 18 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 19 / 20 &nbsp;·&nbsp;
   <a href="18-report-bug.md"><b>Next →</b></a>
 </p>
 

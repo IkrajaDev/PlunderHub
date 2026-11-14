@@ -280,6 +280,33 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
             window._home_select_nav_row()
     steps.append(_step("performance: the Treasure Map", calm_treasure_map))
 
+    def calm_bounty_board():
+        from plunderhub.core import bounty
+        from plunderhub.ui import bounty_board
+        view = getattr(window, "_bb_view", None)
+        assert view is not None, "the Bounty Board wasn't set up"
+        now = time.time()
+        view.offers = [bounty.Offer("t1", "epic", "Self-test Bounty", "https://example.org/", starts=now - 60,
+                                    ends=now + 3 * 86400, price="9.99 EUR", description="A test offer.",
+                                    genres=["Indie"]),
+                       bounty.Offer("t2", "gog", "Second Bounty", "https://example.org/", starts=now - 60,
+                                    ends=now + 3600)]
+        view._fill()
+        nav = window.home_nav
+        try:
+            window._set_home_nav("bounty")
+            assert bounty_board.shown(window) is view, "the Bounty Board didn't open"
+            assert not window.scroller.get_visible(), "the library still shows under the Bounty Board"
+            assert window.home_nav == nav, "the Bounty Board changed the page the app starts on"
+            perf_guard.assert_calm(window, "Bounty Board", idle=False)
+            window._set_home_nav("map")
+            assert bounty_board.shown(window) is None, "the Treasure Map left the Bounty Board open"
+        finally:
+            window._set_home_nav(nav)
+            view.offers = []
+            view._fill()
+    steps.append(_step("performance: the Bounty Board", calm_bounty_board))
+
     def calm_release_notes():
         from types import SimpleNamespace as R
         from plunderhub.ui.release_notes_window import SINCE, open_notes
@@ -304,6 +331,23 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
         finally:
             notes_window.dialog.destroy()
     steps.append(_step("performance: the release notes window", calm_release_notes))
+
+    def calm_whats_changed():
+        if not window.game_index:
+            return
+        from plunderhub.ui.whats_changed import WhatsChanged
+        good = {"proton": {"name": "Proton-GE Latest", "tag": "GE-Proton99-1", "choice": "Proton-GE Latest"},
+                "options": "gamemoderun %command%", "game": "Build 1", "driver": "Mesa 1.0", "kernel": "1.0"}
+        bad = dict(good, proton=dict(good["proton"], tag="GE-Proton99-2"), options="gamemoderun mangohud %command%")
+        now = time.time()
+        wc = WhatsChanged(window, next(iter(window.game_index.values())),
+                          session={"at": now, "snap": bad, "ran": 3, "result": "failed"}, error="Steam said no",
+                          by_itself=True, good={"at": now - 86400, "snap": good, "ran": 3600, "result": "ok"})
+        try:
+            perf_guard.assert_calm(wc.dialog, "the What changed? window")
+        finally:
+            wc._close()
+    steps.append(_step("performance: the What changed? window", calm_whats_changed))
 
     def calm_game_menus():
         from plunderhub.ui.game_page import GameMenu, LauncherMenu
@@ -340,6 +384,9 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
                 if page.launch is not None:
                     page._show_tab("launch")
                     perf_guard.assert_calm(page, "game page (launch options)")
+                if getattr(page, "perf", None) is not None:
+                    page._show_tab("perf")
+                    perf_guard.assert_calm(page, "game page (performance)")
             except AssertionError as e:
                 outcome["error"] = e
             finally:

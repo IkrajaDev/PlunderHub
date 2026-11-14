@@ -351,6 +351,11 @@ class GameMenu(Gtk.Popover):
         page.pack_start(self._separator(), False, False, 0)
         page.pack_start(self._row("preferences-system-symbolic", _("gm_settings"), _("gm_settings_sub"),
                                   action=lambda: GamePage(app, game)), False, False, 0)
+        from plunderhub.core import launch_history
+        if launch_history.load(game.uid):
+            from plunderhub.ui import whats_changed
+            page.pack_start(self._row("scroll-text-symbolic", _("wc_menu"), _("wc_menu_sub"),
+                                      action=lambda: whats_changed.open_for(app, game)), False, False, 0)
         page.pack_start(self._row("folder-symbolic", _("gm_open"), _("gm_open_sub"), chevron=True, side="open"),
                         False, False, 0)
         page.pack_start(self._row("web-browser-symbolic", _("gm_web"), _("gm_web_sub"), chevron=True, side="web"),
@@ -713,6 +718,15 @@ class GamePage(Gtk.Dialog):
                 tab_specs.append(("launch", self._("gp_tab_launch")))
             except Exception as e:
                 logger.error(f"Couldn't read the launch options of {game.title!r}: {e}")
+        from plunderhub.ui import perf_tab
+        self.perf = None
+        if perf_tab.wanted(game, backend):
+            try:
+                self.perf = perf_tab.PerformanceTab(app, game, backend, self)
+                self.pages.add_named(self.perf, "perf")
+                tab_specs.append(("perf", self._("pf_tab")))
+            except Exception as e:
+                logger.error(f"Couldn't build the performance tab of {game.title!r}: {e}")
         first = None
         self.tab_buttons: Dict[str, Gtk.RadioButton] = {}
         for name, text in tab_specs:
@@ -760,6 +774,8 @@ class GamePage(Gtk.Dialog):
             self.launch.footer.hide()
         if tab == "launch":
             self.show_launch_options()
+        elif tab in self.tab_buttons:
+            self.tab_buttons[tab].set_active(True)
         if show_hint:
             # opened from the card's Proton badge: down to its strip, lit up
             # a moment - else it looks as if nothing happened
@@ -1686,6 +1702,14 @@ class LaunchOptionsTab(Gtk.Box):
         if native:
             runtime.insert(0, self._row(_("gp_lo_native"), _("gp_lo_native_sub"), self._toggle("native")))
         col.pack_start(self._section("rocket-symbolic", _("gp_runs_with"), runtime), False, False, 0)
+        if backend.launcher == "Heroic":
+            col.pack_start(self._section("package-symbolic", _("lo_section_exe"), [
+                self._row(_("lo_alt_exe"), _("lo_alt_exe_sub"), self._exe_picker(True))]), False, False, 0)
+        elif backend.launcher in ("Faugus", "Lutris") and "target_exe" not in backend.unsupported(game):
+            # their own file is the setting: swapped, never emptied
+            col.pack_start(self._section("package-symbolic", _("lo_section_exe"), [
+                self._row(_("lo_game_exe"), _("lo_game_exe_sub").format(launcher=backend.launcher),
+                          self._exe_picker(False))]), False, False, 0)
         # a newer Proton release mentions this game - also one for a game on another Proton
         from plunderhub.ui.proton_hints import hint_strip
         self.hint_strip = hint_strip(self.app, game, lambda: self.get_toplevel(),
@@ -1810,6 +1834,78 @@ class LaunchOptionsTab(Gtk.Box):
         if kept != (settings.get(self._SUSPENDED_KEY) or {}):
             settings[self._SUSPENDED_KEY] = kept
             save_settings(settings)
+
+    def _exe_picker(self, clearable: bool) -> Gtk.Widget:
+        """Heroic's "alternative EXE to run": the file, a Choose button and a
+        clear one (shown only while one is set)."""
+        _ = self._
+        box = Gtk.Box(spacing=8)
+        entry = self._entry("target_exe", 34)
+        entry.set_placeholder_text(_("lo_alt_exe_none"))
+        entry.set_editable(False)
+        entry.set_can_focus(False)
+        box.pack_start(entry, True, True, 0)
+        clear = Gtk.Button()
+        clear_icon = self.app._icon_image_at_size("window-close-symbolic", 14)
+        clear_icon.show()          # the button itself is shown only while a file is set
+        clear.add(clear_icon)
+        clear.get_style_context().add_class("about-close")
+        clear.set_tooltip_text(_("lo_alt_exe_clear"))
+        clear.set_valign(Gtk.Align.CENTER)
+        clear.connect("clicked", lambda *_a: entry.set_text(""))
+        if clearable:
+            box.pack_start(clear, False, False, 0)
+        pick = Gtk.Button(label=_("lo_alt_exe_pick"))
+        pick.set_valign(Gtk.Align.CENTER)
+        pick.connect("clicked", lambda *_a: self._pick_exe(entry))
+        box.pack_start(pick, False, False, 0)
+        clear.set_no_show_all(True)
+        def changed(e):
+            clear.set_visible(clearable and bool(e.get_text()))
+            e.set_position(-1)      # the file's name in sight, not the start of its path
+            e.set_tooltip_text(e.get_text() or None)
+        entry.connect("changed", changed)
+        return box
+
+    def _pick_exe(self, entry: Gtk.Entry):
+        _ = self._
+        dialog = Gtk.FileChooserNative.new(_("lo_alt_exe"), self.get_toplevel(), Gtk.FileChooserAction.OPEN,
+                                           _("lo_alt_exe_pick").rstrip("…."), _("dialog_cancel"))
+        programs = Gtk.FileFilter()
+        programs.set_name(_("lo_alt_exe_filter"))
+        for pattern in ("*.exe", "*.EXE", "*.bat", "*.BAT"):
+            programs.add_pattern(pattern)
+        dialog.add_filter(programs)
+        anything = Gtk.FileFilter()
+        anything.set_name(_("lo_alt_exe_any"))      # a native game's binary, an .sh
+        anything.add_pattern("*")
+        dialog.add_filter(anything)
+        if self.game.launcher == "Lutris" and not entry.get_text().lower().endswith((".exe", ".bat")):
+            dialog.set_filter(anything)
+        start = entry.get_text() or ""
+        folder = os.path.dirname(start) if start else (self.game.install_dir or "")
+        if folder and os.path.isdir(folder):
+            dialog.set_current_folder(folder)
+        picked = dialog.get_filename() if dialog.run() == Gtk.ResponseType.ACCEPT else None
+        dialog.destroy()
+        if not picked:
+            return
+        # a Flatpak launcher only sees the folders it was let into: a file
+        # elsewhere would leave the game unable to start
+        from plunderhub.core.flatpak_access import sees
+        from plunderhub.core.perf_log import flatpak_id
+        app_id = flatpak_id(self.game)
+        if app_id and sees(app_id, picked) is False:
+            answer = self.app._card_dialog(
+                _("lo_exe_unseen_t").format(launcher=self.game.launcher),
+                _("lo_exe_unseen_s").format(launcher=self.game.launcher, folder=os.path.dirname(picked)),
+                [(_("lo_exe_unseen_other"), Gtk.ResponseType.CANCEL, "ghost"),
+                 (_("lo_exe_unseen_keep"), Gtk.ResponseType.OK, "accent")],
+                tone="warning", transient_for=self.get_toplevel(), default=Gtk.ResponseType.CANCEL)
+            if answer != Gtk.ResponseType.OK:
+                GLib.idle_add(lambda: self._pick_exe(entry) and False)
+                return
+        entry.set_text(picked)
 
     def _launch_args_section(self) -> Gtk.Box:
         """Switches for the game's own common arguments: a window mode

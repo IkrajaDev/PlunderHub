@@ -1102,6 +1102,10 @@ class GameCard:
             body.pack_start(self._steam_options(), False, False, 0)
         if not game.installed and game.store != "steam":
             body.pack_start(self._heroic_options(), False, False, 0)
+        # the DLCs to take along - filled once the store says which there are (_got)
+        self.dlc_slot = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.dlc_slot.set_no_show_all(True)
+        body.pack_start(self.dlc_slot, False, False, 0)
         row = Gtk.Box(spacing=10)
         answers = {1: "dig", 2: "sail", 3: "uninstall"}
         if game.installed:
@@ -1182,6 +1186,7 @@ class GameCard:
             if fixed:
                 text = Gtk.Label(label=self.choice[key], xalign=0)
                 text.set_ellipsize(Pango.EllipsizeMode.START)
+                text.set_max_width_chars(10)
                 text.set_hexpand(True)
                 text.set_tooltip_text(self.choice[key])
                 grid.attach(text, 1, r, 1, 1)
@@ -1192,6 +1197,7 @@ class GameCard:
             inner = Gtk.Box(spacing=8)
             text = Gtk.Label(label=self.choice[key], xalign=0)
             text.set_ellipsize(Pango.EllipsizeMode.START)
+            text.set_max_width_chars(10)    # a long path is cut, not the card widened
             text.set_hexpand(True)
             inner.pack_start(text, True, True, 0)
             inner.pack_start(app._icon_image_at_size("folder-symbolic", 16), False, False, 0)
@@ -1267,6 +1273,86 @@ class GameCard:
             combo.set_tooltip_text(pick["path"])
         grid.attach(combo, 1, 0, 1, 1)
         return grid
+
+    def _fill_dlcs(self, dlcs: List[Dict]):
+        """Heroic's "Select components to install": Install all DLCs, then
+        each one, all ticked (as Heroic and Steam start them)."""
+        app, f = self.app, self.f
+        self.choice["dlc_sizes"] = {d["id"]: (int(d.get("size") or 0), int(d.get("download") or d.get("size") or 0))
+                                    for d in dlcs}
+        self.choice["dlcs"] = [d["id"] for d in dlcs]
+        head = Gtk.Label(label=app._("tm_dlc_title"), xalign=0)
+        head.get_style_context().add_class("tm-card-hint")
+        self.dlc_slot.pack_start(head, False, False, 0)
+        every = Gtk.CheckButton(label=app._("tm_dlc_all").format(n=len(dlcs)))
+        every.set_focus_on_click(False)
+        every.set_active(True)
+        every.set_margin_top(4)
+        self.dlc_slot.pack_start(every, False, False, 0)
+        listing = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        listing.set_margin_start(26)
+        checks = []
+        state = {"busy": False}
+
+        def picked_changed():
+            self.choice["dlcs"] = [d["id"] for d, c in zip(dlcs, checks) if c.get_active()]
+            n = len(self.choice["dlcs"])
+            state["busy"] = True
+            every.set_active(n == len(dlcs))
+            every.set_inconsistent(0 < n < len(dlcs))
+            state["busy"] = False
+            self._dlc_room()
+
+        def all_toggled(b):
+            if state["busy"]:
+                return
+            on = b.get_active() or b.get_inconsistent()
+            state["busy"] = True
+            for c in checks:
+                c.set_active(on)
+            state["busy"] = False
+            picked_changed()
+        every.connect("toggled", all_toggled)
+        for d in dlcs:
+            c = Gtk.CheckButton()
+            c.set_focus_on_click(False)
+            c.set_active(True)
+            line = Gtk.Box(spacing=10)
+            name = Gtk.Label(label=d["title"], xalign=0)
+            name.set_ellipsize(Pango.EllipsizeMode.END)
+            name.set_tooltip_text(d["title"])
+            line.pack_start(name, True, True, 0)
+            if d.get("size"):
+                size = Gtk.Label(label=_fmt_gb(d["size"]))
+                size.get_style_context().add_class("tm-card-hint")
+                line.pack_end(size, False, False, 0)
+            c.add(line)
+            c.connect("toggled", lambda *_a: state["busy"] or picked_changed())
+            checks.append(c)
+            listing.pack_start(c, False, False, 0)
+        # many (Civilization VI has a dozen): about four show, the rest scroll
+        scroll = Gtk.ScrolledWindow()
+        scroll.get_style_context().add_class("settings-scroll")
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_overlay_scrolling(False)
+        scroll.set_propagate_natural_height(True)
+        scroll.set_max_content_height(int(118 * f))
+        scroll.add(listing)
+        self.dlc_slot.pack_start(scroll, False, False, 0)
+        self.dlc_slot.set_no_show_all(False)
+        self.dlc_slot.show_all()
+        self._dlc_room()
+
+    def _dlc_room(self):
+        """The game's size with the picked DLCs on top (the room bar's numbers)."""
+        if self.info is None or not self.choice or self.choice.get("dlc_sizes") is None:
+            return
+        base = self._base_size
+        extra = [self.choice["dlc_sizes"].get(i, (0, 0)) for i in self.choice["dlcs"]]
+        self.info["size"] = base[0] + sum(e[0] for e in extra) if base[0] else 0
+        if base[1]:
+            self.info["download"] = base[1] + sum(e[1] for e in extra)
+        self.room.queue_draw()
 
     def _refresh_room(self):
         """A new install folder: its drive's room."""
@@ -1345,7 +1431,14 @@ class GameCard:
     def _got(self, info, pb):
         if self.dlg is None:
             return False
-        self.info, self.hero_pb = info, pb or self.hero_pb
+        # a copy: the DLCs' sizes go on top of it, the cached one stays the game's
+        self.info, self.hero_pb = dict(info), pb or self.hero_pb
+        self._base_size = (int(info.get("size") or 0), int(info.get("download") or 0))
+        if info.get("dlcs") and not self.game.installed and self.choice is not None \
+                and not self.dlc_slot.get_children():
+            self._fill_dlcs(info["dlcs"])
+        elif self.choice is not None and self.choice.get("dlc_sizes") is not None:
+            self._dlc_room()                # numbers in again: the picked DLCs added
         if getattr(self, "choice", None):
             self._refresh_room()
         desc = info.get("description") or ""
@@ -2710,7 +2803,9 @@ class TreasureMap(Gtk.Box):
         if answer == "dig" and card.choice and game.store != "steam":
             self.start_heroic_install(game, card.choice, card.info or {})
         elif answer == "dig" and card.choice and game.store == "steam":
-            self.start_steam_install(game, card.choice["path"], card.info or {})
+            # Steam installs every owned DLC unless told otherwise: the unticked ones
+            off = [i for i in (card.choice.get("dlc_sizes") or {}) if i not in (card.choice.get("dlcs") or [])]
+            self.start_steam_install(game, card.choice["path"], card.info or {}, disabled_dlcs=off)
         elif answer == "dig":
             self.start_download(game)
         elif answer == "sail":
@@ -2830,7 +2925,7 @@ class TreasureMap(Gtk.Box):
             ok, why = hold_data.heroic_install(
                 game.store, game.app_id, game.title, choice["path"], choice["prefix"], choice["wine"],
                 on_progress=progress, on_proc=lambda p: dl.__setitem__("proc", p),
-                lang=info.get("lang") or "en-US")
+                lang=info.get("lang") or "en-US", dlcs=choice.get("dlcs"))
 
             def done():
                 if game.uid in self.queue:
@@ -3041,10 +3136,10 @@ class TreasureMap(Gtk.Box):
                 pass
         logger.info("Treasure Map: Steam closed again (it wasn't running before)")
 
-    def start_steam_install(self, game: OwnedGame, library: str, info: Dict):
+    def start_steam_install(self, game: OwnedGame, library: str, info: Dict, disabled_dlcs=None):
         if not self._steam_stop_for_work():
             return
-        ok, why = hold_data.steam_queue_install(game.app_id, library)
+        ok, why = hold_data.steam_queue_install(game.app_id, library, disabled_dlcs)
         logger.info(f"Treasure Map: install {game.title}: manifest in {library} ({'ok' if ok else why})")
         if not ok:
             self.app._card_dialog(self.app._("tm_install_failed").format(game=game.title), why,
@@ -3453,40 +3548,6 @@ def open_treasure_map(app, opts: Dict):
         dlg.destroy()
 
 
-def draw_map_icon(cr, size, rgb, fill=False, alpha=1.0):
-    """A folded map with a dashed route to an X - drawn (40 px design)."""
-    cr.save()
-    cr.scale(size / 40, size / 40)
-    cr.new_path()
-    cr.set_line_width(2.2)
-    cr.set_line_join(cairo.LINE_JOIN_ROUND)
-    cr.set_line_cap(cairo.LINE_CAP_ROUND)
-    pts = [(4, 9), (14, 5), (26, 9), (36, 5), (36, 31), (26, 35), (14, 31), (4, 35)]
-    cr.move_to(*pts[0])
-    for p in pts[1:]:
-        cr.line_to(*p)
-    cr.close_path()
-    if fill:
-        cr.set_source_rgba(*rgb, 0.16 * alpha)
-        cr.fill_preserve()
-    cr.set_source_rgba(*rgb, alpha)
-    cr.stroke()
-    cr.set_line_width(1.6)
-    cr.set_dash([2.2, 3.0])
-    cr.move_to(9, 27)
-    cr.curve_to(13, 18, 20, 26, 24, 18)
-    cr.stroke()
-    cr.set_dash([])
-    cr.set_line_width(2.4)
-    for dx, dy in ((1, 1), (1, -1)):
-        cr.move_to(29 - 3.2 * dx, 16 - 3.2 * dy)
-        cr.line_to(29 + 3.2 * dx, 16 + 3.2 * dy)
-    cr.stroke()
-    cr.restore()
-
-
-# --- in the main window: a sidebar page above All Plunder ---------------------------------
-
 def _launcher_running(launcher: str) -> bool:
     try:
         from plunderhub.core.launch_options import launcher_pids
@@ -3542,16 +3603,7 @@ def attach(app, opts):
     app.main_overlay.add_overlay(view)
     app.main_overlay.reorder_overlay(view, 1)
     app._tm_view, app._tm_active = view, False
-    icon = Gtk.DrawingArea()
-    icon.set_size_request(18, 18)
-    icon.set_valign(Gtk.Align.CENTER)
-
-    def draw(widget, cr):
-        ctx = widget.get_style_context()
-        fg = ctx.get_color(ctx.get_state())
-        draw_map_icon(cr, 18, (fg.red, fg.green, fg.blue), alpha=fg.alpha)
-        return False
-    icon.connect("draw", draw)
+    icon = app._icon_image_at_size("map-x-symbolic", 18)
     row = app._home_nav_row("map", icon, "tm_title", with_count=True)
     app.home_nav_main.insert(row, 3)          # under Recently sailed
     row.show_all()

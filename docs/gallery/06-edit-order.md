@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="05-library-list.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 6 / 18 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 6 / 20 &nbsp;·&nbsp;
   <a href="07-game-menu.md"><b>Next →</b></a>
 </p>
 

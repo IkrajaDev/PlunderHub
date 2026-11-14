@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="06-edit-order.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 7 / 18 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 7 / 20 &nbsp;·&nbsp;
   <a href="08-treasure-map.md"><b>Next →</b></a>
 </p>
 

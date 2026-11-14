@@ -1528,6 +1528,85 @@ button.notes-close:hover {{ background-color: {tint(0.12)}; }}
     padding: 14px 16px;
 }}
 .ph-title {{ font-weight: 700; color: {accent}; }}
+/* "What changed?" (ui/whats_changed.py) */
+.wc-head {{ padding: 22px 22px 18px 26px; border-radius: 20px 20px 0 0; }}
+.wc-head.wc-bad {{ background-image: linear-gradient(100deg, rgba(232,93,93,0.20), rgba(232,93,93,0.0) 70%); }}
+.wc-head.wc-calm {{ background-image: linear-gradient(100deg, {tint(0.18)}, {tint(0.0)} 70%); }}
+.wc-kicker {{ font-size: 78%; font-weight: 800; letter-spacing: 2px; color: {accent}; }}
+.wc-bad .wc-kicker {{ color: #e05252; }}
+.wc-headline {{ font-size: 150%; font-weight: 800; }}
+.wc-section {{ font-size: 80%; font-weight: 800; letter-spacing: 1.5px; color: {fg_dim}; margin-top: 6px; }}
+.wc-row {{
+    background-color: {tint(0.05)};
+    border: 1px solid {tint(0.10)};
+    border-radius: 16px;
+    padding: 12px 16px;
+}}
+.wc-row-changed {{ background-color: {tint(0.11)}; border-color: {tint(0.45)}; }}
+.wc-badge {{ min-width: 38px; min-height: 38px; border-radius: 999px; background-color: {tint(0.12)}; }}
+.wc-field {{ font-size: 85%; font-weight: 700; color: {fg_dim}; }}
+.wc-old {{ color: {fg_dim}; }}
+.wc-new {{ font-weight: 800; color: {accent}; }}
+.wc-value {{ font-weight: 600; }}
+.wc-rescue {{
+    background-image: linear-gradient(110deg, {tint(0.26)}, {tint(0.08)});
+    border: 1px solid {tint(0.50)};
+    border-radius: 18px;
+    padding: 16px 18px;
+}}
+.wc-rescue-title {{ font-size: 112%; font-weight: 800; }}
+.wc-ok {{ color: #2fa968; font-weight: 700; }}
+.wc-error {{
+    background-color: rgba(240,160,75,0.10);
+    border: 1px solid rgba(240,160,75,0.35);
+    border-radius: 14px;
+    padding: 12px 14px;
+}}
+.wc-expander title {{ color: {fg_dim}; font-weight: 700; padding: 4px 0; }}
+.wc-chip {{ border-radius: 999px; padding: 2px 10px; font-weight: 700; font-family: monospace; }}
+.wc-chip-add {{ background-color: rgba(47,169,104,0.16); color: #2fa968; }}
+.wc-chip-gone {{ background-color: rgba(224,82,82,0.14); color: #e05252; }}
+.wc-line {{ color: {fg_dim}; font-family: monospace; font-size: 90%; }}
+/* the Bounty Board (ui/bounty_board.py): only the background changes on hover */
+button.bb-card {{
+    padding: 0;
+    border-radius: 20px;
+    border: 1px solid {tint(0.16)};
+    background-color: {raised};
+    background-image: linear-gradient({tint(0.06)}, {tint(0.06)});
+    box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+}}
+button.bb-card:hover {{ background-image: linear-gradient({tint(0.13)}, {tint(0.13)}); border-color: {tint(0.45)}; }}
+.bb-body {{ padding: 14px 18px 16px 18px; }}
+.bb-title {{ font-size: 122%; font-weight: 800; }}
+.bb-genres {{ font-size: 85%; font-weight: 700; color: {accent}; }}
+.bb-desc {{ color: {fg_dim}; }}
+.bb-was {{ color: {fg_dim}; }}
+.bb-free {{
+    background-color: {accent}; color: {on_accent}; font-weight: 900; letter-spacing: 1px;
+    border-radius: 999px; padding: 2px 12px;
+}}
+.bb-claim {{ color: {accent}; font-weight: 700; }}
+.bb-empty {{ padding: 60px 12px; }}
+/* the game page's Performance tab (ui/perf_tab.py) */
+.pf-record-title {{ font-size: 112%; font-weight: 800; }}
+.pf-empty {{ padding: 36px 12px; }}
+.pf-tile {{
+    background-image: linear-gradient(160deg, {tint(0.16)}, {tint(0.04)});
+    border: 1px solid {tint(0.18)};
+    border-radius: 18px;
+    padding: 14px 18px;
+}}
+.pf-tile-name {{ font-size: 78%; font-weight: 800; letter-spacing: 1px; color: {fg_dim}; }}
+.pf-tile-value {{ font-size: 230%; font-weight: 800; }}
+.pf-up {{ color: #2fa968; font-weight: 700; font-size: 88%; }}
+.pf-down {{ color: #e05252; font-weight: 700; font-size: 88%; }}
+.pf-fact {{ background-color: {tint(0.06)}; border: 1px solid {tint(0.12)}; border-radius: 16px; padding: 14px 10px; }}
+.pf-fact-value {{ font-size: 112%; font-weight: 800; }}
+button.pf-danger {{ color: #e05252; }}
+.wc-footer {{ padding: 14px 22px 20px 22px; border-top: 1px solid {tint(0.12)}; }}
+progressbar.wc-bar trough {{ min-height: 6px; border-radius: 999px; background-color: {tint(0.12)}; }}
+progressbar.wc-bar progress {{ min-height: 6px; border-radius: 999px; background-color: {accent}; }}
 /* opened from the card's badge: lit a moment (GamePage._bring_hint) - border and
    shadow only, once */
 .ph-strip {{ transition: border-color 400ms ease-out, box-shadow 400ms ease-out; }}

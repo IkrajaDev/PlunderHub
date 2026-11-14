@@ -256,6 +256,30 @@ def match_processes(targets: List[GameTarget], proc_root: Path = Path("/proc"),
     return result
 
 
+def prefix_busy(prefix: str, proc_root: Path = Path("/proc")) -> bool:
+    """Whether anything still runs in the Wine prefix (or the Proton
+    compat folder holding it): a launcher handing over to the game, its
+    wineserver. A game gone with its prefix quiet is over - no need to
+    wait out the hand-over grace."""
+    root = _realpath(prefix)
+    if not root:
+        return True
+    try:
+        pids = [e for e in os.listdir(proc_root) if e.isdigit()]
+    except OSError:
+        return True
+    for pid in pids:
+        proc = _Proc(proc_root, int(pid))
+        env = proc.env
+        for key in ("WINEPREFIX", "STEAM_COMPAT_DATA_PATH"):
+            value = env.get(key)
+            if value:
+                real = _realpath(value) or value
+                if _under(real, root) or _under(root, real):
+                    return True
+    return False
+
+
 def _usable_install_dir(path: Optional[str]) -> Optional[str]:
     """The install folder as a matching rule - unless it's so broad (/, a
     top-level folder, the home folder or above) that unrelated programs

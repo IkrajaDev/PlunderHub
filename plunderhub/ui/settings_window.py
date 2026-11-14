@@ -56,7 +56,7 @@ _APPLY_DELAY_MS = 350
 _PAGES = [
     ("general", "preferences-other-symbolic", "tab_general", "settings_sub_general"),
     ("appearance", "applications-graphics-symbolic", "tab_appearance", "settings_sub_appearance"),
-    ("library", "applications-games-symbolic", "settings_page_library", "settings_sub_library"),
+    ("library", "chest-symbolic", "settings_page_library", "settings_sub_library"),
     ("covers", "image-x-generic-symbolic", "tab_covers", "settings_sub_covers"),
     ("console", "input-gaming-symbolic", "settings_page_console", "settings_sub_console"),
     ("system", "drive-harddisk-symbolic", "settings_page_system", "settings_sub_system"),
@@ -735,6 +735,30 @@ class SettingsWindow:
         protondb.connect("notify::active", protondb_toggled)
         self.row(card, self._("pdb_setting_title"), self._("pdb_setting_sub"), [protondb],
                  icon="starred-symbolic")
+        from plunderhub.ui import whats_changed
+        wc_switch = self.switch(self.app.settings.get(whats_changed.SETTING, True))
+
+        def wc_toggled(switch, _pspec):
+            from plunderhub.core.persistence import save_settings
+            self.app.settings[whats_changed.SETTING] = switch.get_active()
+            if switch.get_active():
+                # on again: for every game, also the ones it was told to leave alone
+                self.app.settings.pop(whats_changed.MUTED, None)
+            save_settings(self.app.settings)
+        wc_switch.connect("notify::active", wc_toggled)
+        self.row(card, self._("wc_setting_title"), self._("wc_setting_sub"), [wc_switch],
+                 icon="scroll-text-symbolic")
+        from plunderhub.ui import bounty_board
+        bb_switch = self.switch(bounty_board.enabled(self.app))
+
+        def bb_toggled(switch, _pspec):
+            from plunderhub.core.persistence import save_settings
+            self.app.settings[bounty_board.SETTING] = switch.get_active()
+            save_settings(self.app.settings)
+            bounty_board.set_enabled(self.app, switch.get_active())
+        bb_switch.connect("notify::active", bb_toggled)
+        self.row(card, self._("bb_setting_title"), self._("bb_setting_sub"), [bb_switch],
+                 icon="wanted-poster-symbolic")
 
         card = self.group(col, self._("tab_hidden"))
         hidden_any = False

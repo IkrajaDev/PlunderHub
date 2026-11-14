@@ -347,6 +347,8 @@ class LaunchOptionsMixin:
         ui["fps_entry"].set_text(opts.fps_limit)
         ui["fps_entry"].set_sensitive(bool(opts.fps_limit))
         ui["args"].set_text(opts.args)
+        if "target_exe" in ui:
+            ui["target_exe"].set_text(opts.target_exe)
         gs = opts.gamescope
         ui["gs_enabled"].set_active(gs.enabled)
         for key, value in (("gs_game_w", gs.game_width), ("gs_game_h", gs.game_height),
@@ -362,6 +364,10 @@ class LaunchOptionsMixin:
         store.clear()
         for key, value in opts.env.items():
             store.append([key, value])
+        from plunderhub.core import perf_log
+        if "mangohud" in ui and perf_log.recording(opts) is False:
+            # recording with the overlay hidden: MangoHud's switch is the overlay's
+            ui["mangohud"].set_active(False)
 
     def _lo_read_widgets(self, ui: Dict, previous: LaunchOptions) -> LaunchOptions:
         opts = LaunchOptions(wrappers=list(previous.wrappers))
@@ -393,6 +399,12 @@ class LaunchOptionsMixin:
             key, value = row[0].strip(), row[1]
             if key:
                 opts.env[key] = value
+        # a field without a widget here (Heroic's alternative EXE elsewhere): kept
+        opts.target_exe = ui["target_exe"].get_text().strip() if "target_exe" in ui else previous.target_exe
+        from plunderhub.core import perf_log
+        if perf_log.recording(opts) is not None:
+            # the Performance tab records: MangoHud's switch says whether its overlay shows
+            perf_log.set_hud(opts, bool(ui["mangohud"].get_active()) if "mangohud" in ui else True)
         return opts
 
     def _lo_text_to_options(self, ui: Dict, previous: LaunchOptions) -> LaunchOptions:

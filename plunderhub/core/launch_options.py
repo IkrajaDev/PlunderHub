@@ -100,6 +100,7 @@ class LaunchOptions:
     env: Dict[str, str] = field(default_factory=dict)
     wrappers: List[str] = field(default_factory=list)   # unrecognised wrapper words, kept as-is
     args: str = ""
+    target_exe: str = ""            # Heroic: another .exe started instead of the game's own ("" = its own)
     gamescope: GamescopeOptions = field(default_factory=GamescopeOptions)
     # the text it was read from (parse_command_line): written back as it was
     # while it still says the same - see keep_raw_line
@@ -226,7 +227,8 @@ def parse_command_line(text: str, base: Optional[LaunchOptions] = None) -> Launc
     """The text form -> a model. Fields the text can't express (Proton,
     the anti-cheat runtimes) are carried over from `base`."""
     base = base or LaunchOptions()
-    opts = LaunchOptions(proton=base.proton, native=base.native, battleye=base.battleye, eac=base.eac)
+    opts = LaunchOptions(proton=base.proton, native=base.native, battleye=base.battleye, eac=base.eac,
+                         target_exe=base.target_exe)
     opts.raw = text.strip()
     words = _split(text.strip())
     if "%command%" not in words:
@@ -1180,6 +1182,7 @@ class HeroicBackend(LaunchOptionsBackend):
                 opts.wrappers.append(str(entry["exe"]))
                 opts.wrappers += _split(str(entry.get("args") or ""))
         opts.args = str(s.get("launcherArgs") or "")
+        opts.target_exe = str(s.get("targetExe") or "")
         wine = s.get("wineVersion")
         if isinstance(wine, dict) and wine.get("bin"):
             opts.proton = str(wine["bin"])
@@ -1230,6 +1233,8 @@ class HeroicBackend(LaunchOptionsBackend):
             s["wrapperOptions"] = ([{"exe": opts.wrappers[0], "args": shlex.join(opts.wrappers[1:])}]
                                    if opts.wrappers else [])
         s["launcherArgs"] = opts.args
+        if opts.target_exe or s.get("targetExe"):
+            s["targetExe"] = opts.target_exe       # Heroic's own "alternative EXE to run"
         if opts.proton:
             s["wineVersion"] = self._wine_installation(opts.proton, merged.get("wineVersion"))
         gs = opts.gamescope
@@ -1448,6 +1453,9 @@ _GAMESCOPE_DEFAULT_SHARPNESS = "2"     # gamescope's own default
 
 class LutrisBackend(LaunchOptionsBackend):
     launcher = "Lutris"
+    # the game's file can change here (Launch options > Executable): the
+    # running detector's targets follow it after a rescan
+    needs_rescan = True
 
     def advisory_process_running(self) -> bool:
         return _process_running(("lutris",))
@@ -1492,6 +1500,7 @@ class LutrisBackend(LaunchOptionsBackend):
         game_s, system, wine = section("game"), section("system"), section("wine")
         opts = LaunchOptions()
         opts.args = str(game_s.get("args") or "")
+        opts.target_exe = str(game_s.get("exe") or "")         # the game's own file
         opts.gamemode = bool(system.get("gamemode", which("gamemoderun") is not None))
         opts.mangohud = bool(system.get("mangohud", False))
         env = system.get("env") if isinstance(system.get("env"), dict) else {}
@@ -1544,6 +1553,8 @@ class LutrisBackend(LaunchOptionsBackend):
                 section[key] = value
 
         put(game_s, "args", opts.args)
+        if opts.target_exe:
+            game_s["exe"] = opts.target_exe       # never emptied: a Lutris game always has one
         system["gamemode"] = opts.gamemode
         system["mangohud"] = opts.mangohud
         is_wine = self._is_wine(game)
@@ -1675,7 +1686,7 @@ class FaugusBackend(LaunchOptionsBackend):
     # apply to it, and Faugus keeps Proton's Wayland driver off for most of them
     # (core/faugus_add.LAUNCHER_ENV) - greyed out, and kept so on every save.
     STORE_LAUNCHER_LOCKED = frozenset({"recommended", "wayland", "fps_check", "fps_entry", "win_fullscreen",
-                                       "win_borderless", "launcher_skip", "fsr", "hdr"})
+                                       "win_borderless", "launcher_skip", "fsr", "hdr", "target_exe"})
 
     def unsupported(self, game: GameItem) -> frozenset:
         base = super().unsupported(game)
@@ -1692,6 +1703,7 @@ class FaugusBackend(LaunchOptionsBackend):
         launch = str(entry.get("launch_arguments") or "")
         opts = parse_command_line(f"{launch} %command%") if launch.strip() else LaunchOptions()
         opts.args = str(entry.get("game_arguments") or "")
+        opts.target_exe = str(entry.get("path") or "")          # the game's own file
         opts.gamemode = opts.gamemode or bool(entry.get("gamemode"))
         opts.mangohud = opts.mangohud or bool(entry.get("mangohud"))
         runner = entry.get("runner")
@@ -1722,6 +1734,8 @@ class FaugusBackend(LaunchOptionsBackend):
         launch = to_command_line(before)
         entry["launch_arguments"] = launch[: -len("%command%")].strip() if launch.endswith("%command%") else ""
         entry["game_arguments"] = opts.args
+        if opts.target_exe and game.store_platform not in ("store-launcher", "launcher-game"):
+            entry["path"] = opts.target_exe        # never emptied: a Faugus game always has one
         entry["gamemode"] = True if opts.gamemode else ""
         if entry.get("runner") not in _FAUGUS_NON_PROTON_RUNNERS:
             entry["runner"] = opts.proton or ""

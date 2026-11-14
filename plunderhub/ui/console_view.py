@@ -43,7 +43,7 @@ from plunderhub.logging_setup import logger
 from plunderhub.ui.animated_hero import argb_surface
 from plunderhub.theme import THEME_PALETTES, _app_icon_file, logo_accent, logo_pixbuf
 from plunderhub.ui.home_mixin import (
-    _accent_rgb, _draw_hero_glyph, _on_accent_rgb, _paint_hero_light, _paint_name_plate, _pango_text, _rounded,
+    _accent_rgb, _draw_hero_glyph, _on_accent_rgb, _paint_name_plate, _pango_text, _rounded,
     _title_gradient, _title_hue,
 )
 
@@ -60,6 +60,31 @@ FACE_COLORS = {
 }
 GROW = 0.12      # how much the selected cover grows
 RECENT_SHELF = 10
+
+
+def _shade_of(bg):
+    """What darkens the picture: the theme's background taken almost to
+    black - its colour (teal, purple...) washed over the hero's edges
+    looked like a light of its own."""
+    return tuple(c * 0.2 for c in bg)
+
+
+def _paint_full_shades(cr, W: int, H: int, bg):
+    """The shades over a full-screen hero: a little at the top (the tabs
+    and the clock), more downwards behind the shelves - the picture still
+    shows through to the bottom edge."""
+    bg = _shade_of(bg)
+    top = cairo.LinearGradient(0, 0, 0, H * 0.16)
+    top.add_color_stop_rgba(0, *bg, 0.55)
+    top.add_color_stop_rgba(1, *bg, 0)
+    cr.set_source(top)
+    cr.paint()
+    down = cairo.LinearGradient(0, H * 0.38, 0, H)
+    down.add_color_stop_rgba(0, *bg, 0)
+    down.add_color_stop_rgba(0.45, *bg, 0.5)
+    down.add_color_stop_rgba(1, *bg, 0.82)
+    cr.set_source(down)
+    cr.paint()
 
 
 class ConsoleView(Gtk.DrawingArea):
@@ -456,7 +481,7 @@ class ConsoleView(Gtk.DrawingArea):
     def _scene(self, window, game: GameItem, W: int, H: int, bg) -> cairo.ImageSurface:
         """game's whole backdrop - colour, poster, shade - as one image,
         made once (a playing hero's: once a frame, but not mid-switch)."""
-        hh = int(H * 0.72)
+        hh = self._hero_h(H)
         hero = self._hero(game, W, hh)
         frame = self._hero_anim.frame() if game is self.bg_cur and hero is not None else None
         key = (game.uid, W, H, window.get_scale_factor(), bg, self.app.show_covers,
@@ -488,11 +513,7 @@ class ConsoleView(Gtk.DrawingArea):
         cr.paint()
         if game is not None:
             self._paint_poster(cr, game, 1.0, W, H, bg)
-        shade = cairo.LinearGradient(0, H * 0.35, 0, H)
-        shade.add_color_stop_rgba(0, *bg, 0)
-        shade.add_color_stop_rgba(1, *bg, 0.96)
-        cr.set_source(shade)
-        cr.paint()
+        _paint_full_shades(cr, W, H, bg)
 
     def _veil(self, window, W: int, H: int, bg) -> cairo.ImageSurface:
         """Everything of a hero's backdrop but the picture: its shades over
@@ -503,7 +524,7 @@ class ConsoleView(Gtk.DrawingArea):
         if veil is None:
             for old in [k for k in self._art if k[0] == "veil"]:
                 del self._art[old]
-            hh = int(H * 0.72)
+            hh = self._hero_h(H)
             scale = window.get_scale_factor()
             veil = image_surface(window, cairo.FORMAT_ARGB32, W * scale, H * scale, scale)
             cr = cairo.Context(veil)
@@ -514,22 +535,13 @@ class ConsoleView(Gtk.DrawingArea):
             cr.rectangle(0, 0, W, hh)
             cr.clip()
             left = cairo.LinearGradient(0, 0, W * 0.7, 0)
-            left.add_color_stop_rgba(0, *bg, 0.82)
-            left.add_color_stop_rgba(0.55, *bg, 0.45)
-            left.add_color_stop_rgba(1, *bg, 0)
+            left.add_color_stop_rgba(0, *_shade_of(bg), 0.82)
+            left.add_color_stop_rgba(0.55, *_shade_of(bg), 0.45)
+            left.add_color_stop_rgba(1, *_shade_of(bg), 0)
             cr.set_source(left)
             cr.paint()
-            down = cairo.LinearGradient(0, hh * 0.4, 0, hh)
-            down.add_color_stop_rgba(0, *bg, 0)
-            down.add_color_stop_rgba(1, *bg, 1)
-            cr.set_source(down)
-            cr.paint()
             cr.restore()
-            shade = cairo.LinearGradient(0, H * 0.35, 0, H)
-            shade.add_color_stop_rgba(0, *bg, 0)
-            shade.add_color_stop_rgba(1, *bg, 0.96)
-            cr.set_source(shade)
-            cr.paint()
+            _paint_full_shades(cr, W, H, bg)
             veil.flush()
             self._art[key] = veil
         return veil
@@ -541,14 +553,14 @@ class ConsoleView(Gtk.DrawingArea):
         cur = self.bg_cur
         if cur is not None:
             # the hero takes up its size and file here, if it plays
-            hh = int(H * 0.72)
+            hh = self._hero_h(H)
             moving = self._hero(cur, W, hh) is not None
             self._hero_anim.set(self._hero_motion(cur) if moving else None, W, hh)
         if self.bg_t >= 1 and self._hero_anim.frame() is not None:
             # A playing hero: its frame, and over it all the rest of the
             # backdrop from one image kept of it (_veil) - five full-screen
             # layers a frame before.
-            hh = int(H * 0.72)
+            hh = self._hero_h(H)
             cr.save()
             cr.rectangle(0, 0, W, hh)
             cr.clip()
@@ -591,6 +603,12 @@ class ConsoleView(Gtk.DrawingArea):
             self._draw_legend(cr, W, H, pad, s, game)
         self._draw_toast(cr, W, H, s, accent)
 
+    @staticmethod
+    def _hero_h(H: int) -> int:
+        """How much of the screen the hero takes: all of it - the shelves
+        and the title sit on the picture, shaded where they are."""
+        return H
+
     def _hero(self, game: GameItem, w: int, h: int) -> Optional[cairo.ImageSurface]:
         """The game's SteamGridDB hero, filling w x h (cut to it, a little
         above the middle), or None without one. Animated heroes show their
@@ -632,7 +650,7 @@ class ConsoleView(Gtk.DrawingArea):
         """The game's hero across the top, darkened behind the text on the
         left and melting into the background downwards. Without a hero,
         its cover, sharp, on the right."""
-        hh = int(H * 0.72)
+        hh = self._hero_h(H)
         hero = self._hero(game, W, hh)
         moving = game is self.bg_cur and hero is not None
         if game is self.bg_cur:
@@ -655,15 +673,10 @@ class ConsoleView(Gtk.DrawingArea):
                 cr.paint()
             # the title and buttons stay readable over any picture
             left = cairo.LinearGradient(0, 0, W * 0.7, 0)
-            left.add_color_stop_rgba(0, *bg, 0.82)
-            left.add_color_stop_rgba(0.55, *bg, 0.45)
-            left.add_color_stop_rgba(1, *bg, 0)
+            left.add_color_stop_rgba(0, *_shade_of(bg), 0.82)
+            left.add_color_stop_rgba(0.55, *_shade_of(bg), 0.45)
+            left.add_color_stop_rgba(1, *_shade_of(bg), 0)
             cr.set_source(left)
-            cr.paint()
-            down = cairo.LinearGradient(0, hh * 0.4, 0, hh)
-            down.add_color_stop_rgba(0, *bg, 0)
-            down.add_color_stop_rgba(1, *bg, 1)
-            cr.set_source(down)
             cr.paint()
             if fading:
                 cr.pop_group_to_source()
@@ -876,9 +889,6 @@ class ConsoleView(Gtk.DrawingArea):
         x, y = pad, max(H * 0.13, 120 * s)
         phase = app._home_phase(game.uid)
         latest = max(app.recent.values(), default=0)
-        # the accent's light behind the text, stronger while the game runs
-        _paint_hero_light(cr, W, H * 0.62, accent, 0.36 if phase == "running" else 0.2,
-                          cx=0.05, cy=0.42, radius=0.55)
         # Setting sail is said on the button alone, and the launcher in the
         # line under the title - a kicker only for these two. Its room
         # stays, so the title doesn't jump from game to game.
@@ -1016,7 +1026,10 @@ class ConsoleView(Gtk.DrawingArea):
         heading_off = abs(target_y - self._target_y) > 0.5
         self._target_y = target_y
         cr.save()
-        cr.rectangle(0, top - ch * GROW - 60 * s, W, H - top + ch * GROW + 30 * s)
+        # down to the screen's edge: the next shelf's cards go off the screen,
+        # not off a line above it
+        clip_top = top - ch * GROW - 60 * s
+        cr.rectangle(0, clip_top, W, H - clip_top)
         cr.clip()
         for si, (name, games) in enumerate(self._shelves):
             sy = top + si * shelf_h - self.scroll_y
@@ -1157,13 +1170,6 @@ class ConsoleView(Gtk.DrawingArea):
     def _draw_legend(self, cr, W, H, pad, s, game: GameItem):
         app = self.app
         y = H - 34 * s
-        bg = self._bg_rgb()
-        shade = cairo.LinearGradient(0, H - 80 * s, 0, H)
-        shade.add_color_stop_rgba(0, *bg, 0)
-        shade.add_color_stop_rgba(1, *bg, 0.92)
-        cr.set_source(shade)
-        cr.rectangle(0, H - 80 * s, W, 80 * s)
-        cr.fill()
         running = app._is_game_running(game.uid)
         items = [
             ("activate", app._("stop_game_tooltip") if running else app._("launch_label"), app._console_activate),
@@ -1178,6 +1184,12 @@ class ConsoleView(Gtk.DrawingArea):
             gw = self._glyph_width(cr, role, size)
             widths.append(gw + 10 + self._measure(cr, label, 12 * s, True)[0])
         x = W - pad - sum(widths) - 34 * s * (len(items) - 1)
+        # no band across the bottom (it cut the cards off): a dark pill of
+        # its own behind the hints, like the tabs' at the top
+        total = sum(widths) + 34 * s * (len(items) - 1)
+        _rounded(cr, x - 16 * s, y - 20 * s, total + 32 * s, 40 * s, 20 * s)
+        cr.set_source_rgba(0, 0, 0, 0.55)
+        cr.fill()
         for (role, label, action), width in zip(items, widths):
             gw = self._glyph(cr, role, x, y, size)
             _pango_text(cr, self, label, x + gw + 10, y - 9 * s, width, 12 * s, True, (1, 1, 1, 0.85))

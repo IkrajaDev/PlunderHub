@@ -29,9 +29,9 @@ KEYBOARD = [
         (("Enter",), "sc_launch"),
         (("Esc",), "sc_back_close"),
         (("1-9",), "shortcut_places"),
-        (("B",), "sc_top"),
+        (("Home",), "sc_top"),
     ]),
-    ("sc_group_games", "applications-games-symbolic", [
+    ("sc_group_games", "chest-symbolic", [
         (("Menu",), "shortcut_menu"),
         (("F",), "shortcut_favorite"),
         (("V",), "selection_mode_btn"),
@@ -47,6 +47,7 @@ KEYBOARD = [
         (("A",), "all_games_section"),
         (("S",), "sw_title"),
         (("T",), "tm_title"),
+        (("B",), "bb_title"),
         (("D",), "sc_dashboard"),
         (("O",), "sc_settings"),
         (("H",), "sc_harbors"),

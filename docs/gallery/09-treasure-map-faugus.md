@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="08-treasure-map.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 9 / 18 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 9 / 20 &nbsp;·&nbsp;
   <a href="10-game-launch-options.md"><b>Next →</b></a>
 </p>
 

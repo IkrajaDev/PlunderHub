@@ -583,6 +583,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             _treasure_map().attach(self, {"cache": str(CACHE_DIR / "treasure-map"), "tab": "all"})
         except Exception as e:
             logger.warning(f"Treasure Map couldn't be set up: {e}")
+        try:
+            from plunderhub.ui import bounty_board
+            bounty_board.attach(self)
+        except Exception as e:
+            logger.warning(f"Bounty Board couldn't be set up: {e}")
         return False
 
     _STARTUP_OVERLAY_MAX_WAIT = 30.0
@@ -1127,7 +1132,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
     _SEARCH_DEBOUNCE_MS = 150
 
     def _on_search_changed(self):
-        view = _treasure_map().shown(self)
+        from plunderhub.ui import bounty_board
+        view = _treasure_map().shown(self) or bounty_board.shown(self)
         if view is not None:
             view.set_query(self.search_entry.get_text())
             return
@@ -1340,7 +1346,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             grid = event.keyval in (Gdk.KEY_g, Gdk.KEY_G)
             (self.view_grid_btn if grid else self.view_list_btn).set_active(True)
             return True
-        if event.keyval in (Gdk.KEY_b, Gdk.KEY_B):
+        if event.keyval in (Gdk.KEY_b, Gdk.KEY_B) and not self.reorder_mode:
+            return self._toggle_bounty_board()
+        if event.keyval == Gdk.KEY_Home and self.scroller.get_visible():
+            # the library back to its top (the Treasure Map's tiles take Home themselves)
             self._on_scroll_top_clicked(None)
             return True
         return False
@@ -1878,15 +1887,15 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         # for it, now or at the next start
         self.settings[captains_log.SEEN_KEY] = APP_VERSION
         save_settings(self.settings)
-        # seen only once watched through (Set sail!): closed by force, it
-        # comes again at the next start
+        # seen once Set sail! or Skip closed it: closed any other way
+        # (killed), it comes again at the next start
         if self._show_welcome(forced=True):
             self.settings["welcome_shown"] = True
             save_settings(self.settings)
 
     def _show_welcome(self, forced: bool = False) -> bool:
         """The welcome tour (ui/welcome_tour.py); forced: the first
-        start's, watched through. True once Set sail! closed it."""
+        start's. True once Set sail! or Skip closed it."""
         from plunderhub.ui import welcome_tour
         return welcome_tour.Tour(self, forced).run()
 
@@ -3393,6 +3402,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 self._heroic_launches[uid] = heroic[0]
             self.launching_uids[uid] = time.time()
             self._launch_cmds[uid] = (cmd, env)
+            from plunderhub.ui import whats_changed
+            whats_changed.launch_started(self, uid)
             self._steam_asked_again.discard(uid)
             self._launch_settled_at.pop(uid, None)
             if mover is not None and uid.startswith("steam:"):
@@ -3602,12 +3613,38 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
     _GONE_GRACE_EARLY_SECONDS = 30.0
     _GONE_EARLY_RUN_SECONDS = 180.0
 
+    _GONE_QUIET_PREFIX_SECONDS = 3.0
+
     def _gone_for_good(self, uid: str) -> bool:
         now = time.monotonic()
         first_missed = self._gone_since.setdefault(uid, now)
         started = self.running_since.get(uid)
         early = started is None or now - started < self._GONE_EARLY_RUN_SECONDS
+        if early and now - first_missed >= self._GONE_QUIET_PREFIX_SECONDS and self._prefix_quiet(uid):
+            # quit within its first minutes: nothing left in its prefix is
+            # handing over to it (a launcher, a redist) - it's over
+            return True
         return now - first_missed >= (self._GONE_GRACE_EARLY_SECONDS if early else self._GONE_GRACE_SECONDS)
+
+    def _prefix_quiet(self, uid: str) -> bool:
+        """Nothing runs in the game's Wine prefix any more (False when it
+        has none, or it can't be told: the grace stays)."""
+        cache = self.__dict__.setdefault("_prefix_of", {})
+        if uid not in cache:
+            game = self.game_index.get(uid)
+            try:
+                prefix = self._resolve_wine_prefix(game) if game is not None else None
+            except Exception:
+                prefix = None
+            cache[uid] = str(prefix) if prefix else None
+        prefix = cache[uid]
+        if not prefix:
+            return False
+        from plunderhub.core.running_detector import prefix_busy
+        try:
+            return not prefix_busy(prefix)
+        except Exception:
+            return False
 
     def _unconfirmed_run_timed_out(self, uid: str, proc: subprocess.Popen, launcher_holds_group: bool = False) -> bool:
         if uid in self._directory_confirmed_running:
@@ -3686,6 +3723,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         return True
 
     def _end_detected_session(self, uid: str) -> None:
+        from plunderhub.ui import perf_tab
+        perf_tab.after_session(self, uid)
         started_at = self.running_since.pop(uid, None)
         # Only Bottles keeps no playtime of its own; the rest are synced
         # from the launcher, so crediting here would count them twice.
@@ -3802,14 +3841,18 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             text += f" {percent}%  ·  {format_bytes(stage.done)} / {format_bytes(stage.total)}"
         return text
 
+    def _launch_failed_text(self, uid: str, error: str) -> str:
+        game = self.game_index.get(uid)
+        which = "heroic" if uid.startswith("heroic:") else "bottles" if uid.startswith("bottles:") else "steam"
+        text = self._(f"{which}_launch_failed_text") if uid.startswith(("heroic:", "bottles:", "steam:")) \
+            else self._("other_launch_failed_text").format(launcher=game.launcher if game is not None else "")
+        return f"{text}\n\n{error}" if error else text
+
     def _show_launch_failed(self, uid: str, error: str) -> bool:
         game = self.game_index.get(uid)
         title = game.title if game is not None else uid
         which = "heroic" if uid.startswith("heroic:") else "bottles" if uid.startswith("bottles:") else "steam"
-        text = self._(f"{which}_launch_failed_text") if uid.startswith(("heroic:", "bottles:", "steam:")) \
-            else self._("other_launch_failed_text").format(launcher=game.launcher if game is not None else "")
-        if error:
-            text += f"\n\n{error}"
+        text = self._launch_failed_text(uid, error)
         self._show_info_dialog(text, Gtk.MessageType.ERROR,
                                heading=self._(f"{which}_launch_failed").format(title=title))
         return False
@@ -4090,6 +4133,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
 
         finished = []
         failed_launches = []
+        crashed: set = set()
         detected = self._running_detector.snapshot()
         for uid, proc in self.running_procs.items():
             if uid.startswith("steam:"):
@@ -4152,6 +4196,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 self.closed_on_purpose.discard(uid)
                 if proc.returncode != 0 and ran < self._FAILED_START_SECONDS and not closed:
                     failed_launches.append((uid, ""))
+                elif proc.returncode != 0 and not closed:
+                    crashed.add(uid)
         for uid in self.launching_uids:
             stage = self._process_probe.stage(uid)
             if stage is not None and stage.stage == "failed" and uid not in finished:
@@ -4177,6 +4223,13 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             # doesn't come back with hours of playtime it never had.
             self.running_since[uid] = time.monotonic()
         if finished or expired_launching:
+            from plunderhub.ui import whats_changed
+            errors = dict(failed_launches)
+            from plunderhub.ui import perf_tab
+            for uid in finished:
+                whats_changed.launch_ended(self, uid, failed=uid in errors, crashed=uid in crashed,
+                                           error=errors.get(uid, ""))
+                perf_tab.after_session(self, uid)
             for uid in finished:
                 self._gone_since.pop(uid, None)
                 self._ignore_detection_briefly(uid)
@@ -4202,7 +4255,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 GLib.timeout_add_seconds(10, self._bilge_check_waiting)
             self._update_decorative_animation_pause_state()
             for uid, error in failed_launches:
-                GLib.idle_add(self._show_launch_failed, uid, error)
+                if not whats_changed.takes_over(self, uid, error):
+                    GLib.idle_add(self._show_launch_failed, uid, error)
             return True
 
         for uid, widgets in self.running_time_widgets.items():
@@ -4253,6 +4307,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                     self._terminate_game_processes(match, resync_playtime=True)
             self._render_launchers()
             return
+        from plunderhub.ui import perf_tab, whats_changed
+        whats_changed.launch_closed(self, game.uid)
+        perf_tab.after_session(self, game.uid)
         proc = self.running_procs.pop(game.uid, None)
         started_at = self.running_since.pop(game.uid, None)
         self.launching_uids.pop(game.uid, None)

@@ -233,6 +233,8 @@ def steam_state() -> StoreState:
     played = _steam_played(root)
     _STEAM_INFO.clear()
     _STEAM_INFO.update(infos)
+    _STEAM_OWNED.clear()
+    _STEAM_OWNED.update(apps)
     games = []
     for appid, info in infos.items():
         common = info.get("common") or {}
@@ -254,6 +256,7 @@ def steam_state() -> StoreState:
 
 
 _STEAM_INFO: Dict[int, Dict] = {}
+_STEAM_OWNED: set = set()           # every appid the account holds - its DLCs too
 _HEROIC_ITEMS: Dict[str, Dict] = {}
 _STEAM_INSTALL_INDEX = ["0"]
 
@@ -723,13 +726,7 @@ def _steam_size(info: Dict) -> int:
     total = 0
     for key, depot in (info.get("depots") or {}).items():
         if not str(key).isdigit() or not isinstance(depot, dict) or depot.get("dlcappid") \
-                or depot.get("sharedinstall"):
-            continue
-        cfg = depot.get("config") or {}
-        oslist = str(cfg.get("oslist", ""))
-        if oslist and "windows" not in oslist:
-            continue
-        if cfg.get("language") not in (None, "", "english") or cfg.get("lowviolence"):
+                or depot.get("sharedinstall") or not _depot_counts(depot):
             continue
         public = (depot.get("manifests") or {}).get("public")
         size = public.get("size") if isinstance(public, dict) else depot.get("maxsize")
@@ -738,6 +735,47 @@ def _steam_size(info: Dict) -> int:
         except (TypeError, ValueError):
             pass
     return total
+
+
+def _depot_counts(depot: Dict) -> bool:
+    """A depot Steam's install window would download: Windows (or no OS),
+    English (or no language), not the low-violence one."""
+    cfg = depot.get("config") or {}
+    oslist = str(cfg.get("oslist", ""))
+    if oslist and "windows" not in oslist:
+        return False
+    return cfg.get("language") in (None, "", "english") and not cfg.get("lowviolence")
+
+
+def steam_dlcs(appid: str) -> List[Dict]:
+    """The DLCs with something to download that the account owns:
+    [{id, title, size}] - Steam installs them with the game unless its
+    manifest lists them as DisabledDLC (the Properties > DLC ticks)."""
+    try:
+        info = _STEAM_INFO.get(int(appid)) or {}
+    except ValueError:
+        return []
+    sizes: Dict[int, int] = {}
+    for key, depot in (info.get("depots") or {}).items():
+        if not str(key).isdigit() or not isinstance(depot, dict) or not depot.get("dlcappid"):
+            continue
+        try:
+            dlc = int(depot["dlcappid"])
+        except (TypeError, ValueError):
+            continue
+        if dlc not in _STEAM_OWNED or not _depot_counts(depot):
+            continue
+        public = (depot.get("manifests") or {}).get("public")
+        size = public.get("size") if isinstance(public, dict) else depot.get("maxsize")
+        try:
+            sizes[dlc] = sizes.get(dlc, 0) + int(size or 0)
+        except (TypeError, ValueError):
+            sizes.setdefault(dlc, 0)
+    out = []
+    for dlc, size in sizes.items():
+        title = str(((_STEAM_INFO.get(dlc) or {}).get("common") or {}).get("name") or dlc)
+        out.append({"id": str(dlc), "title": title, "size": size})
+    return sorted(out, key=lambda d: d["title"].lower())
 
 
 def _strip_html(text: str) -> str:
@@ -800,6 +838,7 @@ def details(game: OwnedGame, cache_dir: Path, slow: bool = True) -> Dict:
         if common.get("review_percentage"):
             out["review"] = int(common["review_percentage"])
         out["size"] = _steam_size(info)
+        out["dlcs"] = steam_dlcs(game.app_id)
         art = launcher_art._steam(game.app_id)
         out["hero"] = art.get("hero") or _download(
             f"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{game.app_id}/library_hero.jpg", cache_dir)
@@ -836,6 +875,7 @@ def details(game: OwnedGame, cache_dir: Path, slow: bool = True) -> Dict:
             if tool_info.get("disk_size"):
                 out["size"] = tool_info["disk_size"]
                 out["download"] = tool_info.get("download_size") or 0
+            out["dlcs"] = tool_info.get("dlcs") or []
         root = heroic_root()
         target = Path.home() / "Games" / "Heroic"
         try:
@@ -961,10 +1001,12 @@ def _steam_owner() -> str:
     return best
 
 
-def steam_queue_install(appid: str, library: str) -> Tuple[bool, str]:
+def steam_queue_install(appid: str, library: str, disabled_dlcs: Optional[List[str]] = None) -> Tuple[bool, str]:
     """Writes the manifest that has Steam install appid into library at
     its next start. Steam must be closed (it writes its own manifests over
-    ours while it runs)."""
+    ours while it runs). disabled_dlcs: the DLCs unticked on the card -
+    UserConfig/MountedConfig DisabledDLC, where Steam's Properties > DLC
+    keeps them."""
     if steam_manifest(appid) is not None:
         return False, "already has a manifest"
     info = _STEAM_INFO.get(int(appid)) or {}
@@ -982,7 +1024,12 @@ def steam_queue_install(appid: str, library: str) -> Tuple[bool, str]:
               ("installdir", q(installdir)), ("LastUpdated", "0"), ("SizeOnDisk", "0"), ("buildid", "0"),
               ("LastOwner", _steam_owner()), ("BytesToDownload", "0"), ("BytesDownloaded", "0"),
               ("AutoUpdateBehavior", "0"), ("AllowOtherDownloadsWhileRunning", "0"), ("ScheduledAutoUpdate", "0")]
-    text = '"AppState"\n{\n' + "".join(f'\t"{k}"\t\t"{v}"\n' for k, v in fields) + "}\n"
+    text = '"AppState"\n{\n' + "".join(f'\t"{k}"\t\t"{v}"\n' for k, v in fields)
+    off = ",".join(q(d) for d in disabled_dlcs or [] if str(d).isdigit())
+    if off:
+        for block in ("UserConfig", "MountedConfig"):
+            text += f'\t"{block}"\n\t{{\n\t\t"DisabledDLC"\t\t"{off}"\n\t}}\n'
+    text += "}\n"
     path = steamapps / f"appmanifest_{appid}.acf"
     try:
         tmp = path.with_suffix(".acf.plunderhub-tmp")
@@ -1477,13 +1524,28 @@ def heroic_install_info(store: str, app_name: str) -> Dict:
         lang = "en-US" if "en-US" in langs else (langs[0] if langs else "en-US")
         sizes = data.get("size") or {}
         sz = sizes.get(lang) or next((v for v in sizes.values() if (v or {}).get("disk_size")), {}) or {}
+        dlcs = []
+        for dlc in data.get("dlcs") or []:
+            if not isinstance(dlc, dict) or not dlc.get("id"):
+                continue
+            ds = (dlc.get("size") or {})
+            one = ds.get(lang) or ds.get("*") or {}
+            dlcs.append({"id": str(dlc["id"]), "title": dlc.get("title") or str(dlc["id"]),
+                         "size": int(one.get("disk_size") or 0), "download": int(one.get("download_size") or 0)})
         return {"download_size": int(sz.get("download_size") or 0), "disk_size": int(sz.get("disk_size") or 0),
+                "dlcs": dlcs,
                 "lang": lang, "folder_name": data.get("folder_name") or "",
                 "game": {"version": data.get("versionName") or "", "buildId": data.get("buildId") or ""},
                 "manifest": {"versionEtag": data.get("versionEtag") or ""}}
     m = data.get("manifest") or {}
+    game = data.get("game") or {}
+    # Epic: the owned DLCs with files of their own (the rest are only unlocks);
+    # their sizes would take a call each - left out
+    dlcs = [{"id": str(d["app_name"]), "title": d.get("title") or d["app_name"], "size": 0}
+            for d in game.get("owned_dlc") or []
+            if isinstance(d, dict) and d.get("app_name") and d.get("installable")]
     return {"download_size": int(m.get("download_size") or 0), "disk_size": int(m.get("disk_size") or 0),
-            "game": data.get("game") or {}, "manifest": m}
+            "game": game, "manifest": m, "dlcs": dlcs}
 
 
 _PROGRESS = re.compile(r"Progress: (\d+(?:\.\d+)?)")
@@ -1491,27 +1553,11 @@ _DOWNLOADED = re.compile(r"Downloaded: (\S+) MiB")
 _SPEED = re.compile(r"Download\s+- (\S+) MiB")
 
 
-def heroic_install(store: str, app_name: str, title: str, base_path: str, prefix: str, wine: Dict,
-                   on_progress=None, on_proc=None, lang: str = "en-US") -> Tuple[bool, str]:
-    """Installs like Heroic does; blocks (a worker thread). on_progress(
-    percent, downloaded_bytes, bytes_per_s), on_proc(Popen) to stop it."""
+def _run_tool(cmd: List[str], env: Dict, on_progress, on_proc) -> Tuple[bool, str]:
+    """One run of legendary / gogdl / nile, its progress lines followed."""
     import subprocess
-    root = heroic_root()
-    cmd, env = _tool_cmd(store)
-    if root is None or cmd is None:
-        return False, "Heroic's tools weren't found"
-    Path(base_path).mkdir(parents=True, exist_ok=True)
-    if store == "epic":
-        args = ["install", app_name, "--platform", "Windows", "--base-path", base_path,
-                "--skip-dlcs", "--skip-sdl", "-y"]
-    elif store == "amazon":
-        args = ["install", "--base-path", base_path, app_name]
-    else:
-        args = ["download", app_name, "--platform", "windows", "--path", base_path,
-                "--support", str(root / "gogdlConfig" / "heroic_gogdl" / "gog-support" / app_name),
-                "--skip-dlcs", "--lang", lang]
     try:
-        proc = subprocess.Popen(cmd + args, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 text=True, bufsize=1, start_new_session=True)
     except OSError as e:
         return False, str(e)
@@ -1542,6 +1588,53 @@ def heroic_install(store: str, app_name: str, title: str, base_path: str, prefix
     if code != 0:
         why = next((l for l in reversed(tail) if "error" in l.lower()), tail[-1] if tail else f"exit {code}")
         return False, why.strip()
+    return True, ""
+
+
+def heroic_install(store: str, app_name: str, title: str, base_path: str, prefix: str, wine: Dict,
+                   on_progress=None, on_proc=None, lang: str = "en-US",
+                   dlcs: Optional[List[str]] = None) -> Tuple[bool, str]:
+    """Installs like Heroic does; blocks (a worker thread). on_progress(
+    percent, downloaded_bytes, bytes_per_s), on_proc(Popen) to stop it.
+    dlcs: the DLCs picked on the card - GOG downloads them with the game
+    (--with-dlcs --dlcs), Epic installs each after it, as Heroic queues them."""
+    root = heroic_root()
+    cmd, env = _tool_cmd(store)
+    if root is None or cmd is None:
+        return False, "Heroic's tools weren't found"
+    dlcs = [d for d in (dlcs or []) if d]
+    Path(base_path).mkdir(parents=True, exist_ok=True)
+    if store == "epic":
+        args = ["install", app_name, "--platform", "Windows", "--base-path", base_path,
+                "--skip-dlcs", "--skip-sdl", "-y"]
+    elif store == "amazon":
+        args = ["install", "--base-path", base_path, app_name]
+        dlcs = []
+    else:
+        with_dlcs = ["--with-dlcs", "--dlcs", ",".join(dlcs)] if dlcs else ["--skip-dlcs"]
+        args = ["download", app_name, "--platform", "windows", "--path", base_path,
+                "--support", str(root / "gogdlConfig" / "heroic_gogdl" / "gog-support" / app_name),
+                *with_dlcs, "--lang", lang]
+    # Epic: the game, then a run per DLC - one progress bar over all of them
+    runs = [args] + ([["install", d, "--platform", "Windows", "--base-path", base_path,
+                       "--skip-dlcs", "--skip-sdl", "-y"] for d in dlcs] if store == "epic" else [])
+    done_bytes = [0]
+    for i, run in enumerate(runs):
+        def progress(pct, got, speed, i=i):
+            if on_progress:
+                on_progress((i * 100 + pct) / len(runs), done_bytes[0] + got, speed)
+        last = [0]
+
+        def track(pct, got, speed, i=i):
+            last[0] = got
+            progress(pct, got, speed)
+        ok, why = _run_tool(cmd + run, env, track, on_proc)
+        if not ok:
+            if i == 0:
+                return False, why
+            # the game is in; a DLC that didn't come is said, the game kept
+            logger.warning(f"Treasure Map: DLC {run[1]} of {title} not installed: {why}")
+        done_bytes[0] += last[0]
     if store == "gog":
         info = heroic_install_info("gog", app_name)
         folder = info.get("folder_name")
@@ -1556,7 +1649,7 @@ def heroic_install(store: str, app_name: str, title: str, base_path: str, prefix
         entry = {"platform": "windows", "executable": "", "install_path": install_path,
                  "install_size": f"{folder_bytes(Path(install_path), 30) / 1024 ** 3:.2f} GiB",
                  "is_dlc": False, "version": (info.get("game") or {}).get("version") or "",
-                 "appName": app_name, "installedDLCs": [], "language": lang,
+                 "appName": app_name, "installedDLCs": dlcs, "language": lang,
                  "versionEtag": (info.get("manifest") or {}).get("versionEtag") or "",
                  "buildId": (info.get("game") or {}).get("buildId") or "", "pinnedVersion": False}
         path = root / "gog_store" / "installed.json"
