@@ -1,9 +1,9 @@
 <h2 align="center">Launch options</h2>
 
 <p align="center">
-  <a href="09-treasure-map-faugus.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 10 / 20 &nbsp;·&nbsp;
-  <a href="19-bounty-board.md"><b>Next →</b></a>
+  <a href="21-loading-dock.md"><b>← Previous</b></a>
+  &nbsp;·&nbsp; 10 / 21 &nbsp;·&nbsp;
+  <a href="22-dlc-tab.md"><b>Next →</b></a>
 </p>
 
 <p align="center">

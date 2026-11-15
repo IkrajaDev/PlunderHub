@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="04-console-mode.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 5 / 20 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 5 / 21 &nbsp;·&nbsp;
   <a href="06-edit-order.md"><b>Next →</b></a>
 </p>
 

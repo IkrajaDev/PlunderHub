@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="18-report-bug.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 1 / 20 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 1 / 21 &nbsp;·&nbsp;
   <a href="02-treasure-map-card.md"><b>Next →</b></a>
 </p>
 

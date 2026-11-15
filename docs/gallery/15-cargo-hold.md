@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="14-captains-dashboard.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 17 / 20 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 18 / 21 &nbsp;·&nbsp;
   <a href="16-settings-appearance.md"><b>Next →</b></a>
 </p>
 

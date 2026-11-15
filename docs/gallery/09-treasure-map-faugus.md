@@ -1,9 +1,9 @@
 <h2 align="center">Treasure Map: the Faugus tab</h2>
 
 <p align="center">
-  <a href="08-treasure-map.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 9 / 20 &nbsp;·&nbsp;
-  <a href="10-game-launch-options.md"><b>Next →</b></a>
+  <a href="07-game-menu.md"><b>← Previous</b></a>
+  &nbsp;·&nbsp; 8 / 21 &nbsp;·&nbsp;
+  <a href="21-loading-dock.md"><b>Next →</b></a>
 </p>
 
 <p align="center">

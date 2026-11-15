@@ -631,6 +631,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         # Proton builds checked and kept in step, once the window is up
         from plunderhub.ui.proton_upkeep import upkeep
         upkeep(self).start()
+        # whether HDR needs PROTON_FORCE_HDR here, asked of the desktop before
+        # any Launch options dialog would (core/hdr_detect.py)
+        from plunderhub.core import hdr_detect
+        hdr_detect.prefetch()
         # the launchers' install state, asked of the package manager ahead
         # of Settings (which would wait on it - seconds on dpkg / rpm)
         GLib.timeout_add_seconds(10, self._warm_launcher_states)

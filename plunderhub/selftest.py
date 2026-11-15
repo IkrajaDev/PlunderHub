@@ -401,6 +401,48 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
             raise outcome["error"]
     steps.append(_step("performance: the game page", calm_game_page))
 
+    def launch_options_faithful():
+        """The Launch options dialog shows what's saved: filled in and read
+        straight back, nothing differs (11-15: the gamescope HDR switch turned
+        the game's HDR on by itself while the form was filled). Reads only."""
+        import copy
+        from gi.repository import GLib, Gtk
+        from plunderhub.core import perf_log
+        from plunderhub.core.launch_options import backend_for
+        from plunderhub.ui.game_page import GamePage
+        games = [g for g in window.game_index.values() if backend_for(g) is not None][:6]
+        problems = []
+        animated, window.animated_covers = window.animated_covers, False
+        try:
+            for game in games:
+                def check(game=game) -> bool:
+                    page = window._game_page
+                    if page is None:
+                        return True
+                    try:
+                        tab = getattr(page, "launch", None)
+                        if tab is not None:
+                            want = copy.deepcopy(tab.loaded)
+                            perf_log.bring_up_to_date(want)     # what reading the form adds by design
+                            got = tab._read()                    # what Save would store
+                            if got != want:
+                                fields = [f for f, spec in want.__dataclass_fields__.items()
+                                          if spec.compare and getattr(got, f) != getattr(want, f)]
+                                problems.append(f"{game.title}: " + ", ".join(
+                                    f"{f} {getattr(want, f)!r} -> {getattr(got, f)!r}" for f in fields))
+                    except Exception as e:
+                        problems.append(f"{game.title}: {e}")
+                    finally:
+                        page.response(Gtk.ResponseType.CLOSE)
+                    return False
+                GLib.timeout_add(300, check)
+                GamePage(window, game)
+        finally:
+            window.animated_covers = animated
+        if problems:
+            raise AssertionError("the Launch options dialog shows other than what's saved: " + "; ".join(problems))
+    steps.append(_step("launch options: the dialog shows what's saved", launch_options_faithful))
+
     def calm_card_dialog(what: str, run_dialog, wait_ms: int = 800):
         """Checks a card dialog that blocks in run(): the check is
         scheduled first (after its opening animation, if it has one),

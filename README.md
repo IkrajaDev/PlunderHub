@@ -78,14 +78,14 @@
       <sub>Set sail menu</sub>
     </td>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/08-treasure-map.md"><img src="docs/screenshots/08-treasure-map.png" alt="Treasure Map" width="400"></a><br>
-      <sub>Treasure Map</sub>
+      <a href="docs/gallery/09-treasure-map-faugus.md"><img src="docs/screenshots/09-treasure-map-faugus.png" alt="Treasure Map: the Faugus tab" width="400"></a><br>
+      <sub>Treasure Map: the Faugus tab</sub>
     </td>
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/09-treasure-map-faugus.md"><img src="docs/screenshots/09-treasure-map-faugus.png" alt="Treasure Map: the Faugus tab" width="400"></a><br>
-      <sub>Treasure Map: the Faugus tab</sub>
+      <a href="docs/gallery/21-loading-dock.md"><img src="docs/screenshots/21-loading-dock.png" alt="Loading Dock: every install in order" width="400"></a><br>
+      <sub>Loading Dock: every install in order</sub>
     </td>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/10-game-launch-options.md"><img src="docs/screenshots/10-game-launch-options.png" alt="Launch options" width="400"></a><br>
@@ -94,49 +94,55 @@
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/19-bounty-board.md"><img src="docs/screenshots/19-bounty-board.png" alt="Bounty Board" width="400"></a><br>
-      <sub>Bounty Board: free games right now</sub>
+      <a href="docs/gallery/22-dlc-tab.md"><img src="docs/screenshots/22-dlc-tab.png" alt="DLCs of a game" width="400"></a><br>
+      <sub>DLCs of a game</sub>
     </td>
     <td align="center" valign="top" width="50%">
-      <a href="docs/gallery/20-performance.md"><img src="docs/screenshots/20-performance.png" alt="Performance" width="400"></a><br>
-      <sub>Performance, session by session</sub>
+      <a href="docs/gallery/19-bounty-board.md"><img src="docs/screenshots/19-bounty-board.png" alt="Bounty Board: free games right now" width="400"></a><br>
+      <sub>Bounty Board: free games right now</sub>
     </td>
   </tr>
   <tr>
+    <td align="center" valign="top" width="50%">
+      <a href="docs/gallery/20-performance.md"><img src="docs/screenshots/20-performance.png" alt="Performance, session by session" width="400"></a><br>
+      <sub>Performance, session by session</sub>
+    </td>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/11-proton-versions.md"><img src="docs/screenshots/11-proton-versions.png" alt="Proton versions" width="400"></a><br>
       <sub>Proton versions</sub>
     </td>
+  </tr>
+  <tr>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/12-shipwright.md"><img src="docs/screenshots/12-shipwright.png" alt="Shipwright" width="400"></a><br>
       <sub>Shipwright</sub>
     </td>
-  </tr>
-  <tr>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/13-bilge-cleaning.md"><img src="docs/screenshots/13-bilge-cleaning.png" alt="Bilge cleaning" width="400"></a><br>
       <sub>Bilge cleaning</sub>
     </td>
+  </tr>
+  <tr>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/14-captains-dashboard.md"><img src="docs/screenshots/14-captains-dashboard.png" alt="Captain's Dashboard" width="400"></a><br>
       <sub>Captain's Dashboard</sub>
     </td>
-  </tr>
-  <tr>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/15-cargo-hold.md"><img src="docs/screenshots/15-cargo-hold.png" alt="Cargo hold" width="400"></a><br>
       <sub>Cargo hold</sub>
     </td>
+  </tr>
+  <tr>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/16-settings-appearance.md"><img src="docs/screenshots/16-settings-appearance.png" alt="Ship's Controls" width="400"></a><br>
       <sub>Ship's Controls</sub>
     </td>
-  </tr>
-  <tr>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/17-themes.md"><img src="docs/screenshots/17-themes.png" alt="15 themes" width="400"></a><br>
       <sub>15 themes</sub>
     </td>
+  </tr>
+  <tr>
     <td align="center" valign="top" width="50%">
       <a href="docs/gallery/18-report-bug.md"><img src="docs/screenshots/18-report-bug.png" alt="Report a bug" width="400"></a><br>
       <sub>Report a bug</sub>
@@ -256,7 +262,7 @@
     <td align="center" valign="top" width="25%">
       <img src="docs/icons/hdr.svg" width="40" height="40" alt=""><br>
       <b>HDR</b><br>
-      <sub>Through&nbsp;gamescope</sub>
+      <sub>Wayland&nbsp;or&nbsp;gamescope</sub>
     </td>
   </tr>
 </table>
@@ -284,7 +290,8 @@
 
 #### Each game
 
-- **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and news links. Launch options with a Recommended preset, gamescope with HDR; winecfg, winetricks and running an .exe in the game's prefix.
+- **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and news links. Launch options with a Recommended preset and gamescope; winecfg, winetricks and running an .exe in the game's prefix.
+- **HDR**: one switch, in the game's own Wayland window or through gamescope. Hyprland and KDE switch the screen to HDR only once a game asks, so games saw no HDR and greyed it out - PlunderHub adds what Proton-GE and gamescope need there by itself, also to games set up with an older version.
 - **DLCs**: a game's DLC tab shows which DLCs it has and which are installed - install or uninstall the ones you tick (Steam, Epic, GOG).
 - **Game EXE**: start another .exe for a Heroic game, or swap a Faugus or Lutris game's file, in Launch options.
 - **Performance**: switch it on for a game and MangoHud logs every session in the background. The game page shows FPS, 1% lows and frame times session by session, marked where Proton or the driver changed.
@@ -409,6 +416,8 @@ Other distros (in the PlunderHub folder):
 - **Games inside store launchers** are new and haven't been tried with every store yet. Wargaming Game Center opens on its own page, press Play there. Uninstall them in their launcher.
 - **Read-only systems** (Bazzite, Silverblue): Shipwright installs launchers and tools as Flatpaks. System packages come through your system's own tools.
 - **Installing with Steam**: with Steam's window open, Steam's own install window asks. If you press Cancel there, PlunderHub lets the install go after a minute - Steam doesn't tell. With Steam closed or in the tray, Steam is closed for a moment and started again the way it was. On GNOME PlunderHub can't see whether Steam shows a window, so Steam's own install window always asks there.
+- **HDR inside gamescope**: a game in its own exclusive fullscreen mode can start black or as a small picture in a corner. Pick borderless (windowed) in the game's settings - gamescope fills the screen itself.
+- **HDR with an HDR and an SDR monitor**: on Hyprland and KDE PlunderHub sets HDR up for the monitor that's active (KDE: the primary one) when you save. A game opening on the other monitor may then look washed out.
 - **Steer Steam's downloads** opens Steam's debugging port (127.0.0.1:8080, this computer only) while it's on: other programs on your PC could steer Steam through it. That's why it's off by default and switches itself off when Steam's installs are done. Turning it on restarts Steam once.
 
 ## Tested launcher versions

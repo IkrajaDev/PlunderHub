@@ -194,6 +194,19 @@ class ProtonUpkeep:
         for name, uids in dict(self.app.settings.get(REASSIGN_KEY) or {}).items():
             move_games_off(self.app, name, set(uids))
         move_games_off(self.app, None)
+        self._hdr_upgrade()
+
+    def _hdr_upgrade(self):
+        """Launch options saved by an older PlunderHub brought up to date
+        (forced HDR, a recording's log length - core/launch_options.
+        upgrade_saved_options). Each game once a run; a Steam game waits for
+        Steam to close (this runs again then)."""
+        from plunderhub.core.launch_options import upgrade_saved_options
+        done = self.__dict__.setdefault("_hdr_done", set())
+        try:
+            done.update(upgrade_saved_options(list(self.app.game_index.values()), frozenset(done)))
+        except Exception as e:
+            logger.warning(f"Couldn't bring the launch options up to date: {e}")
 
     # --- games waiting for a build ------------------------------------------------------
 

@@ -567,7 +567,7 @@ class PerformanceTab(Gtk.Box):
         accent = _rgb(self.accent)
         left, right, top, bottom = 44, 8, 10, 22
         plot_w, plot_h = w - left - right, h - top - bottom
-        peak = max(max(curve), s.get("avg", 0)) * 1.1 or 60
+        peak = curve_top(curve, s.get("avg", 0))
         for i in range(4):
             value = peak * i / 3
             y = top + plot_h - plot_h * i / 3
@@ -615,3 +615,18 @@ class PerformanceTab(Gtk.Box):
             cr.move_to(left + plot_w * frac - (tw if frac else 0), top + plot_h + 6)
             PangoCairo.show_layout(cr, lay)
         return False
+
+
+def curve_top(curve, avg: float) -> float:
+    """The session curve's scale. A loading screen or menu can run at 1000+
+    FPS for a moment; scaled to that, the real play is a flat line at the
+    bottom. So the scale follows most of the session (95th percentile) and a
+    short spike above it is cut off at the top."""
+    values = sorted(v for v in curve if v > 0)
+    if not values:
+        return 60.0
+    high = values[min(len(values) - 1, int(0.95 * (len(values) - 1)))]
+    top = max(values[-1], avg)
+    if values[-1] > high * 1.5:
+        top = max(high, avg) * 1.25
+    return top * 1.1 or 60.0

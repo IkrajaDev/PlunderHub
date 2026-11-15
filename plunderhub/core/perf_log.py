@@ -46,8 +46,8 @@ MIN_SECONDS = 20                      # shorter logs say nothing
 LOG_INTERVAL_MS = 20
 # the HUD out of sight while it logs
 HIDDEN_HUD = "alpha=0,background_alpha=0,fps=0,frame_timing=0,cpu_stats=0,gpu_stats=0"
-_OURS = ("output_folder", "autostart_log", "log_interval", "read_cfg", "alpha", "background_alpha",
-         "fps", "frame_timing", "cpu_stats", "gpu_stats")
+_OURS = ("output_folder", "autostart_log", "log_interval", "log_duration", "read_cfg", "alpha",
+         "background_alpha", "fps", "frame_timing", "cpu_stats", "gpu_stats")
 
 SINCE_FILE = ".recording-since"
 _LOCK = threading.Lock()
@@ -107,6 +107,27 @@ def recording(opts) -> Optional[bool]:
     return "read_cfg" in items
 
 
+def _log_words(folder: str) -> List[Tuple[str, str]]:
+    # log_duration=0: no end - with the HUD shown MangoHud also reads the
+    # user's MangoHud.conf (read_cfg), and a log_duration there (the user's:
+    # 30) stopped the log after that many seconds ("Logging Finished" on screen)
+    return [("output_folder", folder), ("autostart_log", "1"), ("log_interval", str(LOG_INTERVAL_MS)),
+            ("log_duration", "0")]
+
+
+def outdated(opts) -> bool:
+    """Recording set up before log_duration=0 was written (core/launch_options.upgrade_saved_options)."""
+    if recording(opts) is None:
+        return False
+    return dict(_parse_config(opts.env.get("MANGOHUD_CONFIG", ""))).get("log_duration") != "0"
+
+
+def bring_up_to_date(opts) -> None:
+    hud = recording(opts)
+    if hud is not None:
+        set_hud(opts, hud)
+
+
 def set_recording(opts, game, on: bool, hud: bool) -> None:
     """Changes the LaunchOptions: MangoHud logging on (with the HUD shown
     or not) or off - the user's own MANGOHUD_CONFIG words kept."""
@@ -123,7 +144,7 @@ def set_recording(opts, game, on: bool, hud: bool) -> None:
         except OSError as e:
             logger.warning(f"Performance log folder {folder}: {e}")
         ours = [("read_cfg", "")] if hud else _parse_config(HIDDEN_HUD)
-        ours += [("output_folder", str(folder)), ("autostart_log", "1"), ("log_interval", str(LOG_INTERVAL_MS))]
+        ours += _log_words(str(folder))
         opts.env["MANGOHUD_CONFIG"] = _join_config(ours + own)
         opts.mangohud = True
         return
@@ -144,7 +165,7 @@ def set_hud(opts, hud: bool) -> None:
         return
     keep = [(k, v) for k, v in items if k not in _OURS and k != "no_display"]
     ours = [("read_cfg", "")] if hud else _parse_config(HIDDEN_HUD)
-    ours += [("output_folder", folder), ("autostart_log", "1"), ("log_interval", str(LOG_INTERVAL_MS))]
+    ours += _log_words(folder)
     opts.env["MANGOHUD_CONFIG"] = _join_config(ours + keep)
     opts.mangohud = True
 
@@ -173,9 +194,27 @@ def _save(uid: str, sessions: List[Dict]):
     os.replace(tmp, path)
 
 
+def _cleared_path(uid: str) -> Path:
+    return SUMMARY_DIR / f"{_safe(uid)}.cleared"
+
+
+def _cleared_at(uid: str) -> float:
+    try:
+        return float(_cleared_path(uid).read_text().strip())
+    except (OSError, ValueError):
+        return 0.0
+
+
 def delete(uid: str, at: Optional[float] = None):
-    """One session (its start), or all of them (None)."""
+    """One session (its start), or all of them (None). When: remembered, so
+    the sessions played before it don't count as "MangoHud left no log"
+    (log_missing) just because their summaries were deleted."""
     with _LOCK:
+        try:
+            SUMMARY_DIR.mkdir(parents=True, exist_ok=True)
+            _cleared_path(uid).write_text(str(time.time()))
+        except OSError as e:
+            logger.debug(f"Performance log: couldn't note the deletion: {e}")
         if at is None:
             try:
                 _summary_path(uid).unlink(missing_ok=True)
@@ -190,6 +229,30 @@ def _percentile(values: List[float], q: float) -> float:
         return 0.0
     ordered = sorted(values)
     return ordered[min(len(ordered) - 1, max(0, int(round(q * (len(ordered) - 1)))))]
+
+
+_MAX_FRAMETIME_MS = 60000.0        # without elapsed times: no frame takes a minute
+
+
+def _real_frames(rows: List[Dict[str, float]]) -> List[Dict[str, float]]:
+    """Rows whose frame really happened. A logged frame can't take longer
+    than the time since the row before it (a real stall, a loading screen,
+    leaves that gap in `elapsed` too). MangoHud's first row has none before
+    it and can carry a frametime measured from long before the game started
+    (Cyberpunk on Wine's Wayland driver: ~86 000 s), which made a 165 FPS
+    session's average 0 - so the first row goes, and any row over its gap."""
+    out: List[Dict[str, float]] = []
+    prev: Optional[float] = None
+    for i, row in enumerate(rows):
+        elapsed, ft = row.get("elapsed"), row.get("frametime", 0.0)
+        if i > 0 and ft < _MAX_FRAMETIME_MS:
+            if elapsed is None or prev is None:
+                out.append(row)
+            elif ft <= (elapsed - prev) / 1e6 * 1.1 + 5.0:     # ns -> ms, timer jitter
+                out.append(row)
+        if elapsed is not None:
+            prev = elapsed
+    return out
 
 
 def summarise(path: Path) -> Optional[Dict]:
@@ -219,6 +282,9 @@ def summarise(path: Path) -> Optional[Dict]:
     except OSError:
         return None
     if len(rows) < 10 or "fps" not in rows[0]:
+        return None
+    rows = _real_frames(rows)
+    if len(rows) < 10:
         return None
     elapsed = [r.get("elapsed", 0.0) for r in rows]
     seconds = (elapsed[-1] - elapsed[0]) / 1e9 if elapsed[-1] > elapsed[0] else len(rows) * LOG_INTERVAL_MS / 1000
@@ -306,6 +372,7 @@ def log_missing(game) -> bool:
         since = float((raw_dir(game) / SINCE_FILE).read_text().strip())
     except (OSError, ValueError):
         return False
+    since = max(since, _cleared_at(game.uid))     # deleted sessions left no summary on purpose
     from plunderhub.core import launch_history
     played = [s for s in launch_history.load(game.uid)
               if s.get("at", 0) > since and (s.get("ran") or 0) >= 60 and s.get("result") == "ok"]

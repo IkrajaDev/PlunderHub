@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="01-library-grid.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 2 / 20 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 2 / 21 &nbsp;·&nbsp;
   <a href="03-game-overview.md"><b>Next →</b></a>
 </p>
 

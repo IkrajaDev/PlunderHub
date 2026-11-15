@@ -336,6 +336,15 @@ class LaunchOptionsMixin:
             ui[key].set_sensitive(not native)
 
     def _lo_write_widgets(self, ui: Dict, opts: LaunchOptions) -> None:
+        # while the form is filled, a switch's coupling (gamescope HDR -> HDR)
+        # mustn't fire: the saved state is shown as it is
+        self._lo_writing = True
+        try:
+            self._lo_write_widgets_now(ui, opts)
+        finally:
+            self._lo_writing = False
+
+    def _lo_write_widgets_now(self, ui: Dict, opts: LaunchOptions) -> None:
         if "native" in ui:
             ui["native"].set_active(opts.native)
             self._lo_apply_native(ui, opts.native)

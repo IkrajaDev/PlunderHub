@@ -2019,6 +2019,8 @@ class LaunchOptionsTab(Gtk.Box):
         self.ui["gs_hdr"] = hdr
 
         def hdr_toggled(sw):
+            if getattr(self.app, "_lo_writing", False):
+                return                      # filling the form from the saved options, not a click
             if sw.get_active() and "hdr" in self.ui and self.ui["hdr"].get_sensitive():
                 self.ui["hdr"].set_active(True)
         hdr.connect("toggled", hdr_toggled)

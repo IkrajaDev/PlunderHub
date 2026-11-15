@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="13-bilge-cleaning.md"><b>← Previous</b></a>
-  &nbsp;·&nbsp; 16 / 20 &nbsp;·&nbsp;
+  &nbsp;·&nbsp; 17 / 21 &nbsp;·&nbsp;
   <a href="15-cargo-hold.md"><b>Next →</b></a>
 </p>
 
