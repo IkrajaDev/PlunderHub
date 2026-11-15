@@ -35,7 +35,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Set
 
 from plunderhub.core import flatpak_layers, inspection
-from plunderhub.core.tools import GROUPS, TOOLS, full_upgrade_only, pending_updates, snapshots_on
+from plunderhub.core.tools import GROUPS, TOOLS, full_upgrade_only, offered, pending_updates, snapshots_on
 from plunderhub.core.persistence import save_settings
 from plunderhub.core.utils import detect_linux_distro_family, immutable_system
 from plunderhub.gi_setup import Gdk, GdkPixbuf, GLib, Gtk, Pango, logical_size
@@ -56,7 +56,7 @@ CATEGORY_ICONS = {"overview": "layout-dashboard-symbolic", "inspection": "stetho
                   "updates": "view-refresh-symbolic",
                   "launchers": "applications-games-symbolic", "performance": "zap-symbolic",
                   "graphics": "sparkles-symbolic", "proton": "rocket-symbolic", "flatpak": "package-symbolic",
-                  "controllers": "input-gaming-symbolic", "apps": "cpu-symbolic",
+                  "controllers": "input-gaming-symbolic", "apps": "cpu-symbolic", "system": "preferences-system-symbolic",
                   "bilge": "user-trash-symbolic"}
 TILE_CATEGORIES = [c for c in CATEGORIES if c not in ("overview", "inspection", "updates")]
 # The Flatpak launchers' Vulkan layer of a tool: shown and installed
@@ -66,7 +66,8 @@ FLATPAK_PARTS = {"mangohud": "flatpak:mangohud", "gamescope": "flatpak:gamescope
 TOOL_OF_PART = {part: tool for tool, part in FLATPAK_PARTS.items()}
 # What "Recommended" picks: what most games and launchers benefit from.
 # ProtonPlus stays on its shelf as an alternative: the Proton page does its job.
-RECOMMENDED = ("gamemode", "mangohud", "gamescope", "winedeps")
+# paru (Arch only): AUR launchers like Bottles need an AUR helper - yay counts too.
+RECOMMENDED = ("gamemode", "mangohud", "gamescope", "winedeps", "paru")
 # Makes the Proton page (ui/proton_page.py) for a Shipwright - the design
 # demo (PlunderHubDemos/proton_demo.py) sets one with made-up data.
 PROTON_PAGE: Optional[Callable] = None
@@ -720,7 +721,10 @@ class Shipwright:
         for ldef in LAUNCHER_REGISTRY:
             self.items[ldef.name] = Item(ldef.name, ldef.name, "launchers",
                                          _(f"sw_desc_launcher_{ldef.name.lower()}"), launcher=True, gui=True)
+        family = detect_linux_distro_family()
         for tool in TOOLS:
+            if not offered(tool, family):
+                continue
             used = f"sw_used_{tool.id}"
             # product names stay as they are; a descriptive one is translated
             name = _(f"sw_name_{tool.id}") if f"sw_name_{tool.id}" in self.app.strings else tool.name
@@ -824,6 +828,9 @@ class Shipwright:
             self.nav.add(row)
             self.nav_rows[cat] = row
             self.nav_badges[cat] = badge_label
+            if cat in TILE_CATEGORIES and not self._in(cat):
+                # a shelf with nothing for this distribution (System off Arch)
+                row.set_no_show_all(True)
             if cat == "updates":
                 # the pages, then a hairline, then the shelves
                 self.nav.add(self._nav_divider())

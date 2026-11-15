@@ -1218,6 +1218,150 @@ msgstr "Elsötétíti a főablakot, amíg egy másik ablak nyitva van."
 msgid "dismiss_tooltip"
 msgstr "Elrejtés"
 
+#. English: Uninstall
+msgid "dlc_confirm_btn"
+msgstr "Törlés"
+
+#. English: {names} ({size}) leave {game}. You can install them again here any time.
+msgid "dlc_confirm_s"
+msgstr "A(z) {names} ({size}) lekerül a(z) {game} mellől. Innen bármikor újra feltelepítheted."
+
+#. English: Uninstall {n} DLC(s)?
+msgid "dlc_confirm_t"
+msgstr "Törlöd a(z) {n} DLC-t?"
+
+#. English: {game}'s DLCs weren't changed
+msgid "dlc_failed_t"
+msgstr "A(z) {game} DLC-i nem változtak"
+
+#. English: Close it first - its files are in use.
+msgid "dlc_game_running_s"
+msgstr "Előbb zárd be - a fájljai használatban vannak."
+
+#. English: {game} is running
+msgid "dlc_game_running_t"
+msgstr "A(z) {game} fut"
+
+#. English: It's open - while the DLCs change it would write the old state back.
+msgid "dlc_heroic_close_s"
+msgstr "Nyitva van - amíg a DLC-k változnak, visszaírná a régi állapotot."
+
+#. English: Install
+msgid "dlc_install"
+msgstr "Telepítés"
+
+#. English: Install {n} · {size}
+msgid "dlc_install_n"
+msgstr "Telepítés: {n} · {size}"
+
+#. English: Install {n}
+msgid "dlc_install_n_nosize"
+msgstr "Telepítés: {n}"
+
+#. English: Installed
+msgid "dlc_installed"
+msgstr "Telepítve"
+
+#. English: Installing {dlc}…
+msgid "dlc_installing"
+msgstr "{dlc} telepítése…"
+
+#. English: Downloadable content
+msgid "dlc_list_head"
+msgstr "Letölthető tartalmak"
+
+#. English: Not installed
+msgid "dlc_missing"
+msgstr "Nincs telepítve"
+
+#. English: No files of its own
+msgid "dlc_no_files"
+msgstr "Nincs külön fájlja"
+
+#. English: Heroic's Epic tool applies it, one DLC at a time.
+msgid "dlc_note_epic"
+msgstr "A Heroic Epic-eszköze végzi el, DLC-nként."
+
+#. English: Heroic's GOG tool applies it - Heroic stays closed meanwhile.
+msgid "dlc_note_heroic"
+msgstr "A Heroic GOG-eszköze végzi el - a Heroic addig zárva marad."
+
+#. English: Steam closes for a moment and applies it in the tray.
+msgid "dlc_note_steam"
+msgstr "A Steam egy pillanatra bezár, és a tálcán elvégzi."
+
+#. English: Tick the DLCs to install or uninstall.
+msgid "dlc_pick_hint"
+msgstr "Jelöld ki a telepítendő vagy törlendő DLC-ket."
+
+#. English: Removing {dlc}…
+msgid "dlc_removing"
+msgstr "{dlc} eltávolítása…"
+
+#. English: Select all
+msgid "dlc_select_all"
+msgstr "Mind kijelölése"
+
+#. English: Select none
+msgid "dlc_select_none"
+msgstr "Kijelölés törlése"
+
+#. English: Steam is applying it in the tray…
+msgid "dlc_steam_applying"
+msgstr "A Steam a tálcán végzi el…"
+
+#. English: Closing Steam for a moment…
+msgid "dlc_steam_closing"
+msgstr "A Steam egy pillanatra bezár…"
+
+#. English: Almost done - Steam goes back to how it was…
+msgid "dlc_steam_finishing"
+msgstr "Mindjárt kész - a Steam visszaáll, ahogy volt…"
+
+#. English: Steam hasn't finished it yet - it goes on in Steam's Downloads.
+msgid "dlc_steam_slow"
+msgstr "A Steam még nem végzett vele - a Steam Letöltések részében folytatódik."
+
+#. English: DLC
+msgid "dlc_tab"
+msgstr "DLC"
+
+#. English: DLCs
+msgid "dlc_tile_all"
+msgstr "DLC"
+
+#. English: On disk
+msgid "dlc_tile_disk"
+msgstr "Lemezen"
+
+#. English: Installed
+msgid "dlc_tile_in"
+msgstr "Telepítve"
+
+#. English: Uninstall
+msgid "dlc_uninstall"
+msgstr "Törlés"
+
+#. English: Uninstall {n} · {size}
+msgid "dlc_uninstall_n"
+msgstr "Törlés: {n} · {size}"
+
+#. English: Uninstall {n}
+msgid "dlc_uninstall_n_nosize"
+msgstr "Törlés: {n}"
+
+#. English: Unlocks content in the game - nothing to download
+msgid "dlc_unlock_sub"
+msgstr "Tartalmat old fel a játékban - nincs mit letölteni"
+
+#. English: Getting ready…
+msgid "dlc_working"
+msgstr "Előkészítés…"
+
+#. English: Updating the game's DLCs…
+msgid "dlc_working_gog"
+msgstr "A játék DLC-inek frissítése…"
+
 #. English: Download covers & icons
 msgid "download_btn"
 msgstr "Borítók és ikonok letöltése"
@@ -1434,9 +1578,9 @@ msgstr "Nem kedvenc"
 msgid "gm_web"
 msgstr "Weben"
 
-#. English: Store, ProtonDB, patch notes
+#. English: Store, ProtonDB, news
 msgid "gm_web_sub"
-msgstr "Áruház, ProtonDB, frissítési jegyzék"
+msgstr "Áruház, ProtonDB, hírek"
 
 #. English: Change
 msgid "gp_change"
@@ -2118,6 +2262,198 @@ msgstr "Bezárás"
 msgid "launcher_open"
 msgstr "Megnyitás"
 
+#. English: Steam is reserving disk space
+msgid "ld_act_allocating"
+msgstr "A Steam helyet foglal a lemezen"
+
+#. English: Waiting for you in Steam's install window
+msgid "ld_act_dialog"
+msgstr "Vár rád a Steam telepítőablakában"
+
+#. English: Steam updates {name} first
+msgid "ld_act_other"
+msgstr "A Steam előbb ezt frissíti: {name}"
+
+#. English: Steam updates something else first
+msgid "ld_act_other_any"
+msgstr "A Steam előbb mást frissít"
+
+#. English: Steam is preparing the install
+msgid "ld_act_preparing"
+msgstr "A Steam előkészíti a telepítést"
+
+#. English: Steam is running install scripts
+msgid "ld_act_scripts"
+msgstr "A Steam telepítő szkripteket futtat"
+
+#. English: Steam is starting the download
+msgid "ld_act_starting"
+msgstr "A Steam indítja a letöltést"
+
+#. English: Waiting for Steam to start
+msgid "ld_act_steam"
+msgstr "Várakozás a Steam indulására"
+
+#. English: Steam has paused this download
+msgid "ld_act_suspended"
+msgstr "A Steam szüneteltette ezt a letöltést"
+
+#. English: Steam is checking the files
+msgid "ld_act_verifying"
+msgstr "A Steam ellenőrzi a fájlokat"
+
+#. English: {n} more in line
+msgid "ld_card_more"
+msgstr "még {n} a sorban"
+
+#. English: Clear list
+msgid "ld_clear"
+msgstr "Lista törlése"
+
+#. English: {game} is paused
+msgid "ld_dock_paused"
+msgstr "{game} szüneteltetve"
+
+#. English: Resume it on the Loading Dock.
+msgid "ld_dock_paused_sub"
+msgstr "A Loading Dockban folytathatod."
+
+#. English: done {time}
+msgid "ld_done_at"
+msgstr "kész {time}"
+
+#. English: Later in the queue
+msgid "ld_down"
+msgstr "Hátrébb a sorban"
+
+#. English: The dock lies quiet
+msgid "ld_empty"
+msgstr "Csendes a rakpart"
+
+#. English: No cargo coming aboard. Dig up a game on the Treasure Map and its crates are hauled in here.
+msgid "ld_empty_sub"
+msgstr "Nincs rakomány úton. Áss ki egy játékot a Treasure Mapen, és a ládái ide érkeznek."
+
+#. English: {m} min {s} s left
+msgid "ld_left_short"
+msgstr "még {m} p {s} mp"
+
+#. English: Open in Steam
+msgid "ld_open_steam"
+msgstr "Megnyitás a Steamben"
+
+#. English: What's being dug up, in order.
+msgid "ld_page_sub"
+msgstr "Ami épp felkerül a hajóra, sorrendben."
+
+#. English: Pause
+msgid "ld_pause"
+msgstr "Szünet"
+
+#. English: Pause all
+msgid "ld_pause_all"
+msgstr "Mind szüneteltetése"
+
+#. English: Download
+msgid "ld_rate_caption"
+msgstr "Letöltés"
+
+#. English: Restart Steam
+msgid "ld_restart_btn"
+msgstr "Steam újraindítása"
+
+#. English: Its port opens when it starts - once, now. Its downloads go on after.
+msgid "ld_restart_s"
+msgstr "A portja indításkor nyílik meg - egyszer, most. A letöltései utána folytatódnak."
+
+#. English: Steam starts again
+msgid "ld_restart_t"
+msgstr "A Steam újraindul"
+
+#. English: Resume
+msgid "ld_resume"
+msgstr "Folytatás"
+
+#. English: Resume all
+msgid "ld_resume_all"
+msgstr "Mind folytatása"
+
+#. English: Aboard
+msgid "ld_sec_done"
+msgstr "Fedélzeten"
+
+#. English: Up next
+msgid "ld_sec_next"
+msgstr "Sorban áll"
+
+#. English: Now loading
+msgid "ld_sec_now"
+msgstr "Most töltődik"
+
+#. English: Paused
+msgid "ld_sec_paused"
+msgstr "Szüneteltetve"
+
+#. English: Aboard
+msgid "ld_state_aboard"
+msgstr "Fedélzeten"
+
+#. English: Downloading
+msgid "ld_state_downloading"
+msgstr "Töltődik"
+
+#. English: Installing
+msgid "ld_state_installing"
+msgstr "Települ"
+
+#. English: Paused
+msgid "ld_state_paused"
+msgstr "Szüneteltetve"
+
+#. English: Waiting
+msgid "ld_state_waiting"
+msgstr "Sorban áll"
+
+#. English: Steam has paused all its downloads.
+msgid "ld_steam_all_paused"
+msgstr "A Steam szüneteltette az összes letöltését."
+
+#. English: On - from Steam's next start.
+msgid "ld_steam_next_start"
+msgstr "Bekapcsolva - a Steam következő indításától."
+
+#. English: Pause and reorder Steam's downloads here. Uses a local Steam port while on.
+msgid "ld_steam_sub"
+msgstr "A Steam letöltéseit is innen szüneteltetheted és rendezheted. Közben egy helyi Steam-portot használ."
+
+#. English: Steer Steam's downloads
+msgid "ld_steam_title"
+msgstr "Steam-letöltések irányítása"
+
+#. English: Waiting for Steam to answer…
+msgid "ld_steam_waiting"
+msgstr "Várakozás a Steam válaszára…"
+
+#. English: What's downloaded of it so far goes too.
+msgid "ld_stop_s"
+msgstr "Ami eddig letöltődött belőle, az is törlődik."
+
+#. English: Stop {game}?
+msgid "ld_stop_t"
+msgstr "Leállítod: {game}?"
+
+#. English: Loading Dock
+msgid "ld_tab"
+msgstr "Loading Dock"
+
+#. English: To the Treasure Map
+msgid "ld_to_map"
+msgstr "Irány a Treasure Map"
+
+#. English: Earlier in the queue
+msgid "ld_up"
+msgstr "Előrébb a sorban"
+
 #. English: Games folder
 msgid "lm_games_folder"
 msgstr "Játékok mappája"
@@ -2293,6 +2629,10 @@ msgstr "Játék felbontása:"
 #. English: Enable Force Grab Cursor
 msgid "lo_gs_grab"
 msgstr "Kurzor kényszerített befogása (Force Grab Cursor)"
+
+#. English: HDR output from gamescope
+msgid "lo_gs_hdr"
+msgstr "HDR-kimenet a gamescope-ból"
 
 #. English: Integer
 msgid "lo_gs_integer"
@@ -2694,17 +3034,17 @@ msgstr "Hajóvezérlés"
 msgid "other_launch_failed_text"
 msgstr "A(z) {launcher} nem tudta elindítani a játékot."
 
-#. English: Looking for patch notes…
+#. English: Looking for news…
 msgid "patch_notes_loading"
-msgstr "Frissítési jegyzék keresése…"
+msgstr "Hírek keresése…"
 
-#. English: Patch Notes
+#. English: News
 msgid "patch_notes_menu"
-msgstr "Frissítési jegyzék"
+msgstr "Hírek"
 
-#. English: No Steam version of this game could be found, so patch notes can't be shown.
+#. English: No Steam version of this game could be found, so its news can't be shown.
 msgid "patch_notes_not_found"
-msgstr "Nem található Steam-es verzió ehhez a játékhoz, ezért nem tudjuk megmutatni a frissítési jegyzéket."
+msgstr "Nem található Steam-es verzió ehhez a játékhoz, ezért nem tudjuk megmutatni a híreit."
 
 #. English: Pause animations when idle
 msgid "pause_animations_check"
@@ -4558,6 +4898,10 @@ msgstr "Átfedés FPS-sel, képkockaidőkkel, CPU- és GPU-terheléssel és hőm
 msgid "sw_desc_obs"
 msgstr "Játékfelvétel és streamelés."
 
+#. English: Installs launchers from the AUR (Bottles) and keeps them updated. yay does the same - with it there, nothing more is needed.
+msgid "sw_desc_paru"
+msgstr "Launchereket telepít az AUR-ból (Bottles), és frissen tartja őket. A yay ugyanezt tudja - ha az megvan, nem kell más."
+
 #. English: Downloads more Proton and Wine versions - GE-Proton and others - for every launcher.
 msgid "sw_desc_protonplus"
 msgstr "További Proton- és Wine-verziókat tölt le - GE-Protont és másokat - minden launcherhez."
@@ -4665,6 +5009,10 @@ msgstr "Teljesítmény"
 #. English: Proton & Wine
 msgid "sw_group_proton"
 msgstr "Proton és Wine"
+
+#. English: System
+msgid "sw_group_system"
+msgstr "Rendszer"
 
 #. English: Fit out your ship
 msgid "sw_headline"
@@ -5826,10 +6174,6 @@ msgstr "{launcher} telepítése"
 msgid "tm_install_to"
 msgstr "Telepítés ide"
 
-#. English: Being installed - the Treasure Map shows more
-msgid "tm_installing_tooltip"
-msgstr "Éppen települ - a Kincses térképen többet látsz"
-
 #. English: Keep it
 msgid "tm_keep_it"
 msgstr "Maradjon"
@@ -5878,6 +6222,10 @@ msgstr "Shader cache"
 msgid "tm_left_kind_steam_prefix"
 msgstr "Proton-prefix"
 
+#. English: {n} games
+msgid "tm_left_many"
+msgstr "{n} játék"
+
 #. English: Leave them be
 msgid "tm_left_no"
 msgstr "Maradjanak"
@@ -5885,6 +6233,10 @@ msgstr "Maradjanak"
 #. English: {game} left these behind - {size}
 msgid "tm_left_s"
 msgstr "Ezeket hagyta maga után: {game} - {size}"
+
+#. English: {n} games left these behind - {size}
+msgid "tm_left_s_many"
+msgstr "{n} játék hagyta itt ezeket - {size}"
 
 #. English: There are saves inside - Bilge cleaning can back them up first
 msgid "tm_left_saves"
@@ -6018,6 +6370,10 @@ msgstr "Legfrissebb zsákmány"
 msgid "tm_sort_oldest"
 msgstr "Ősi kincsek"
 
+#. English: Steam is open: its own install window asks where to and which DLCs.
+msgid "tm_steam_open_note"
+msgstr "A Steam nyitva van: a saját telepítőablakában kérdezi meg, hova és milyen DLC-kkel."
+
 #. English: Steam reviews
 msgid "tm_steam_reviews"
 msgstr "Steam-értékelés"
@@ -6113,6 +6469,10 @@ msgstr "Telepítve - csatlakoztasd újra a kontrollert, vagy indítsd újra a g�
 #. English: Installed - open it from Shipwright or your app menu.
 msgid "tool_ready_text_gui"
 msgstr "Telepítve – megnyithatod a Hajóácsból vagy az alkalmazásmenüből."
+
+#. English: Installed - launchers from the AUR install through it.
+msgid "tool_ready_text_paru"
+msgstr "Telepítve - az AUR-os launcherek ezzel települnek."
 
 #. English: Installed - Wine games have their 32-bit libraries.
 msgid "tool_ready_text_winedeps"

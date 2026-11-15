@@ -567,6 +567,9 @@ def _native_plan(name: str):
         if name == "Steam":
             # Arch's Steam is in multilib, never in the AUR.
             return _repo_hint(name, family)
+        tool = TOOLS_BY_NAME.get(name)
+        if tool is not None and tool.aur:
+            pkg = tool.aur      # paru-bin: the repositories don't have paru here
         if _aur_has(pkg) is False:
             return _repo_hint(name, family)
         helper = next((h for h in ("paru", "yay") if shutil.which(h)), "")

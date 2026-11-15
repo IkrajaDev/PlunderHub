@@ -1001,7 +1001,111 @@ def _steam_owner() -> str:
     return best
 
 
-def steam_queue_install(appid: str, library: str, disabled_dlcs: Optional[List[str]] = None) -> Tuple[bool, str]:
+# --- the tools a game runs with (found 11-15) ---------------------------------------
+# A manifest for a game whose Steam Linux Runtime isn't there made Steam assert
+# and quit at every start ("missing required app 1391110 - trying to install
+# now but may be too late"; a native Amnesia). Steam's install window queues
+# those first - so does steam_queue_install, from Steam's own list of its
+# tools (app 891390: compat_tools, app_mappings).
+
+_STEAM_PLAY_MANIFESTS = 891390
+_SCOUT, _SOLDIER = 1070560, 1391110
+
+
+def _steam_play_info() -> Dict:
+    info = _STEAM_INFO.get(_STEAM_PLAY_MANIFESTS)
+    if info is None:
+        root = _steam_signed_in_root(steam_roots())
+        try:
+            info = _app_infos(root, {_STEAM_PLAY_MANIFESTS}).get(_STEAM_PLAY_MANIFESTS) if root else None
+        except Exception:  # noqa: BLE001 - an unreadable appinfo: nothing known
+            info = None
+        if info:
+            _STEAM_INFO[_STEAM_PLAY_MANIFESTS] = info
+    return (info or {}).get("extended") or {}
+
+
+def _tool_entry(name: str, tools: Dict) -> Optional[Dict]:
+    """compat_tools' entry for a tool name or one of its aliases."""
+    low = name.lower()
+    for key, entry in tools.items():
+        if not isinstance(entry, dict):
+            continue
+        aliases = [a.strip().lower() for a in str(entry.get("aliases") or "").split(",")]
+        if key.lower() == low or low in aliases:
+            return entry
+    return None
+
+
+def _custom_tool_requires(name: str) -> Optional[int]:
+    """A tool in compatibilitytools.d (Proton-GE...): its toolmanifest's
+    require_tool_appid - matched by folder name or its own name."""
+    from plunderhub.core.steam_heroic import parse_vdf_text
+    for root in steam_roots():
+        base = root / "compatibilitytools.d"
+        if not base.is_dir():
+            continue
+        for folder in base.iterdir():
+            names = {folder.name.lower()}
+            try:
+                vdf = parse_vdf_text((folder / "compatibilitytool.vdf").read_text(encoding="utf-8", errors="replace"))
+                tools = ((vdf.get("compatibilitytools") or vdf).get("compat_tools") or {})
+                names |= {str(k).lower() for k in tools} | {str((v or {}).get("display_name", "")).lower()
+                                                            for v in tools.values() if isinstance(v, dict)}
+            except (OSError, ValueError, AttributeError):
+                pass
+            if name.lower() not in names:
+                continue
+            try:
+                m = parse_vdf_text((folder / "toolmanifest.vdf").read_text(encoding="utf-8", errors="replace"))
+                req = (m.get("manifest") or m).get("require_tool_appid")
+                return int(req) if str(req or "").isdigit() else None
+            except (OSError, ValueError, AttributeError):
+                return None
+    return None
+
+
+def _game_tool(appid: str) -> str:
+    """The compat tool Steam will run the game with: its own mapping, Steam's
+    rule for it, native's runtime for a game with a Linux build, else the
+    default for all."""
+    from plunderhub.core.launch_options import SteamBackend, _vdf_get_ci
+    try:
+        mapping = SteamBackend()._compat_mapping()
+    except Exception:  # noqa: BLE001
+        mapping = {}
+    own = _vdf_get_ci(mapping, appid)
+    if isinstance(own, dict) and own.get("name"):
+        return str(own["name"])
+    rule = (_steam_play_info().get("app_mappings") or {}).get(str(appid))
+    if isinstance(rule, dict) and rule.get("tool"):
+        return str(rule["tool"])
+    common = (_STEAM_INFO.get(int(appid)) or {}).get("common") or {}
+    if "linux" in str(common.get("oslist") or "").lower().split(","):
+        return "steamlinuxruntime"
+    default = _vdf_get_ci(mapping, "0")
+    return str(default.get("name")) if isinstance(default, dict) and default.get("name") else ""
+
+
+def steam_missing_tools(appid: str) -> List[int]:
+    """The Steam tools (runtimes, Valve's Protons) the game needs that
+    aren't installed, the ones they need first."""
+    tools = _steam_play_info().get("compat_tools") or {}
+    by_appid = {int(e["appid"]): e for e in tools.values() if isinstance(e, dict) and str(e.get("appid", "")).isdigit()}
+    chain: List[int] = []
+    name = _game_tool(appid)
+    entry = _tool_entry(name, tools) if name else None
+    nxt = int(entry["appid"]) if entry else _custom_tool_requires(name) if name else None
+    while nxt and nxt not in chain and len(chain) < 5:
+        chain.append(nxt)
+        e = by_appid.get(nxt) or {}
+        req = e.get("require_tool_appid")
+        nxt = int(req) if str(req or "").isdigit() else (_SOLDIER if nxt == _SCOUT else None)
+    return [a for a in reversed(chain) if steam_manifest(str(a)) is None]
+
+
+def steam_queue_install(appid: str, library: str, disabled_dlcs: Optional[List[str]] = None,
+                        optional_dlcs: Optional[List[str]] = None, with_tools: bool = True) -> Tuple[bool, str]:
     """Writes the manifest that has Steam install appid into library at
     its next start. Steam must be closed (it writes its own manifests over
     ours while it runs). disabled_dlcs: the DLCs unticked on the card -
@@ -1026,11 +1130,26 @@ def steam_queue_install(appid: str, library: str, disabled_dlcs: Optional[List[s
               ("AutoUpdateBehavior", "0"), ("AllowOtherDownloadsWhileRunning", "0"), ("ScheduledAutoUpdate", "0")]
     text = '"AppState"\n{\n' + "".join(f'\t"{k}"\t\t"{v}"\n' for k, v in fields)
     off = ",".join(q(d) for d in disabled_dlcs or [] if str(d).isdigit())
-    if off:
-        for block in ("UserConfig", "MountedConfig"):
-            text += f'\t"{block}"\n\t{{\n\t\t"DisabledDLC"\t\t"{off}"\n\t}}\n'
+    # optional DLCs (CS2's Workshop Tools) come only when opted in: UserConfig OptionalDLC
+    opt = ",".join(q(d) for d in optional_dlcs or [] if str(d).isdigit())
+    if off or opt:
+        lines = (f'\t\t"DisabledDLC"\t\t"{off}"\n' if off else "") + (f'\t\t"OptionalDLC"\t\t"{opt}"\n' if opt else "")
+        text += f'\t"UserConfig"\n\t{{\n{lines}\t}}\n'
+        if off:
+            text += f'\t"MountedConfig"\n\t{{\n\t\t"DisabledDLC"\t\t"{off}"\n\t}}\n'
     text += "}\n"
     path = steamapps / f"appmanifest_{appid}.acf"
+    try:
+        missing = steam_missing_tools(appid) if with_tools else []
+        unknown = {t for t in missing if t not in _STEAM_INFO}
+        root = _steam_signed_in_root(steam_roots()) if unknown else None
+        if root is not None:
+            _STEAM_INFO.update(_app_infos(root, unknown))
+        for tool in missing:
+            ok, why = steam_queue_install(str(tool), library, with_tools=False)
+            logger.info(f"Treasure Map: {name} needs Steam's tool {tool} - queued first ({'ok' if ok else why})")
+    except Exception as e:  # noqa: BLE001 - the game is queued anyway, as before
+        logger.warning(f"Treasure Map: the tools {name} needs weren't worked out: {e}")
     try:
         tmp = path.with_suffix(".acf.plunderhub-tmp")
         tmp.write_text(text, encoding="utf-8")
@@ -1109,6 +1228,38 @@ def heroic_download(app_name: str) -> Optional[Dict]:
     return None
 
 
+def heroic_queue() -> List[str]:
+    """The games in Heroic's own download queue now (app names)."""
+    root = heroic_root()
+    if root is None:
+        return []
+    try:
+        data = json.loads((root / "store" / "download-manager.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    return [str((item.get("params") or {}).get("appName")) for item in data.get("queue") or []
+            if (item.get("params") or {}).get("appName")]
+
+
+def steam_installing() -> Dict[str, float]:
+    """appid -> its manifest's time, for every game whose manifest says it
+    isn't fully installed yet (an install going on, or put off) - what the
+    Loading Dock takes up again when PlunderHub starts."""
+    found: Dict[str, float] = {}
+    for lib in steam_libraries():
+        for acf in (Path(lib) / "steamapps").glob("appmanifest_*.acf"):
+            try:
+                text = acf.read_text(encoding="utf-8", errors="replace")
+                mtime = acf.stat().st_mtime
+            except OSError:
+                continue
+            m = re.search(r'"appid"\s+"(\d+)"', text)
+            flags = re.search(r'"StateFlags"\s+"(\d+)"', text)
+            if m and flags and not int(flags.group(1)) & 4:
+                found[m.group(1)] = mtime
+    return found
+
+
 def folder_bytes(path: Optional[Path], limit_s: float = 1.5) -> int:
     """How much is in a folder so far (a download growing) - stops after
     limit_s on a huge one and returns what it counted."""
@@ -1183,6 +1334,72 @@ def steam_phase(appid: str, since: float) -> Optional[Dict]:
         if out is not None:
             out["commit_from"] = lib
             return out
+    return None
+
+
+def steam_activity(appid: str, since: float) -> Optional[Tuple[str, str]]:
+    """What Steam is busy with while the game's bar still stands at 0, from
+    logs/content_log.txt: ("other", its name) - updating something else
+    first (seen 11-15: Borderlands 2 "update canceled : Priority
+    (Suspended)" behind a Workshop update), or ("preparing" | "allocating"
+    | "verifying" | "scripts" | "starting", "") - None when nothing says."""
+    from datetime import datetime
+    for root in steam_roots():
+        try:
+            with open(root / "logs" / "content_log.txt", "rb") as fh:
+                fh.seek(0, 2)
+                fh.seek(max(0, fh.tell() - 128 * 1024))
+                lines = fh.read().decode("utf-8", "replace").splitlines()
+        except OSError:
+            continue
+        ours = None
+        suspended = False
+        running: Dict[str, str] = {}            # appid -> "App" | "Workshop", while it runs
+        for line in lines:
+            m = re.match(r"\[(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\] AppID (\d+) (.*)", line)
+            if not m:
+                continue
+            try:
+                when = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S").timestamp()
+            except ValueError:
+                continue
+            if when < since - 5:
+                continue
+            app, rest = m.group(2), m.group(3)
+            upd = re.match(r"(App|Workshop|Shader) update changed : (.*)", rest)
+            if upd:
+                flags = upd.group(2).strip()
+                if app == appid:
+                    ours = flags
+                    if "Running Update" in flags and "Stopping" not in flags:
+                        suspended = False
+                elif "Running Update" in flags:
+                    running[app] = upd.group(1)
+                else:
+                    running.pop(app, None)
+                continue
+            if app == appid and ("(Suspended)" in rest or rest.startswith("update canceled")):
+                suspended = True
+            elif app != appid and "scheduler update : Priority First" in rest:
+                running.setdefault(app, "App")          # put before ours
+            elif app != appid and rest.startswith("scheduler finished"):
+                running.pop(app, None)
+        others = [a for a in running if a != appid]
+        if (suspended or not ours or ours == "None") and others:
+            other = others[-1]
+            kind = running[other]
+            name = str(((_STEAM_INFO.get(int(other)) or {}).get("common") or {}).get("name") or "")
+            return "other", (name + (" Workshop" if kind == "Workshop" else "")) if name else ""
+        if suspended and (not ours or ours == "None" or "Stopping" in ours):
+            return "suspended", ""          # Steam stopped it (Downloads paused, Steam closing)
+        if ours:
+            for flag, key in (("Running Script", "scripts"), ("Verifying", "verifying"),
+                              ("Preallocating", "allocating"), ("Reconfiguring", "preparing")):
+                if flag in ours:
+                    return key, ""
+            if "Downloading" in ours or "Running Update" in ours:
+                return "starting", ""
+        return None
     return None
 
 

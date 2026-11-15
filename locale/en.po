@@ -918,6 +918,114 @@ msgstr "Darkens the main window while another window is open."
 msgid "dismiss_tooltip"
 msgstr "Dismiss"
 
+msgid "dlc_confirm_btn"
+msgstr "Uninstall"
+
+msgid "dlc_confirm_s"
+msgstr "{names} ({size}) leave {game}. You can install them again here any time."
+
+msgid "dlc_confirm_t"
+msgstr "Uninstall {n} DLC(s)?"
+
+msgid "dlc_failed_t"
+msgstr "{game}'s DLCs weren't changed"
+
+msgid "dlc_game_running_s"
+msgstr "Close it first - its files are in use."
+
+msgid "dlc_game_running_t"
+msgstr "{game} is running"
+
+msgid "dlc_heroic_close_s"
+msgstr "It's open - while the DLCs change it would write the old state back."
+
+msgid "dlc_install"
+msgstr "Install"
+
+msgid "dlc_install_n"
+msgstr "Install {n} · {size}"
+
+msgid "dlc_install_n_nosize"
+msgstr "Install {n}"
+
+msgid "dlc_installed"
+msgstr "Installed"
+
+msgid "dlc_installing"
+msgstr "Installing {dlc}…"
+
+msgid "dlc_list_head"
+msgstr "Downloadable content"
+
+msgid "dlc_missing"
+msgstr "Not installed"
+
+msgid "dlc_no_files"
+msgstr "No files of its own"
+
+msgid "dlc_note_epic"
+msgstr "Heroic's Epic tool applies it, one DLC at a time."
+
+msgid "dlc_note_heroic"
+msgstr "Heroic's GOG tool applies it - Heroic stays closed meanwhile."
+
+msgid "dlc_note_steam"
+msgstr "Steam closes for a moment and applies it in the tray."
+
+msgid "dlc_pick_hint"
+msgstr "Tick the DLCs to install or uninstall."
+
+msgid "dlc_removing"
+msgstr "Removing {dlc}…"
+
+msgid "dlc_select_all"
+msgstr "Select all"
+
+msgid "dlc_select_none"
+msgstr "Select none"
+
+msgid "dlc_steam_applying"
+msgstr "Steam is applying it in the tray…"
+
+msgid "dlc_steam_closing"
+msgstr "Closing Steam for a moment…"
+
+msgid "dlc_steam_finishing"
+msgstr "Almost done - Steam goes back to how it was…"
+
+msgid "dlc_steam_slow"
+msgstr "Steam hasn't finished it yet - it goes on in Steam's Downloads."
+
+msgid "dlc_tab"
+msgstr "DLC"
+
+msgid "dlc_tile_all"
+msgstr "DLCs"
+
+msgid "dlc_tile_disk"
+msgstr "On disk"
+
+msgid "dlc_tile_in"
+msgstr "Installed"
+
+msgid "dlc_uninstall"
+msgstr "Uninstall"
+
+msgid "dlc_uninstall_n"
+msgstr "Uninstall {n} · {size}"
+
+msgid "dlc_uninstall_n_nosize"
+msgstr "Uninstall {n}"
+
+msgid "dlc_unlock_sub"
+msgstr "Unlocks content in the game - nothing to download"
+
+msgid "dlc_working"
+msgstr "Getting ready…"
+
+msgid "dlc_working_gog"
+msgstr "Updating the game's DLCs…"
+
 msgid "download_btn"
 msgstr "Download covers & icons"
 
@@ -1081,7 +1189,7 @@ msgid "gm_web"
 msgstr "On the web"
 
 msgid "gm_web_sub"
-msgstr "Store, ProtonDB, patch notes"
+msgstr "Store, ProtonDB, news"
 
 msgid "gp_change"
 msgstr "Change"
@@ -1593,6 +1701,150 @@ msgstr "Close"
 msgid "launcher_open"
 msgstr "Open"
 
+msgid "ld_act_allocating"
+msgstr "Steam is reserving disk space"
+
+msgid "ld_act_dialog"
+msgstr "Waiting for you in Steam's install window"
+
+msgid "ld_act_other"
+msgstr "Steam updates {name} first"
+
+msgid "ld_act_other_any"
+msgstr "Steam updates something else first"
+
+msgid "ld_act_preparing"
+msgstr "Steam is preparing the install"
+
+msgid "ld_act_scripts"
+msgstr "Steam is running install scripts"
+
+msgid "ld_act_starting"
+msgstr "Steam is starting the download"
+
+msgid "ld_act_steam"
+msgstr "Waiting for Steam to start"
+
+msgid "ld_act_suspended"
+msgstr "Steam has paused this download"
+
+msgid "ld_act_verifying"
+msgstr "Steam is checking the files"
+
+msgid "ld_card_more"
+msgstr "{n} more in line"
+
+msgid "ld_clear"
+msgstr "Clear list"
+
+msgid "ld_dock_paused"
+msgstr "{game} is paused"
+
+msgid "ld_dock_paused_sub"
+msgstr "Resume it on the Loading Dock."
+
+msgid "ld_done_at"
+msgstr "done {time}"
+
+msgid "ld_down"
+msgstr "Later in the queue"
+
+msgid "ld_empty"
+msgstr "The dock lies quiet"
+
+msgid "ld_empty_sub"
+msgstr "No cargo coming aboard. Dig up a game on the Treasure Map and its crates are hauled in here."
+
+msgid "ld_left_short"
+msgstr "{m} min {s} s left"
+
+msgid "ld_open_steam"
+msgstr "Open in Steam"
+
+msgid "ld_page_sub"
+msgstr "What's being dug up, in order."
+
+msgid "ld_pause"
+msgstr "Pause"
+
+msgid "ld_pause_all"
+msgstr "Pause all"
+
+msgid "ld_rate_caption"
+msgstr "Download"
+
+msgid "ld_restart_btn"
+msgstr "Restart Steam"
+
+msgid "ld_restart_s"
+msgstr "Its port opens when it starts - once, now. Its downloads go on after."
+
+msgid "ld_restart_t"
+msgstr "Steam starts again"
+
+msgid "ld_resume"
+msgstr "Resume"
+
+msgid "ld_resume_all"
+msgstr "Resume all"
+
+msgid "ld_sec_done"
+msgstr "Aboard"
+
+msgid "ld_sec_next"
+msgstr "Up next"
+
+msgid "ld_sec_now"
+msgstr "Now loading"
+
+msgid "ld_sec_paused"
+msgstr "Paused"
+
+msgid "ld_state_aboard"
+msgstr "Aboard"
+
+msgid "ld_state_downloading"
+msgstr "Downloading"
+
+msgid "ld_state_installing"
+msgstr "Installing"
+
+msgid "ld_state_paused"
+msgstr "Paused"
+
+msgid "ld_state_waiting"
+msgstr "Waiting"
+
+msgid "ld_steam_all_paused"
+msgstr "Steam has paused all its downloads."
+
+msgid "ld_steam_next_start"
+msgstr "On - from Steam's next start."
+
+msgid "ld_steam_sub"
+msgstr "Pause and reorder Steam's downloads here. Uses a local Steam port while on."
+
+msgid "ld_steam_title"
+msgstr "Steer Steam's downloads"
+
+msgid "ld_steam_waiting"
+msgstr "Waiting for Steam to answer…"
+
+msgid "ld_stop_s"
+msgstr "What's downloaded of it so far goes too."
+
+msgid "ld_stop_t"
+msgstr "Stop {game}?"
+
+msgid "ld_tab"
+msgstr "Loading Dock"
+
+msgid "ld_to_map"
+msgstr "To the Treasure Map"
+
+msgid "ld_up"
+msgstr "Earlier in the queue"
+
 msgid "lm_games_folder"
 msgstr "Games folder"
 
@@ -1724,6 +1976,9 @@ msgstr "Game resolution:"
 
 msgid "lo_gs_grab"
 msgstr "Enable Force Grab Cursor"
+
+msgid "lo_gs_hdr"
+msgstr "HDR output from gamescope"
 
 msgid "lo_gs_integer"
 msgstr "Integer"
@@ -2026,13 +2281,13 @@ msgid "other_launch_failed_text"
 msgstr "{launcher} couldn't start the game."
 
 msgid "patch_notes_loading"
-msgstr "Looking for patch notes…"
+msgstr "Looking for news…"
 
 msgid "patch_notes_menu"
-msgstr "Patch Notes"
+msgstr "News"
 
 msgid "patch_notes_not_found"
-msgstr "No Steam version of this game could be found, so patch notes can't be shown."
+msgstr "No Steam version of this game could be found, so its news can't be shown."
 
 msgid "pause_animations_check"
 msgstr "Pause animations when idle"
@@ -3423,6 +3678,9 @@ msgstr "An overlay with FPS, frame times, CPU and GPU load and temperatures."
 msgid "sw_desc_obs"
 msgstr "Record and stream your games."
 
+msgid "sw_desc_paru"
+msgstr "Installs launchers from the AUR (Bottles) and keeps them updated. yay does the same - with it there, nothing more is needed."
+
 msgid "sw_desc_protonplus"
 msgstr "Downloads more Proton and Wine versions - GE-Proton and others - for every launcher."
 
@@ -3503,6 +3761,9 @@ msgstr "Performance"
 
 msgid "sw_group_proton"
 msgstr "Proton & Wine"
+
+msgid "sw_group_system"
+msgstr "System"
 
 msgid "sw_headline"
 msgstr "Fit out your ship"
@@ -4374,9 +4635,6 @@ msgstr "Install {launcher}"
 msgid "tm_install_to"
 msgstr "Install to"
 
-msgid "tm_installing_tooltip"
-msgstr "Being installed - the Treasure Map shows more"
-
 msgid "tm_keep_it"
 msgstr "Keep it"
 
@@ -4413,11 +4671,17 @@ msgstr "Shader cache"
 msgid "tm_left_kind_steam_prefix"
 msgstr "Proton prefix"
 
+msgid "tm_left_many"
+msgstr "{n} games"
+
 msgid "tm_left_no"
 msgstr "Leave them be"
 
 msgid "tm_left_s"
 msgstr "{game} left these behind - {size}"
+
+msgid "tm_left_s_many"
+msgstr "{n} games left these behind - {size}"
 
 msgid "tm_left_saves"
 msgstr "There are saves inside - Bilge cleaning can back them up first"
@@ -4518,6 +4782,9 @@ msgstr "Freshest loot"
 msgid "tm_sort_oldest"
 msgstr "Ancient relics"
 
+msgid "tm_steam_open_note"
+msgstr "Steam is open: its own install window asks where to and which DLCs."
+
 msgid "tm_steam_reviews"
 msgstr "Steam reviews"
 
@@ -4589,6 +4856,9 @@ msgstr "Installed - reconnect the controller, or restart if it isn't picked up."
 
 msgid "tool_ready_text_gui"
 msgstr "Installed - open it from Shipwright or your app menu."
+
+msgid "tool_ready_text_paru"
+msgstr "Installed - launchers from the AUR install through it."
 
 msgid "tool_ready_text_winedeps"
 msgstr "Installed - Wine games have their 32-bit libraries."

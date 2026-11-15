@@ -727,6 +727,18 @@ class GamePage(Gtk.Dialog):
                 tab_specs.append(("perf", self._("pf_tab")))
             except Exception as e:
                 logger.error(f"Couldn't build the performance tab of {game.title!r}: {e}")
+        # DLCs (Steam, Heroic's Epic and GOG): the tab shows once its list
+        # came back with something in it - see set_dlc_tab_visible
+        self.dlc = None
+        from plunderhub.core import dlc as dlc_core
+        if dlc_core.target(game) is not None:
+            try:
+                from plunderhub.ui.dlc_tab import DlcTab
+                self.dlc = DlcTab(app, game, self)
+                self.pages.add_named(self.dlc, "dlc")
+                tab_specs.append(("dlc", self._("dlc_tab")))
+            except Exception as e:
+                logger.error(f"Couldn't build the DLC tab of {game.title!r}: {e}")
         first = None
         self.tab_buttons: Dict[str, Gtk.RadioButton] = {}
         for name, text in tab_specs:
@@ -736,6 +748,8 @@ class GamePage(Gtk.Dialog):
             rb.connect("toggled", lambda b, n=name: b.get_active() and self._show_tab(n))
             tabs.pack_start(rb, False, False, 0)
             self.tab_buttons[name] = rb
+            if name == "dlc":
+                rb.set_no_show_all(True)
         head.add_overlay(tabs)
         page.pack_start(head, False, False, 0)
         page.pack_start(self.pages, True, True, 0)
@@ -989,6 +1003,14 @@ class GamePage(Gtk.Dialog):
     def show_launch_options(self):
         if "launch" in self.tab_buttons:
             self.tab_buttons["launch"].set_active(True)
+
+    def set_dlc_tab_visible(self, on: bool):
+        rb = self.tab_buttons.get("dlc") if hasattr(self, "tab_buttons") else None
+        if rb is None:
+            return
+        rb.set_visible(on)
+        if not on and rb.get_active():
+            self.tab_buttons["overview"].set_active(True)
 
     def _show_tab(self, name: str):
         self.pages.set_visible_child_name(name)
@@ -1991,6 +2013,15 @@ class LaunchOptionsTab(Gtk.Box):
         extra = self._entry("gs_additional", 30)
         grab = ToggleSwitch()
         self.ui["gs_grab"] = grab
+        # gamescope's HDR output - the game's own HDR (General) goes on with it:
+        # one without the other shows no HDR picture
+        hdr = ToggleSwitch()
+        self.ui["gs_hdr"] = hdr
+
+        def hdr_toggled(sw):
+            if sw.get_active() and "hdr" in self.ui and self.ui["hdr"].get_sensitive():
+                self.ui["hdr"].set_active(True)
+        hdr.connect("toggled", hdr_toggled)
         options = self._section("view-filter-symbolic", _("gp_lo_gs_options"), [
             self._row(_("lo_gs_preset").rstrip(":"), _("gp_lo_gs_preset_sub"), preset),
             self._row(_("lo_gs_game_res").rstrip(":"), None, pair("gs_game")),
@@ -2002,6 +2033,7 @@ class LaunchOptionsTab(Gtk.Box):
             self._row(_("lo_gs_fps").rstrip(":"), None, self._entry("gs_fps")),
             self._row(_("lo_gs_fps_unfocused").rstrip(":"), None, self._entry("gs_fps_unfocused")),
             self._row(_("lo_gs_grab"), None, grab),
+            self._row(_("lo_gs_hdr"), None, hdr),
             self._row(_("lo_gs_additional").rstrip(":"), None, extra)])
         self.ui["gs_grid"] = options
         col.pack_start(options, False, False, 0)

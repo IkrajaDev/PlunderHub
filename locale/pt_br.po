@@ -1218,6 +1218,150 @@ msgstr "Escurece a janela principal enquanto outra janela está aberta."
 msgid "dismiss_tooltip"
 msgstr "Dispensar"
 
+#. English: Uninstall
+msgid "dlc_confirm_btn"
+msgstr "Desinstalar"
+
+#. English: {names} ({size}) leave {game}. You can install them again here any time.
+msgid "dlc_confirm_s"
+msgstr "{names} ({size}) saem de {game}. Você pode instalá-las de novo aqui quando quiser."
+
+#. English: Uninstall {n} DLC(s)?
+msgid "dlc_confirm_t"
+msgstr "Desinstalar {n} DLC(s)?"
+
+#. English: {game}'s DLCs weren't changed
+msgid "dlc_failed_t"
+msgstr "As DLCs de {game} não foram alteradas"
+
+#. English: Close it first - its files are in use.
+msgid "dlc_game_running_s"
+msgstr "Feche-o primeiro - os arquivos dele estão em uso."
+
+#. English: {game} is running
+msgid "dlc_game_running_t"
+msgstr "{game} está em execução"
+
+#. English: It's open - while the DLCs change it would write the old state back.
+msgid "dlc_heroic_close_s"
+msgstr "Está aberto - enquanto as DLCs mudam, ele gravaria o estado antigo de volta."
+
+#. English: Install
+msgid "dlc_install"
+msgstr "Instalar"
+
+#. English: Install {n} · {size}
+msgid "dlc_install_n"
+msgstr "Instalar {n} · {size}"
+
+#. English: Install {n}
+msgid "dlc_install_n_nosize"
+msgstr "Instalar {n}"
+
+#. English: Installed
+msgid "dlc_installed"
+msgstr "Instalado"
+
+#. English: Installing {dlc}…
+msgid "dlc_installing"
+msgstr "Instalando {dlc}…"
+
+#. English: Downloadable content
+msgid "dlc_list_head"
+msgstr "Conteúdo para download"
+
+#. English: Not installed
+msgid "dlc_missing"
+msgstr "Não instalado"
+
+#. English: No files of its own
+msgid "dlc_no_files"
+msgstr "Sem arquivos próprios"
+
+#. English: Heroic's Epic tool applies it, one DLC at a time.
+msgid "dlc_note_epic"
+msgstr "A ferramenta Epic do Heroic aplica, uma DLC por vez."
+
+#. English: Heroic's GOG tool applies it - Heroic stays closed meanwhile.
+msgid "dlc_note_heroic"
+msgstr "A ferramenta GOG do Heroic aplica - o Heroic fica fechado enquanto isso."
+
+#. English: Steam closes for a moment and applies it in the tray.
+msgid "dlc_note_steam"
+msgstr "O Steam fecha por um momento e aplica na bandeja."
+
+#. English: Tick the DLCs to install or uninstall.
+msgid "dlc_pick_hint"
+msgstr "Marque as DLCs para instalar ou desinstalar."
+
+#. English: Removing {dlc}…
+msgid "dlc_removing"
+msgstr "Removendo {dlc}…"
+
+#. English: Select all
+msgid "dlc_select_all"
+msgstr "Selecionar tudo"
+
+#. English: Select none
+msgid "dlc_select_none"
+msgstr "Limpar seleção"
+
+#. English: Steam is applying it in the tray…
+msgid "dlc_steam_applying"
+msgstr "O Steam está aplicando na bandeja…"
+
+#. English: Closing Steam for a moment…
+msgid "dlc_steam_closing"
+msgstr "Fechando o Steam por um momento…"
+
+#. English: Almost done - Steam goes back to how it was…
+msgid "dlc_steam_finishing"
+msgstr "Quase pronto - o Steam volta a ficar como estava…"
+
+#. English: Steam hasn't finished it yet - it goes on in Steam's Downloads.
+msgid "dlc_steam_slow"
+msgstr "O Steam ainda não terminou - continua nos Downloads do Steam."
+
+#. English: DLC
+msgid "dlc_tab"
+msgstr "DLC"
+
+#. English: DLCs
+msgid "dlc_tile_all"
+msgstr "DLCs"
+
+#. English: On disk
+msgid "dlc_tile_disk"
+msgstr "No disco"
+
+#. English: Installed
+msgid "dlc_tile_in"
+msgstr "Instalados"
+
+#. English: Uninstall
+msgid "dlc_uninstall"
+msgstr "Desinstalar"
+
+#. English: Uninstall {n} · {size}
+msgid "dlc_uninstall_n"
+msgstr "Desinstalar {n} · {size}"
+
+#. English: Uninstall {n}
+msgid "dlc_uninstall_n_nosize"
+msgstr "Desinstalar {n}"
+
+#. English: Unlocks content in the game - nothing to download
+msgid "dlc_unlock_sub"
+msgstr "Desbloqueia conteúdo no jogo - nada para baixar"
+
+#. English: Getting ready…
+msgid "dlc_working"
+msgstr "Preparando…"
+
+#. English: Updating the game's DLCs…
+msgid "dlc_working_gog"
+msgstr "Atualizando as DLCs do jogo…"
+
 #. English: Download covers & icons
 msgid "download_btn"
 msgstr "Baixar capas e ícones"
@@ -1434,9 +1578,9 @@ msgstr "Desfavoritar"
 msgid "gm_web"
 msgstr "Na web"
 
-#. English: Store, ProtonDB, patch notes
+#. English: Store, ProtonDB, news
 msgid "gm_web_sub"
-msgstr "Loja, ProtonDB, notas de atualização"
+msgstr "Loja, ProtonDB, notícias"
 
 #. English: Change
 msgid "gp_change"
@@ -2118,6 +2262,198 @@ msgstr "Fechar"
 msgid "launcher_open"
 msgstr "Abrir"
 
+#. English: Steam is reserving disk space
+msgid "ld_act_allocating"
+msgstr "O Steam está reservando espaço em disco"
+
+#. English: Waiting for you in Steam's install window
+msgid "ld_act_dialog"
+msgstr "Esperando por você na janela de instalação do Steam"
+
+#. English: Steam updates {name} first
+msgid "ld_act_other"
+msgstr "O Steam atualiza {name} primeiro"
+
+#. English: Steam updates something else first
+msgid "ld_act_other_any"
+msgstr "O Steam atualiza outra coisa primeiro"
+
+#. English: Steam is preparing the install
+msgid "ld_act_preparing"
+msgstr "O Steam está preparando a instalação"
+
+#. English: Steam is running install scripts
+msgid "ld_act_scripts"
+msgstr "O Steam está executando scripts de instalação"
+
+#. English: Steam is starting the download
+msgid "ld_act_starting"
+msgstr "O Steam está iniciando o download"
+
+#. English: Waiting for Steam to start
+msgid "ld_act_steam"
+msgstr "Esperando o Steam iniciar"
+
+#. English: Steam has paused this download
+msgid "ld_act_suspended"
+msgstr "O Steam pausou este download"
+
+#. English: Steam is checking the files
+msgid "ld_act_verifying"
+msgstr "O Steam está verificando os arquivos"
+
+#. English: {n} more in line
+msgid "ld_card_more"
+msgstr "mais {n} na fila"
+
+#. English: Clear list
+msgid "ld_clear"
+msgstr "Limpar lista"
+
+#. English: {game} is paused
+msgid "ld_dock_paused"
+msgstr "{game} está pausado"
+
+#. English: Resume it on the Loading Dock.
+msgid "ld_dock_paused_sub"
+msgstr "Retome no Loading Dock."
+
+#. English: done {time}
+msgid "ld_done_at"
+msgstr "pronto {time}"
+
+#. English: Later in the queue
+msgid "ld_down"
+msgstr "Depois na fila"
+
+#. English: The dock lies quiet
+msgid "ld_empty"
+msgstr "O cais está calmo"
+
+#. English: No cargo coming aboard. Dig up a game on the Treasure Map and its crates are hauled in here.
+msgid "ld_empty_sub"
+msgstr "Nenhuma carga a caminho. Desenterre um jogo no Mapa do Tesouro e os baús dele chegam aqui."
+
+#. English: {m} min {s} s left
+msgid "ld_left_short"
+msgstr "faltam {m} min {s} s"
+
+#. English: Open in Steam
+msgid "ld_open_steam"
+msgstr "Abrir no Steam"
+
+#. English: What's being dug up, in order.
+msgid "ld_page_sub"
+msgstr "O que está sendo desenterrado, em ordem."
+
+#. English: Pause
+msgid "ld_pause"
+msgstr "Pausar"
+
+#. English: Pause all
+msgid "ld_pause_all"
+msgstr "Pausar tudo"
+
+#. English: Download
+msgid "ld_rate_caption"
+msgstr "Download"
+
+#. English: Restart Steam
+msgid "ld_restart_btn"
+msgstr "Reiniciar o Steam"
+
+#. English: Its port opens when it starts - once, now. Its downloads go on after.
+msgid "ld_restart_s"
+msgstr "A porta dele abre ao iniciar - uma vez, agora. Os downloads continuam depois."
+
+#. English: Steam starts again
+msgid "ld_restart_t"
+msgstr "O Steam reinicia"
+
+#. English: Resume
+msgid "ld_resume"
+msgstr "Retomar"
+
+#. English: Resume all
+msgid "ld_resume_all"
+msgstr "Retomar tudo"
+
+#. English: Aboard
+msgid "ld_sec_done"
+msgstr "A bordo"
+
+#. English: Up next
+msgid "ld_sec_next"
+msgstr "Na fila"
+
+#. English: Now loading
+msgid "ld_sec_now"
+msgstr "Carregando agora"
+
+#. English: Paused
+msgid "ld_sec_paused"
+msgstr "Pausado"
+
+#. English: Aboard
+msgid "ld_state_aboard"
+msgstr "A bordo"
+
+#. English: Downloading
+msgid "ld_state_downloading"
+msgstr "Baixando"
+
+#. English: Installing
+msgid "ld_state_installing"
+msgstr "Instalando"
+
+#. English: Paused
+msgid "ld_state_paused"
+msgstr "Pausado"
+
+#. English: Waiting
+msgid "ld_state_waiting"
+msgstr "Aguardando"
+
+#. English: Steam has paused all its downloads.
+msgid "ld_steam_all_paused"
+msgstr "O Steam pausou todos os downloads."
+
+#. English: On - from Steam's next start.
+msgid "ld_steam_next_start"
+msgstr "Ligado - a partir do próximo início do Steam."
+
+#. English: Pause and reorder Steam's downloads here. Uses a local Steam port while on.
+msgid "ld_steam_sub"
+msgstr "Pause e ordene aqui os downloads do Steam. Usa uma porta local do Steam enquanto ligado."
+
+#. English: Steer Steam's downloads
+msgid "ld_steam_title"
+msgstr "Controlar os downloads do Steam"
+
+#. English: Waiting for Steam to answer…
+msgid "ld_steam_waiting"
+msgstr "Esperando o Steam responder…"
+
+#. English: What's downloaded of it so far goes too.
+msgid "ld_stop_s"
+msgstr "O que já foi baixado dele também vai embora."
+
+#. English: Stop {game}?
+msgid "ld_stop_t"
+msgstr "Parar {game}?"
+
+#. English: Loading Dock
+msgid "ld_tab"
+msgstr "Loading Dock"
+
+#. English: To the Treasure Map
+msgid "ld_to_map"
+msgstr "Para o Mapa do Tesouro"
+
+#. English: Earlier in the queue
+msgid "ld_up"
+msgstr "Antes na fila"
+
 #. English: Games folder
 msgid "lm_games_folder"
 msgstr "Pasta de jogos"
@@ -2293,6 +2629,10 @@ msgstr "Resolução do jogo:"
 #. English: Enable Force Grab Cursor
 msgid "lo_gs_grab"
 msgstr "Forçar captura do cursor (Force Grab Cursor)"
+
+#. English: HDR output from gamescope
+msgid "lo_gs_hdr"
+msgstr "Saída HDR pelo gamescope"
 
 #. English: Integer
 msgid "lo_gs_integer"
@@ -2694,17 +3034,17 @@ msgstr "Controles do Navio"
 msgid "other_launch_failed_text"
 msgstr "O {launcher} não conseguiu iniciar o jogo."
 
-#. English: Looking for patch notes…
+#. English: Looking for news…
 msgid "patch_notes_loading"
-msgstr "Procurando notas de atualização…"
+msgstr "Procurando notícias…"
 
-#. English: Patch Notes
+#. English: News
 msgid "patch_notes_menu"
-msgstr "Notas de atualização"
+msgstr "Notícias"
 
-#. English: No Steam version of this game could be found, so patch notes can't be shown.
+#. English: No Steam version of this game could be found, so its news can't be shown.
 msgid "patch_notes_not_found"
-msgstr "Não foi possível encontrar uma versão Steam deste jogo, então as notas de atualização não podem ser exibidas."
+msgstr "Não foi possível encontrar uma versão Steam deste jogo, então as notícias dele não podem ser exibidas."
 
 #. English: Pause animations when idle
 msgid "pause_animations_check"
@@ -4558,6 +4898,10 @@ msgstr "Uma sobreposição com FPS, tempos de quadro, uso e temperatura de CPU e
 msgid "sw_desc_obs"
 msgstr "Grave e transmita seus jogos."
 
+#. English: Installs launchers from the AUR (Bottles) and keeps them updated. yay does the same - with it there, nothing more is needed.
+msgid "sw_desc_paru"
+msgstr "Instala launchers do AUR (Bottles) e os mantém atualizados. O yay faz o mesmo - se ele já estiver aí, não precisa de mais nada."
+
 #. English: Downloads more Proton and Wine versions - GE-Proton and others - for every launcher.
 msgid "sw_desc_protonplus"
 msgstr "Baixa mais versões do Proton e do Wine - GE-Proton e outras - para todos os launchers."
@@ -4665,6 +5009,10 @@ msgstr "Desempenho"
 #. English: Proton & Wine
 msgid "sw_group_proton"
 msgstr "Proton e Wine"
+
+#. English: System
+msgid "sw_group_system"
+msgstr "Sistema"
 
 #. English: Fit out your ship
 msgid "sw_headline"
@@ -5826,10 +6174,6 @@ msgstr "Instalar {launcher}"
 msgid "tm_install_to"
 msgstr "Instalar em"
 
-#. English: Being installed - the Treasure Map shows more
-msgid "tm_installing_tooltip"
-msgstr "Sendo instalado - o Mapa do tesouro mostra mais"
-
 #. English: Keep it
 msgid "tm_keep_it"
 msgstr "Manter"
@@ -5878,6 +6222,10 @@ msgstr "Cache de shaders"
 msgid "tm_left_kind_steam_prefix"
 msgstr "Prefixo do Proton"
 
+#. English: {n} games
+msgid "tm_left_many"
+msgstr "{n} jogos"
+
 #. English: Leave them be
 msgid "tm_left_no"
 msgstr "Deixa estar"
@@ -5885,6 +6233,10 @@ msgstr "Deixa estar"
 #. English: {game} left these behind - {size}
 msgid "tm_left_s"
 msgstr "{game} deixou isto para trás - {size}"
+
+#. English: {n} games left these behind - {size}
+msgid "tm_left_s_many"
+msgstr "{n} jogos deixaram isto para trás - {size}"
 
 #. English: There are saves inside - Bilge cleaning can back them up first
 msgid "tm_left_saves"
@@ -6018,6 +6370,10 @@ msgstr "Saque mais fresco"
 msgid "tm_sort_oldest"
 msgstr "Relíquias antigas"
 
+#. English: Steam is open: its own install window asks where to and which DLCs.
+msgid "tm_steam_open_note"
+msgstr "O Steam está aberto: a própria janela de instalação dele pergunta onde e quais DLCs."
+
 #. English: Steam reviews
 msgid "tm_steam_reviews"
 msgstr "Avaliações da Steam"
@@ -6113,6 +6469,10 @@ msgstr "Instalado - reconecte o controle, ou reinicie se ele não for reconhecid
 #. English: Installed - open it from Shipwright or your app menu.
 msgid "tool_ready_text_gui"
 msgstr "Instalado - abra-o pelo Estaleiro ou pelo menu de aplicativos."
+
+#. English: Installed - launchers from the AUR install through it.
+msgid "tool_ready_text_paru"
+msgstr "Instalado - os launchers do AUR são instalados por ele."
 
 #. English: Installed - Wine games have their 32-bit libraries.
 msgid "tool_ready_text_winedeps"

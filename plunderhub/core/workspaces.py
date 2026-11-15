@@ -1122,6 +1122,12 @@ class WorkspaceMover:
                     ok = self.compositor.close_window(wid)
                     logger.info(f"Steam opened its window during {uid}'s launch - back to the tray on "
                                 f"{self.compositor.name}: {'done' if ok else 'failed'}")
+                    # once: a Steam window that comes up again was asked for (the
+                    # player opening Steam from its tray - 11-15 CS2: closed at
+                    # once, again and again, for minutes) - it stays
+                    with self._lock:
+                        self._steam_quiet.pop(uid, None)
+                    break
 
     def forget(self, uid: str):
         with self._lock:

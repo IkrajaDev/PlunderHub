@@ -80,8 +80,6 @@ _TASK_STAGES = {
     "Completed": "starting",
 }
 # Steam waits on these for the player, in a window of its own.
-_ASKS_THE_PLAYER = {"ShowLaunchOption", "ShowEula", "ShowCloudSyncConflict", "ShowCDKey",
-                    "ShowGameArgs", "ShowDuplicateLaunch"}
 _BOOTSTRAP_UPDATING = ("Downloading update", "Extracting package", "Installing update",
                        "Verifying installation")
 
@@ -193,6 +191,7 @@ def steam_launch_stage(appid: str, since: float) -> Optional[SteamLaunchStage]:
             if text.startswith(_BOOTSTRAP_UPDATING):
                 stage = SteamLaunchStage("steam_updating", stamp)
         task_at = since
+        before_wait = stage
         for stamp, text in _tail_lines(logs / "console_log.txt", since):
             match = _GAME_ACTION.search(text)
             if match is None or match.group(1) != appid:
@@ -206,9 +205,15 @@ def steam_launch_stage(appid: str, since: float) -> Optional[SteamLaunchStage]:
                 else:
                     stage = SteamLaunchStage(_TASK_STAGES.get(task, "preparing"), stamp)
             elif action.startswith("waiting for user response to "):
-                asked = action[len("waiting for user response to "):].split(" ", 1)[0]
-                if asked in _ASKS_THE_PLAYER:
-                    stage = SteamLaunchStage("waiting", stamp)
+                # Any step can stop for the player - ShowInterstitials (CS2's
+                # notice) and ProcessingShaderCache ("skip?") too, which mostly
+                # go on at once: "continues with user response" follows in the
+                # same second. Waiting until that line comes.
+                before_wait = stage
+                stage = SteamLaunchStage("waiting", stamp)
+            elif action.startswith("continues with user response"):
+                if stage.stage == "waiting":
+                    stage = before_wait
             elif action.startswith("failed with "):
                 stage = SteamLaunchStage("failed", stamp, action[len("failed with "):].split(" ", 1)[0])
         if stage.stage == "failed":

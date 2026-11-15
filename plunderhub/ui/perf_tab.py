@@ -174,9 +174,13 @@ class PerformanceTab(Gtk.Box):
             need.pack_end(get, False, False, 0)
             self.need_row = need
             card.pack_start(need, False, False, 0)
-        self.record.connect("notify::active", lambda *_a: self._set(self.record.get_active(), self.hud.get_active()))
-        self.hud.connect("notify::active", lambda *_a: self.record.get_active() and
-                         self._set(True, self.hud.get_active()))
+        # after the switch's own click is done: saving may ask to close Steam, and
+        # a question run from inside the switch's gesture kept the pointer
+        # grabbed - the whole app stopped answering (11-15, KDE, TEKKEN 8)
+        self.record.connect("notify::active", lambda *_a: self._busy_switch or GLib.idle_add(
+            lambda: self._set(self.record.get_active(), self.hud.get_active()) and False))
+        self.hud.connect("notify::active", lambda *_a: self._busy_switch or GLib.idle_add(
+            lambda: self.record.get_active() and self._set(True, self.hud.get_active()) and False))
         return card
 
     def _tools_changed(self):

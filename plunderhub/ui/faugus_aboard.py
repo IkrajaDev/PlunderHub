@@ -1620,10 +1620,17 @@ def start(view, site: fa.FaugusSite, req: fa.AddRequest):
     job = fa.AddJob(site, req, cache, changed)
     dl["job"] = job
     logger.info(f"Faugus add: {req.kind} '{req.title}' -> {req.prefix or req.file}")
-    job.start()
-    _keep_installer_home(view, job)
-    if req.kind in fa.LAUNCHERS:
-        dl["window"] = InstallWindow(view, uid, req)
+
+    def run():
+        # one install of ours at a time - this one may wait in the Loading Dock's queue
+        dl["state"] = "downloading"
+        job.start()
+        _keep_installer_home(view, job)
+        if req.kind in fa.LAUNCHERS:
+            dl["window"] = InstallWindow(view, uid, req)
+        view._update_dock()
+        view._loading_dock_changed()
+    view._own_submit(uid, dl, run)
     view._update_dock()
 
 
@@ -1632,6 +1639,7 @@ def _drop(view, uid):
     view.downloads.pop(uid, None)
     if uid in view.queue:
         view.queue.remove(uid)
+    GLib.idle_add(lambda: (view._own_next(), view._loading_dock_changed()) and False)
 
 
 def _finished(view, site, req, job: fa.AddJob, uid, game, dl):
@@ -1702,6 +1710,7 @@ def _write_when_closed(view, site, req, exe, uid, dl, asked: bool):
                          icon_name="circle-alert-symbolic", transient_for=view.get_toplevel())
         return False
     _drop(view, uid)
+    view.record_aboard(uid, req.title, "Faugus", 0)
     view._toast = app._("tm_toast_aboard").format(game=req.title)
     view._toast_sub = app._("tm_toast_aboard_sub")
     view._toast_until = time.monotonic() + 5

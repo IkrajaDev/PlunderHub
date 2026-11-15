@@ -30,7 +30,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 from plunderhub.core.launch_options import (
-    QUALITY_PRESETS, GamescopeOptions, LaunchOptions, LaunchOptionsBackend, SteamBackend, _process_running,
+    QUALITY_PRESETS, GamescopeOptions, LaunchOptions, LaunchOptionsBackend, _process_running,
     backend_for,
     detect_preset, drm_connected_modes, launcher_pids, parse_command_line, preset_game_resolution,
     steam_shutdown_invocations,
@@ -247,10 +247,13 @@ class LaunchOptionsMixin:
         if answer != Gtk.ResponseType.OK or not (use_recommended or use_proton):
             return
         ctx = self._lo_context()
-        # closed first (the launchers keep these files in memory), started again after
+        # closed first (the launchers keep these files in memory), started again after -
+        # as they were: a Steam that sat in the tray comes back to the tray
+        windowed = {launcher: self.launcher_windowed(launcher) for launcher in running}
         closed = [launcher for launcher in running if self.close_launcher_asking(launcher, self)]
         left_running = set(running) - set(closed)
-        commands = [list(s["cmd"]) for s in getattr(self, "_cached_launchers", []) or []
+        commands = [self.restart_command(s["name"], s["cmd"], windowed.get(s["name"], False))
+                    for s in getattr(self, "_cached_launchers", []) or []
                     if s.get("name") in closed and s.get("cmd")]
 
         def work():
@@ -359,6 +362,8 @@ class LaunchOptionsMixin:
         ui["gs_upscale"].set_active_id(gs.upscale_method)
         ui["gs_window"].set_active_id(gs.window_type)
         ui["gs_grab"].set_active(gs.force_grab_cursor)
+        if "gs_hdr" in ui:
+            ui["gs_hdr"].set_active(gs.hdr)
         ui["gs_grid"].set_sensitive(gs.enabled)
         store = ui["env_store"]
         store.clear()
@@ -393,6 +398,7 @@ class LaunchOptionsMixin:
             fps_limit=ui["gs_fps"].get_text().strip(),
             fps_limit_unfocused=ui["gs_fps_unfocused"].get_text().strip(),
             force_grab_cursor=ui["gs_grab"].get_active(),
+            hdr=ui["gs_hdr"].get_active() if "gs_hdr" in ui else previous.gamescope.hdr,
             additional_options=ui["gs_additional"].get_text().strip(),
         )
         for row in ui["env_store"]:
@@ -416,16 +422,6 @@ class LaunchOptionsMixin:
             opts.gamescope = copy.deepcopy(previous.gamescope)
             opts.gamescope.enabled = False
         return opts
-
-    # --- Proton by default (Steam) ---------------------------------------------------
-
-    def _apply_steam_proton_default(self, appids) -> None:
-        """Steam games that also have a Linux version get Steam Play's default
-        Proton, once each, while Steam is closed (see apply_default_proton)."""
-        try:
-            SteamBackend().apply_default_proton(appids)
-        except Exception as e:
-            logger.warning(f"Couldn't set the default Proton for Steam games: {e}")
 
     # --- saving -------------------------------------------------------------------
 
@@ -452,6 +448,32 @@ class LaunchOptionsMixin:
         if hints is not None:
             hints.refresh()
         return True
+
+    def launcher_windowed(self, launcher: str) -> Optional[bool]:
+        """Whether the launcher has a window open now (not only its tray
+        icon) - so it's started again the way it was. None when the desktop
+        can't tell (GNOME on Wayland lists no windows to others)."""
+        mover = self.workspace_mover() if hasattr(self, "workspace_mover") else None
+        if mover is None:
+            return None
+        try:
+            pids = set(launcher_pids(launcher))
+            windows = mover.compositor.windows()
+        except Exception:  # noqa: BLE001 - can't tell
+            return None
+        if windows is None:
+            return None
+        if launcher == "Steam":
+            from plunderhub.core.workspaces import is_steam_client
+            return any(pid and (pid in pids or is_steam_client(pid)) for _wid, pid, _ws in windows)
+        return any(pid in pids for _wid, pid, _ws in windows)
+
+    def restart_command(self, launcher: str, command: List[str], windowed: Optional[bool]) -> List[str]:
+        """Steam started again as it was: in the tray (-silent) unless it had a
+        window (not known: the tray)."""
+        if launcher == "Steam" and windowed is not True and "-silent" not in command:
+            return list(command) + ["-silent"]
+        return list(command)
 
     def close_launcher_asking(self, launcher: str, parent: Gtk.Window) -> bool:
         """Closes the launcher - asked first when one of its games runs,

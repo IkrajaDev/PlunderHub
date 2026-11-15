@@ -3357,9 +3357,6 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return      # its saves are being synced
         if uid in self._proton_waits:
             return      # its Proton is being downloaded
-        if uid and uid.startswith("steam:"):
-            # Right before Steam starts, so a closed Steam picks it up.
-            self._apply_steam_proton_default([uid.split(":", 1)[1]])
         # The first game launched: whether games open on the next workspace,
         # asked once (where moving them is possible at all).
         if uid and "workspace_choice_asked" not in self.settings and self.workspace_mover() is not None:
@@ -3741,6 +3738,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         """For keep_steam_in_tray: True while a new Steam window would
         only be in the way, False while Steam asks the player something
         (that window is left alone), None once the launch is over."""
+        if uid in self._directory_confirmed_running:
+            return None         # the game runs: Steam's windows are the player's again
         if uid in self.launching_uids:
             stage = self._process_probe.stage(uid)
             return not (stage is not None and stage.stage == "waiting")
@@ -4140,8 +4139,15 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 steam_running = self._process_probe.reading(uid)
                 if steam_running is True:
                     self._directory_confirmed_running.add(uid)
+                    self._gone_since.pop(uid, None)
                 elif steam_running is False and uid in self._directory_confirmed_running:
-                    finished.append(uid)
+                    # Steam marks the app running for its install scripts too
+                    # (each launch until they've run: Ancestors Legacy, TEKKEN 8),
+                    # then not, then running again for the game a second later -
+                    # that blink read as "quit at once": What changed? said it
+                    # didn't start. Gone only once it stays gone.
+                    if self._gone_for_good(uid):
+                        finished.append(uid)
                 elif self._unconfirmed_run_timed_out(uid, proc, launcher_holds_group=steam_running is False):
                     finished.append(uid)
                 continue
@@ -4255,7 +4261,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 GLib.timeout_add_seconds(10, self._bilge_check_waiting)
             self._update_decorative_animation_pause_state()
             for uid, error in failed_launches:
-                if not whats_changed.takes_over(self, uid, error):
+                if not whats_changed.takes_over(self, uid):
                     GLib.idle_add(self._show_launch_failed, uid, error)
             return True
 
@@ -6761,9 +6767,6 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             if gen == self._detector_gen:
                 self._running_detector.set_targets(targets)
         threading.Thread(target=set_detector_targets, name="plunderhub-detector-targets", daemon=True).start()
-        steam_appids = [g.uid.split(":", 1)[1] for g in all_games if g.uid.startswith("steam:")]
-        if steam_appids:
-            GLib.idle_add(lambda: self._apply_steam_proton_default(steam_appids) and False)
         games_missing_art = self._games_missing_art(all_games)
         if games_missing_art:
             self._auto_download_missing_covers(games_missing_art)

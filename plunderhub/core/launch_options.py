@@ -77,6 +77,7 @@ class GamescopeOptions:
     fps_limit: str = ""
     fps_limit_unfocused: str = ""
     force_grab_cursor: bool = False
+    hdr: bool = False               # --hdr-enabled: gamescope's HDR output
     additional_options: str = ""
 
 
@@ -214,6 +215,8 @@ def _parse_gamescope(words: List[str], opts: LaunchOptions) -> None:
             gs.window_type = "borderless"
         elif word == "--force-grab-cursor":
             gs.force_grab_cursor = True
+        elif word == "--hdr-enabled":
+            gs.hdr = True
         elif word == "--mangoapp":
             opts.mangohud = True
         else:
@@ -292,6 +295,8 @@ def gamescope_args(gs: GamescopeOptions, mangoapp: bool = False) -> List[str]:
         args += ["-o", gs.fps_limit_unfocused]
     if gs.force_grab_cursor:
         args.append("--force-grab-cursor")
+    if gs.hdr:
+        args.append("--hdr-enabled")
     if mangoapp:
         args.append("--mangoapp")
     args += _split(gs.additional_options)
@@ -809,10 +814,9 @@ def read_appinfo_oslists(path: Path, appids) -> Dict[str, str]:
     return {str(a): found[str(a)] for a in wanted}
 
 
-# PlunderHub's own record of the Proton-by-default choice for Steam games
-# that also have a Linux version: "native" - the person ticked "Run
-# natively"; "defaulted" - Proton was set for them once already, so a
-# later switch back in Steam itself is respected, not overridden again.
+# PlunderHub's own record for Steam games that also have a Linux version:
+# "native" - the person ticked "Run natively"; "defaulted" - from before
+# 11-15, when such games were put on Proton by default (kept: backups).
 STEAM_NATIVE_FILE = CONFIG_DIR / "steam_native_games.json"
 
 
@@ -914,10 +918,10 @@ class SteamBackend(LaunchOptionsBackend):
         opts = parse_command_line(raw if isinstance(raw, str) else "")
         opts.proton = self._mapped_tool(self._compat_mapping(), appid)
         if opts.proton is None and self.native_capable(game):
-            record = _load_native_record()
-            # Unmapped means native in Steam - but until Proton was set for
-            # it once by default, it's simply waiting for that default.
-            opts.native = appid in record["native"] or appid in record["defaulted"]
+            # Unmapped means native in Steam - and native is the default for a
+            # game that has a Linux version (since 11-15: CS2 on Proton-GE ran
+            # the Windows build); Proton only when picked for it.
+            opts.native = True
         return opts
 
     def save(self, game: GameItem, opts: LaunchOptions) -> None:
@@ -932,7 +936,360 @@ class SteamBackend(LaunchOptionsBackend):
         native_capable = self.native_capable(game)
         tool = None if opts.native and native_capable else opts.proton
         if tool is None and native_capable and not opts.native:
-            tool = self.default_tool()      # Proton by default; native only when ticked
+            tool = self.default_tool()      # "Run natively" unticked without a Proton picked
+        if tool and not self._config_vdf().is_file():
+            # before localconfig.vdf is touched: no half-saved change
+            raise FileNotFoundError(f"{self._config_vdf()} wasn't found")
+        local = self._localconfig()
+        text = local.read_text(encoding="utf-8", errors="ignore")
+        current = _vdf_get_ci(parse_vdf_text(text), *_STEAM_APPS_PATH, appid, "LaunchOptions")
+        line = keep_raw_line(opts, opts.raw, current if isinstance(current, str) else None)
+        if line:
+            new_text = vdf_set(text, [*_STEAM_APPS_PATH, appid], "LaunchOptions", line)
+        else:
+            new_text = vdf_remove(text, [*_STEAM_APPS_PATH, appid], "LaunchOptions")
+        if new_text != text:
+            _write_with_backup(local, new_text)
+        self._set_compat_tools({appid: tool})
+        if native_capable:
+            record = _load_native_record()
+            record["native"] = [a for a in record["native"] if a != appid] + ([appid] if opts.native else [])
+            record["defaulted"] = [a for a in record["defaulted"] if a != appid] + [appid]
+            _save_native_record(record)
+
+    def _set_compat_tools(self, tools: Dict[str, Optional[str]]) -> None:
+        """appid -> Proton (None removes the game's own mapping), in one edit."""
+        from plunderhub.core.file_lock import held
+        with held(self._config_vdf()):
+            self._set_compat_tools_locked(tools)
+
+    def _set_compat_tools_locked(self, tools: Dict[str, Optional[str]]) -> None:
+        config = self._config_vdf()
+        if not config.is_file():
+            if any(tools.values()):
+                raise FileNotFoundError(f"{config} wasn't found")
+            return
+        ctext = config.read_text(encoding="utf-8", errors="ignore")
+        new_ctext = ctext
+        for appid, tool in tools.items():
+            if tool:
+                for key, value in (("name", tool), ("config", ""), ("priority", "250")):
+                    new_ctext = vdf_set(new_ctext, [*_STEAM_COMPAT_PATH, appid], key, value)
+            else:
+                new_ctext = vdf_remove(new_ctext, _STEAM_COMPAT_PATH, appid)
+        if new_ctext != ctext:
+            _write_with_backup(config, new_ctext)
+
+    def proton_choices(self, game: GameItem, current: Optional[str]) -> List[ProtonChoice]:
+        return []
+
+    def native_capable(self, game: GameItem) -> bool:
+        """Whether the game also has a Linux version to run instead of
+        Proton (only Steam can switch between the two after install)."""
+        return False
+
+    def prefix(self, game: GameItem) -> Optional[PrefixInfo]:
+        """The game's Wine prefix and what runs it, for Launch options'
+        winecfg / Winetricks / Run EXE (see core/prefix_tools.py) - None
+        where the launcher has none."""
+        return None
+
+    def unsupported(self, game: GameItem) -> frozenset:
+        """Dialog widget keys this launcher can't store for this game."""
+        return frozenset({"battleye", "eac"}) if self.anticheat_mode is None else frozenset()
+
+    def blocking_process_running(self) -> bool:
+        """True when the launcher must be closed before saving."""
+        return False
+
+    def advisory_process_running(self) -> bool:
+        """True when the launcher runs but saving is still safe."""
+        return False
+
+    def running(self) -> bool:
+        """Whether the launcher itself runs - shown, with a way to close
+        it, on the game's Launch options."""
+        return bool(launcher_pids(self.launcher))
+
+
+# Steam --------------------------------------------------------------------------
+
+_STEAM_APPS_PATH = ["Software", "Valve", "Steam", "apps"]
+_STEAM_COMPAT_PATH = ["Software", "Valve", "Steam", "CompatToolMapping"]
+_STEAM_RUNTIME_DIRS = {"eac": "Proton EasyAntiCheat Runtime", "battleye": "Proton BattlEye Runtime"}
+# Where distro packages put Proton builds (e.g. proton-ge-custom, CachyOS's proton-cachyos).
+SYSTEM_COMPAT_TOOL_DIRS = [Path("/usr/share/steam/compatibilitytools.d"),
+                           Path("/usr/local/share/steam/compatibilitytools.d")]
+
+
+def _steam_builtin_proton_id(dir_name: str) -> Optional[str]:
+    """Steam's internal name for one of its own Proton folders:
+    "Proton 9.0" -> proton_9, "Proton 5.13" -> proton_513,
+    "Proton - Experimental" -> proton_experimental."""
+    low = dir_name.lower()
+    if low == "proton - experimental":
+        return "proton_experimental"
+    if low == "proton hotfix":
+        return "proton_hotfix"
+    m = re.match(r"^proton (\d+)\.(\d+)", low)
+    if not m:
+        return None
+    major, minor = m.groups()
+    return f"proton_{major}" if minor == "0" else f"proton_{major}{minor}"
+
+
+_vdf_cache: Dict[str, Tuple[int, int, dict]] = {}
+_vdf_cache_lock = threading.Lock()
+
+
+def _parsed_vdf(path: Path) -> dict:
+    """A text VDF parsed once while it stays unchanged: a scan's upkeep asks
+    for every game's options, and a big localconfig.vdf takes a while.
+    The answer is shared - read it, never change it."""
+    st = path.stat()
+    key = str(path)
+    with _vdf_cache_lock:
+        hit = _vdf_cache.get(key)
+        if hit is not None and hit[:2] == (st.st_mtime_ns, st.st_size):
+            return hit[2]
+    data = parse_vdf_text(path.read_text(encoding="utf-8", errors="ignore"))
+    with _vdf_cache_lock:
+        _vdf_cache[key] = (st.st_mtime_ns, st.st_size, data)
+    return data
+
+
+def _compat_tools_in(directory: Path) -> List[ProtonChoice]:
+    choices = []
+    try:
+        entries = sorted(directory.iterdir())
+    except OSError:
+        return []
+    for entry in entries:
+        vdf = entry / "compatibilitytool.vdf"
+        if not vdf.is_file():
+            continue
+        try:
+            data = _parsed_vdf(vdf)
+        except OSError:
+            continue
+        tools = _vdf_get_ci(data, "compat_tools")
+        if not isinstance(tools, dict):
+            continue
+        for internal, info in tools.items():
+            label = _vdf_get_ci(info, "display_name") if isinstance(info, dict) else None
+            choices.append(ProtonChoice(internal, str(label or internal)))
+    return choices
+
+
+_APPINFO_MAGICS = {0x07564427: 27, 0x07564428: 28, 0x07564429: 29}
+_APPINFO_CACHE: Dict[str, Tuple[Tuple[int, int], Dict[str, str]]] = {}
+
+
+def read_appinfo_oslists(path: Path, appids) -> Dict[str, str]:
+    """appinfo/common/oslist ("windows,linux", ...) of the given apps, from
+    Steam's binary appcache/appinfo.vdf (formats 27-29; 29 keeps keys in a
+    string table). Other apps are skipped by their size field unparsed."""
+    wanted = {int(a) for a in appids}
+    try:
+        st = path.stat()
+        stamp = (st.st_mtime_ns, st.st_size)
+    except OSError:
+        return {}
+    cached = _APPINFO_CACHE.get(str(path))
+    if cached and cached[0] == stamp and all(str(a) in cached[1] for a in wanted):
+        return {str(a): cached[1][str(a)] for a in wanted}
+    data = path.read_bytes()
+    magic, _universe = struct.unpack_from("<II", data, 0)
+    version = _APPINFO_MAGICS.get(magic)
+    if version is None:
+        raise ValueError(f"unknown appinfo.vdf format {magic:#x}")
+    pos, strings = 8, None
+    if version >= 29:
+        (table_at,) = struct.unpack_from("<q", data, 8)
+        pos = 16
+        (count,) = struct.unpack_from("<I", data, table_at)
+        p, strings = table_at + 4, []
+        for _ in range(count):
+            end = data.index(b"\0", p)
+            strings.append(data[p:end].decode("utf-8", "replace"))
+            p = end + 1
+
+    def cstr(p: int) -> Tuple[str, int]:
+        end = data.index(b"\0", p)
+        return data[p:end].decode("utf-8", "replace"), end + 1
+
+    def read_kv(p: int, limit: int) -> Tuple[Dict, int]:
+        out: Dict = {}
+        while p < limit:
+            kind = data[p]
+            p += 1
+            if kind == 0x08:
+                return out, p
+            if strings is not None:
+                (idx,) = struct.unpack_from("<I", data, p)
+                p += 4
+                key = strings[idx]
+            else:
+                key, p = cstr(p)
+            if kind == 0x00:
+                value, p = read_kv(p, limit)
+            elif kind == 0x01:
+                value, p = cstr(p)
+            elif kind in (0x02, 0x04, 0x06):
+                (value,) = struct.unpack_from("<i", data, p)
+                p += 4
+            elif kind == 0x03:
+                (value,) = struct.unpack_from("<f", data, p)
+                p += 4
+            elif kind in (0x07, 0x0A):
+                (value,) = struct.unpack_from("<Q", data, p)
+                p += 8
+            else:
+                raise ValueError(f"unknown appinfo value type {kind:#x}")
+            out[key] = value
+        return out, p
+
+    header = 60 if version >= 28 else 40     # state, times, token, sha1, change, (binary sha1)
+    found: Dict[str, str] = dict(cached[1]) if cached and cached[0] == stamp else {}
+    while pos + 8 <= len(data):
+        appid, size = struct.unpack_from("<II", data, pos)
+        if appid == 0:
+            break
+        start, end = pos + 8, pos + 8 + size
+        if appid in wanted:
+            info, _ = read_kv(start + header, end)
+            common = info.get("appinfo", {}).get("common", {}) if isinstance(info.get("appinfo"), dict) else {}
+            found[str(appid)] = str(common.get("oslist", "")) if isinstance(common, dict) else ""
+        pos = end
+    for appid in wanted:
+        found.setdefault(str(appid), "")
+    _APPINFO_CACHE[str(path)] = (stamp, found)
+    return {str(a): found[str(a)] for a in wanted}
+
+
+# PlunderHub's own record for Steam games that also have a Linux version:
+# "native" - the person ticked "Run natively"; "defaulted" - from before
+# 11-15, when such games were put on Proton by default (kept: backups).
+STEAM_NATIVE_FILE = CONFIG_DIR / "steam_native_games.json"
+
+
+def _load_native_record() -> Dict[str, List[str]]:
+    data = load_config_json(STEAM_NATIVE_FILE)
+    data = data if isinstance(data, dict) else {}
+    return {key: [str(a) for a in data.get(key, []) if str(a).isdigit()] for key in ("native", "defaulted")}
+
+
+def _save_native_record(record: Dict[str, List[str]]) -> None:
+    STEAM_NATIVE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    save_json({k: sorted(set(v), key=int) for k, v in record.items()}, STEAM_NATIVE_FILE)
+
+
+class SteamBackend(LaunchOptionsBackend):
+    launcher = "Steam"
+    anticheat_mode = "steam"     # Steam uses the runtimes on its own
+
+    def _localconfig(self) -> Path:
+        path = steam_localconfig_path()
+        if path is None:
+            raise FileNotFoundError("Steam's localconfig.vdf wasn't found")
+        return path
+
+    def _config_vdf(self) -> Path:
+        # userdata/<id>/config/localconfig.vdf -> <steam root>/config/config.vdf
+        return self._localconfig().parents[3] / "config" / "config.vdf"
+
+    @staticmethod
+    def _appid(game: GameItem) -> str:
+        return game.uid.split(":", 1)[1]
+
+    def where(self, game: GameItem) -> str:
+        try:
+            return str(self._localconfig())
+        except FileNotFoundError:
+            return "localconfig.vdf"
+
+    def _appinfo(self) -> Path:
+        return self._localconfig().parents[3] / "appcache" / "appinfo.vdf"
+
+    def prefix(self, game: GameItem) -> Optional[PrefixInfo]:
+        appid = self._appid(game)
+        info = PrefixInfo("steam", appid=appid, runner="Proton")
+        try:
+            if self.native_capable(game) and self.load(game).native:
+                info.problem = "pfx_native"
+                return info
+        except (OSError, ValueError):
+            pass
+        for lib in steam_libraries():
+            found = wine_prefix(lib / "steamapps" / "compatdata" / appid)
+            if found:
+                info.prefix = found
+                break
+        else:
+            # Steam makes it the first time the game starts with Proton
+            info.problem = "pfx_missing"
+        return info
+
+    def native_capable(self, game: GameItem) -> bool:
+        return bool(self.native_capable_appids([self._appid(game)]))
+
+    def native_capable_appids(self, appids) -> set:
+        try:
+            oslists = read_appinfo_oslists(self._appinfo(), appids)
+        except (OSError, ValueError, struct.error) as e:
+            logger.debug(f"Couldn't read Steam's appinfo.vdf: {e}")
+            return set()
+        return {a for a, oslist in oslists.items() if "linux" in oslist.lower().split(",")}
+
+    def _compat_mapping(self) -> Dict:
+        config = self._config_vdf()
+        if not config.is_file():
+            return {}
+        cdata = _parsed_vdf(config)
+        mapping = _vdf_get_ci(cdata, *_STEAM_COMPAT_PATH)
+        return mapping if isinstance(mapping, dict) else {}
+
+    def _mapped_tool(self, mapping: Dict, appid: str) -> Optional[str]:
+        entry = _vdf_get_ci(mapping, appid)
+        tool = _vdf_get_ci(entry, "name") if isinstance(entry, dict) else None
+        return tool if isinstance(tool, str) and tool else None
+
+    def default_tool(self) -> str:
+        """The Proton set as Steam Play's default (the "0" mapping), else the
+        newest built-in one installed."""
+        tool = self._mapped_tool(self._compat_mapping(), "0")
+        if tool:
+            return tool
+        builtin = [c.id for c in self.proton_choices(None, None) if c.id.startswith("proton_")]
+        numbered = sorted((c for c in builtin if c[len("proton_"):].isdigit()), key=lambda c: int(c[7:]))
+        return numbered[-1] if numbered else "proton_experimental"
+
+    def load(self, game: GameItem) -> LaunchOptions:
+        appid = self._appid(game)
+        data = _parsed_vdf(self._localconfig())
+        raw = _vdf_get_ci(data, *_STEAM_APPS_PATH, appid, "LaunchOptions")
+        opts = parse_command_line(raw if isinstance(raw, str) else "")
+        opts.proton = self._mapped_tool(self._compat_mapping(), appid)
+        if opts.proton is None and self.native_capable(game):
+            # Unmapped means native in Steam - and native is the default for a
+            # game that has a Linux version (since 11-15: CS2 on Proton-GE ran
+            # the Windows build); Proton only when picked for it.
+            opts.native = True
+        return opts
+
+    def save(self, game: GameItem, opts: LaunchOptions) -> None:
+        from plunderhub.core.file_lock import held
+        with held(self._localconfig()), held(self._config_vdf()):
+            self._save(game, opts)
+
+    def _save(self, game: GameItem, opts: LaunchOptions) -> None:
+        if self.blocking_process_running():
+            raise RuntimeError("Steam is running")
+        appid = self._appid(game)
+        native_capable = self.native_capable(game)
+        tool = None if opts.native and native_capable else opts.proton
+        if tool is None and native_capable and not opts.native:
+            tool = self.default_tool()      # "Run natively" unticked without a Proton picked
         if tool and not self._config_vdf().is_file():
             # before localconfig.vdf is touched: no half-saved change
             raise FileNotFoundError(f"{self._config_vdf()} wasn't found")
@@ -1201,6 +1558,11 @@ class HeroicBackend(LaunchOptionsBackend):
             force_grab_cursor=bool(gs.get("enableForceGrabCursor")),
             additional_options=str(gs.get("additionalOptions") or ""),
         )
+        # Heroic has no HDR field: it rides in additionalOptions, shown as its own switch
+        extra = _split(opts.gamescope.additional_options)
+        if "--hdr-enabled" in extra:
+            opts.gamescope.hdr = True
+            opts.gamescope.additional_options = shlex.join([w for w in extra if w != "--hdr-enabled"])
         if opts.gamescope.upscale_method not in UPSCALE_METHODS:
             opts.gamescope.upscale_method = ""
         if opts.gamescope.window_type not in WINDOW_TYPES:
@@ -1257,7 +1619,8 @@ class HeroicBackend(LaunchOptionsBackend):
             "upscaleMethod": gs.upscale_method,
             "fpsLimiter": gs.fps_limit,
             "fpsLimiterNoFocus": gs.fps_limit_unfocused,
-            "additionalOptions": gs.additional_options,
+            "additionalOptions": shlex.join([w for w in _split(gs.additional_options) if w != "--hdr-enabled"]
+                                            + (["--hdr-enabled"] if gs.hdr else [])),
         }
         out = dict(doc)
         out[name] = s
@@ -1524,14 +1887,13 @@ class LutrisBackend(LaunchOptionsBackend):
             gs.upscale_method = "fsr"
         # Anything else (filters, unfocused fps, ...) lives in the free-form flags.
         flags = _split(str(system.get("gamescope_flags") or ""))
-        if system.get("gamescope_hdr"):
-            flags.append("--hdr-enabled")
+        gs.hdr = bool(system.get("gamescope_hdr", False))
         probe = LaunchOptions()
         _parse_gamescope(flags, probe)
         # Flags that have a field of their own move into it (unless Lutris's
         # own field already says otherwise); the rest stay free-form.
         for attr in ("game_width", "game_height", "output_width", "output_height", "upscale_method",
-                     "window_type", "fps_limit", "fps_limit_unfocused", "force_grab_cursor"):
+                     "window_type", "fps_limit", "fps_limit_unfocused", "force_grab_cursor", "hdr"):
             if getattr(probe.gamescope, attr) and not getattr(gs, attr):
                 setattr(gs, attr, getattr(probe.gamescope, attr))
         gs.additional_options = probe.gamescope.additional_options
@@ -1586,7 +1948,7 @@ class LutrisBackend(LaunchOptionsBackend):
         else:
             system.pop("gamescope_fsr_sharpness", None)
         extra = _split(gs.additional_options)
-        system["gamescope_hdr"] = "--hdr-enabled" in extra
+        system["gamescope_hdr"] = gs.hdr or "--hdr-enabled" in extra
         extra = [w for w in extra if w != "--hdr-enabled"]
         if gs.upscale_method == "nis":
             extra = ["-F", "nis", *extra]
@@ -1815,7 +2177,7 @@ class BottlesBackend(LaunchOptionsBackend):
             return "bottle.yml"
 
     def unsupported(self, game: GameItem) -> frozenset:
-        return frozenset({"battleye", "eac", "gs_grab", "gs_additional", WRAPPER_KEY})
+        return frozenset({"battleye", "eac", "gs_grab", "gs_hdr", "gs_additional", WRAPPER_KEY})
 
     def load(self, game: GameItem) -> LaunchOptions:
         path, program_id = self._locate(game)

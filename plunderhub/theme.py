@@ -1604,6 +1604,43 @@ button.bb-card:hover {{ background-image: linear-gradient({tint(0.13)}, {tint(0.
 .pf-fact {{ background-color: {tint(0.06)}; border: 1px solid {tint(0.12)}; border-radius: 16px; padding: 14px 10px; }}
 .pf-fact-value {{ font-size: 112%; font-weight: 800; }}
 button.pf-danger {{ color: #e05252; }}
+/* The game page's DLC tab (ui/dlc_tab.py): a row per DLC - hover and picking change only background and border. */
+.dlc-tile-value {{ font-size: 170%; font-weight: 800; }}
+button.dlc-row {{ background-image: none; background-color: {tint(0.04)}; border: 1px solid {tint(0.08)};
+    border-radius: 14px; padding: 12px 16px; box-shadow: none; }}
+button.dlc-row:hover {{ background-color: {tint(0.08)}; }}
+button.dlc-row:checked {{ background-color: alpha({accent}, 0.12); border-color: alpha({accent}, 0.60); }}
+.dlc-row-static {{ background-color: transparent; border: 1px dashed {tint(0.12)}; border-radius: 14px; padding: 12px 16px; }}
+.dlc-row-title {{ font-weight: 700; }}
+.dlc-actions {{ padding: 12px 14px 12px 18px; min-height: 46px; }}
+.dlc-actions button:disabled {{ opacity: 0.45; }}
+/* The Treasure Map's Loading Dock (ui/loading_dock.py): each install's bar. */
+.ld-bar trough {{ min-height: 6px; border-radius: 999px; background-color: {tint(0.10)}; border: none; }}
+.ld-cover {{ border-radius: 6px; }}
+.ld-rate {{ font-size: 150%; font-weight: 800; }}
+.ld-empty {{ padding: 36px 24px 30px; }}
+.ld-empty-title {{ font-size: 140%; font-weight: 800; }}
+.ld-done {{ opacity: 0.85; }}
+/* the sidebar's foot while something installs - Heroic's way: words, a bar, no card */
+button.ld-side {{ background-image: none; background-color: transparent; border: none; box-shadow: none;
+    border-radius: 12px; padding: 8px 10px; }}
+button.ld-side:hover {{ background-color: {tint(0.06)}; }}
+.ld-side-title {{ font-weight: 700; }}
+.ld-side-state {{ color: {accent}; font-style: italic; font-size: 92%; }}
+.ld-side-num {{ font-size: 88%; }}
+.ld-side-detail {{ color: {fg_dim}; font-size: 82%; }}
+/* its place in the queue, and the round buttons - one size each, so every row's columns line up */
+.ld-num {{ min-width: 30px; min-height: 30px; border-radius: 999px; background-color: alpha({accent}, 0.16);
+    color: {accent}; font-weight: 800; }}
+button.ld-icon-btn {{ min-width: 38px; min-height: 38px; padding: 0; border-radius: 999px; background-image: none;
+    background-color: {tint(0.05)}; border: 1px solid {tint(0.10)}; box-shadow: none; }}
+button.ld-icon-btn:hover {{ background-color: {tint(0.12)}; border-color: {tint(0.18)}; }}
+button.ld-mini-btn {{ min-width: 24px; min-height: 18px; padding: 0; border-radius: 6px; background-image: none;
+    background-color: {tint(0.04)}; border: 1px solid {tint(0.08)}; box-shadow: none; }}
+button.ld-mini-btn:hover {{ background-color: {tint(0.12)}; }}
+.ld-bar progress {{ min-height: 6px; border-radius: 999px; background-color: {accent}; border: none; }}
+.dlc-actions progressbar trough {{ min-height: 8px; border-radius: 999px; background-color: {tint(0.10)}; border: none; }}
+.dlc-actions progressbar progress {{ min-height: 8px; border-radius: 999px; background-color: {accent}; border: none; }}
 .wc-footer {{ padding: 14px 22px 20px 22px; border-top: 1px solid {tint(0.12)}; }}
 progressbar.wc-bar trough {{ min-height: 6px; border-radius: 999px; background-color: {tint(0.12)}; }}
 progressbar.wc-bar progress {{ min-height: 6px; border-radius: 999px; background-color: {accent}; }}

@@ -827,7 +827,11 @@ class InstallingCard(Gtk.EventBox):
         self.app, self.view, self.game, self.w, self.h = app, view, game, w, h
         self._surf = None
         self._sig = None
-        area = Gtk.DrawingArea()
+        # a window-less Box, not a DrawingArea: a child with a GdkWindow of
+        # its own sits above the EventBox's input window and swallows the
+        # pointer - no click, no hover (as GameCard found, home_mixin.py)
+        area = Gtk.Box()
+        area.set_app_paintable(True)
         # the library's cards keep 10 px on top to rise into (theme.py
         # button.home-card): the same, so the covers line up
         area.set_size_request(w, h + self.LIFT)
@@ -837,15 +841,42 @@ class InstallingCard(Gtk.EventBox):
         self.set_halign(Gtk.Align.CENTER)
         self.set_valign(Gtk.Align.START)
         self.set_visible_window(False)
-        self.set_tooltip_text(app._("tm_installing_tooltip"))
-        self.connect("button-release-event", self._click)
+        # a window-less EventBox gets the pointer's events only when it asks for them
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK
+                        | Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
+        self.hover = False
+        self.lift = 0.0                 # 0 down .. 1 risen, as the library's cards rise
+        self._anim_id = 0
+        self.connect("enter-notify-event", lambda *_a: self._set_hover(True))
+        self.connect("leave-notify-event", lambda *_a: self._set_hover(False))
+        # taken on the press: the library's FlowBox would take it for selecting
+        self.connect("button-press-event", self._click)
         self.connect("realize", lambda w: w.get_window() and w.get_window().set_cursor(
             Gdk.Cursor.new_from_name(w.get_display(), "pointer")))
         InstallingCard.live.add(self)
 
     def _click(self, _w, ev):
         if ev.button == 1:
-            self.app._set_home_nav("map")
+            self.app._set_home_nav("dock")       # what's being dug up: the Loading Dock
+        return True
+
+    def _set_hover(self, on: bool):
+        if on == self.hover:
+            return False
+        self.hover = on
+        if not self._anim_id:
+            self._anim_id = self.area.add_tick_callback(self._tick)
+        return False
+
+    def _tick(self, widget, clock):
+        """The rise under the pointer (~150 ms), only this card drawn again."""
+        target = 1.0 if self.hover else 0.0
+        step = 1.0 / 9                      # about 9 frames at 60 fps
+        self.lift = min(target, self.lift + step) if target > self.lift else max(target, self.lift - step)
+        widget.queue_draw()
+        if self.lift == target:
+            self._anim_id = 0
+            return False
         return True
 
     def _draw(self, widget, cr):
@@ -856,13 +887,15 @@ class InstallingCard(Gtk.EventBox):
         if not self.view.loader.known(self.game.uid):
             self.view.loader.want(self.game)
         sig = (self.w, self.h, dl["state"], int(dl["frac"] * 100), dl.get("place"),
-               self.view.loader.get(self.game.uid) is not None, self.app.theme, self.app._text_factor())
+               self.view.loader.get(self.game.uid) is not None, self.app.theme, self.app._text_factor(),
+               self.hover)
         if sig != self._sig or self._surf is None:
             self._sig = sig
             self._surf = grid._render_tile(Item(self.game, 0, 0, self.w, self.h), self.view.colors(),
-                                           _accent_rgb(widget), False, dl)
+                                           _accent_rgb(widget), self.hover, dl)
         m = grid.M
-        cr.set_source_surface(self._surf, -m, self.LIFT - m)
+        ease = 1 - (1 - self.lift) ** 3
+        cr.set_source_surface(self._surf, -m, self.LIFT * (1 - ease) - m)
         cr.paint()
         return False
 
@@ -883,8 +916,7 @@ class InstallingRow(Gtk.Box):
         btn.set_relief(Gtk.ReliefStyle.NONE)
         btn.get_style_context().add_class("game-cover")
         btn.get_style_context().add_class("home-list-row-btn")
-        btn.set_tooltip_text(app._("tm_installing_tooltip"))
-        btn.connect("clicked", lambda *_: app._set_home_nav("map"))
+        btn.connect("clicked", lambda *_: app._set_home_nav("dock"))
         self.plunderhub_row_btn = btn
         hbox = Gtk.Box(spacing=18)
         launcher = LAUNCHER_OF[game.store]
@@ -1098,8 +1130,18 @@ class GameCard:
         body.pack_start(self.room, False, False, 0)
         launcher = LAUNCHER_OF[game.store]
         self.choice: Optional[Dict] = None
+        self.steam_opts = self.steam_note = None
         if not game.installed and game.store == "steam":
-            body.pack_start(self._steam_options(), False, False, 0)
+            # with Steam open its own install window asks (start_steam_install):
+            # the picks give way to a line saying so - followed while the card is up
+            self.steam_opts = self._steam_options()
+            self.steam_opts.set_no_show_all(True)
+            body.pack_start(self.steam_opts, False, False, 0)
+            self.steam_note = Gtk.Label(label=app._("tm_steam_open_note"), xalign=0)
+            self.steam_note.set_line_wrap(True)
+            self.steam_note.get_style_context().add_class("tm-card-hint")
+            self.steam_note.set_no_show_all(True)
+            body.pack_start(self.steam_note, False, False, 0)
         if not game.installed and game.store != "steam":
             body.pack_start(self._heroic_options(), False, False, 0)
         # the DLCs to take along - filled once the store says which there are (_got)
@@ -1152,6 +1194,10 @@ class GameCard:
             self.pdb = False
         self._fit_hero(dlg)
         dlg.show_all()
+        if self.steam_opts is not None:
+            self._steam_open = None
+            self._follow_steam()
+            GLib.timeout_add_seconds(2, self._follow_steam)
         buttons[1].grab_focus()
         r = dlg.run()
         dlg.destroy()
@@ -1159,6 +1205,31 @@ class GameCard:
         return answers.get(int(r)) if int(r) in answers else None
 
     ROOM_H = 96
+
+    def _follow_steam(self) -> bool:
+        """Steam open: the line about its own window; closed: the library
+        and the DLCs to pick. While the card is up (every 2 s)."""
+        if self.dlg is None:
+            return False
+        # its own install window asks only when Steam shows a window; in the tray: as closed
+        running = self.app._launcher_is_running("Steam") and self.app.launcher_windowed("Steam") is not False
+        if running != self._steam_open:
+            self._steam_open = running
+            self.steam_note.set_visible(running)
+            self.steam_opts.set_visible(not running)
+            if self.steam_opts.get_visible():
+                self.steam_opts.show_all()
+            self._show_dlc_slot()
+        return True
+
+    def _show_dlc_slot(self):
+        has = bool(self.dlc_slot.get_children())
+        hidden = getattr(self, "_steam_open", None) is True
+        self.dlc_slot.set_no_show_all(not has or hidden)
+        if has and not hidden:
+            self.dlc_slot.show_all()
+        else:
+            self.dlc_slot.hide()
 
     def _heroic_options(self) -> Gtk.Widget:
         """Heroic's install window's choices, filled in the way it fills
@@ -1339,8 +1410,7 @@ class GameCard:
         scroll.set_max_content_height(int(118 * f))
         scroll.add(listing)
         self.dlc_slot.pack_start(scroll, False, False, 0)
-        self.dlc_slot.set_no_show_all(False)
-        self.dlc_slot.show_all()
+        self._show_dlc_slot()
         self._dlc_room()
 
     def _dlc_room(self):
@@ -1923,9 +1993,13 @@ class LeftoversCard(UninstallCard):
     ROW_H = 46
     ICONS = {"steam_prefix": "wine-symbolic", "shader_cache": "sparkles-symbolic", "prefix": "folder-symbolic"}
 
-    def __init__(self, app, parent, title: str, launcher: str, items, **kw):
+    def __init__(self, app, parent, title: str, launcher: str, items, several: bool = False, covers=None, **kw):
         super().__init__(app, parent, title, launcher, 0, **kw)
+        self.covers = [c for c in (covers or []) if c is not None][:4]
         self.items = items
+        self.several = several          # games' leftovers together: each row says whose
+        if several:
+            self.ROW_H = 58             # two lines: the game, what it left
 
     def run(self) -> bool:
         app, f = self.app, self.f
@@ -1964,7 +2038,7 @@ class LeftoversCard(UninstallCard):
             b.set_focus_on_click(False)
             row.pack_start(b, False, False, 0)
         area.pack_start(row, False, False, 0)
-        if self.hero_pb is None and self.game is not None and self.cache:
+        if self.hero_pb is None and self.game is not None and self.cache and not self.several:
             threading.Thread(target=self._fetch_hero, daemon=True).start()
         dlg.show_all()
         go.grab_focus()
@@ -1972,6 +2046,59 @@ class LeftoversCard(UninstallCard):
         dlg.destroy()
         self.dlg = None
         return r == Gtk.ResponseType.OK
+
+    def _draw_several_head(self, cr, c, accent, W, hh, d):
+        """Several games' leftovers: no one game's art - the bilge's dark
+        water, a few waves of the accent, and the games' covers fanned out."""
+        sea = cairo.LinearGradient(0, 0, 0, hh)
+        sea.add_color_stop_rgba(0, *[v * 0.55 + a * 0.12 for v, a in zip(c["alt"], accent)], 1)
+        sea.add_color_stop_rgba(1, *c["alt"], 1)
+        cr.set_source(sea)
+        cr.rectangle(0, 0, W, hh)
+        cr.fill()
+        cr.set_line_width(1.6)
+        for k, (base, amp, alpha) in enumerate(((0.30, 5, 0.16), (0.55, 7, 0.12), (0.80, 6, 0.08))):
+            y0 = hh * base
+            cr.move_to(0, y0)
+            x = 0.0
+            while x <= W:
+                cr.line_to(x, y0 + amp * math.sin(x / 38 + k * 1.7))
+                x += 6
+            cr.set_source_rgba(*accent, alpha)
+            cr.stroke()
+        n = len(self.covers)
+        if not n:
+            return
+        cw, ch, gap = 58, 78, 14
+        angles = {1: [0], 2: [-5, 5], 3: [-8, 0, 8], 4: [-10, -4, 4, 10]}[n]
+        span = cw + (n - 1) * (cw - gap)
+        left = W / 2 - span / 2
+        top = 24
+        for i, pb in enumerate(self.covers):
+            cx = left + i * (cw - gap) + cw / 2
+            cy = top + ch / 2 + abs(angles[i]) * 0.6
+            cr.save()
+            cr.translate(cx, cy)
+            cr.rotate(math.radians(angles[i]))
+            _rounded(cr, -cw / 2 + 2, -ch / 2 + 4, cw, ch, 7)      # its shadow
+            cr.set_source_rgba(0, 0, 0, 0.45)
+            cr.fill()
+            _rounded(cr, -cw / 2, -ch / 2, cw, ch, 7)
+            cr.clip()
+            pw, ph = pb.get_width() / d, pb.get_height() / d
+            sc = max(cw / pw, ch / ph)
+            cr.translate(-cw / 2, -ch / 2)
+            cr.scale(sc, sc)
+            cr.set_source_surface(Gdk.cairo_surface_create_from_pixbuf(pb, d, None), 0, 0)
+            cr.paint()
+            cr.restore()
+        # the lower part fades into the card, under the badge
+        fade = cairo.LinearGradient(0, hh * 0.62, 0, hh)
+        fade.add_color_stop_rgba(0, *c["alt"], 0)
+        fade.add_color_stop_rgba(1, *c["alt"], 1)
+        cr.set_source(fade)
+        cr.rectangle(0, 0, W, hh)
+        cr.fill()
 
     def _draw(self, widget, cr):
         from plunderhub.icons import get_icon_pixbuf
@@ -1994,7 +2121,9 @@ class LeftoversCard(UninstallCard):
         cr.line_to(W, hh)
         cr.close_path()
         cr.clip()
-        if self.hero_pb is not None:
+        if self.several:
+            self._draw_several_head(cr, c, accent, W, hh, d)
+        elif self.hero_pb is not None:
             sc = W / (self.hero_pb.get_width() / d)
             cr.scale(sc, sc)
             cr.set_source_surface(Gdk.cairo_surface_create_from_pixbuf(self.hero_pb, d, None), 0, 0)
@@ -2002,12 +2131,13 @@ class LeftoversCard(UninstallCard):
             cr.scale(1 / sc, 1 / sc)
         else:
             _title_gradient(cr, self.title, W, hh, 0.9)
-        grad = cairo.LinearGradient(0, 0, 0, hh)
-        grad.add_color_stop_rgba(0, *c["alt"], 0.35)
-        grad.add_color_stop_rgba(1, *c["alt"], 1)
-        cr.set_source(grad)
-        cr.rectangle(0, 0, W, hh)
-        cr.fill()
+        if not self.several:
+            grad = cairo.LinearGradient(0, 0, 0, hh)
+            grad.add_color_stop_rgba(0, *c["alt"], 0.35)
+            grad.add_color_stop_rgba(1, *c["alt"], 1)
+            cr.set_source(grad)
+            cr.rectangle(0, 0, W, hh)
+            cr.fill()
         cr.restore()
         # the amber badge: the bilge's own icon
         cx, cy, r = W / 2, hh - 6, 34
@@ -2031,8 +2161,10 @@ class LeftoversCard(UninstallCard):
         _pango_text(cr, widget, self.app._("tm_left_t"), 20, y, W - 40, 20, True, (*c["fg"], 1), align_center=True)
         y += 32
         total = sum(max(i.size, 0) for i in self.items)
-        _pango_text(cr, widget, self.app._("tm_left_s").format(game=self.title, size=format_bytes(total)),
-                    20, y, W - 40, 12, False, (*c["fg"], 0.65), align_center=True)
+        sub = (self.app._("tm_left_s_many").format(n=len({getattr(i, "game_title", "") for i in self.items}),
+                                                  size=format_bytes(total)) if self.several
+               else self.app._("tm_left_s").format(game=self.title, size=format_bytes(total)))
+        _pango_text(cr, widget, sub, 20, y, W - 40, 12, False, (*c["fg"], 0.65), align_center=True)
         y += 36
         x0, w = 28, W - 56
         for item in self.items:
@@ -2045,20 +2177,28 @@ class LeftoversCard(UninstallCard):
                 cr.set_source_surface(pixbuf_surface(ipb), x0 + 16, y + self.ROW_H / 2 - 9)
                 cr.paint()
             label = self.app._(f"tm_left_kind_{item.kind}")
+            kind_line = None
+            if self.several:
+                label, kind_line = getattr(item, "game_title", ""), label
+            ty = y + (9 if kind_line else 13)
             size = format_bytes(max(item.size, 0))
             sw = _text_w(widget, cr, size, 11.5, True)
             pill = ""
             if item.saves:
                 pill = self.app._("bg_pill_player")
             pw = _text_w(widget, cr, pill, 9.5, True) + 20 if pill else 0
-            _pango_text(cr, widget, label, x0 + 46, y + 13, w - 46 - sw - pw - 40, 11.5, True, (*c["fg"], 0.95))
+            _pango_text(cr, widget, label, x0 + 46, ty, w - 46 - sw - pw - 40, 11.5, True, (*c["fg"], 0.95))
+            if kind_line:
+                _pango_text(cr, widget, kind_line, x0 + 46, ty + 22, w - 46 - sw - pw - 40, 10, False,
+                            (*c["fg"], 0.6))
+            mid = y + self.ROW_H / 2
             if pill:
                 px = x0 + w - 16 - sw - 14 - pw
-                _rounded(cr, px, y + 12, pw, 22, 11)
+                _rounded(cr, px, mid - 11, pw, 22, 11)
                 cr.set_source_rgba(*amber, 0.18)
                 cr.fill()
-                _pango_text(cr, widget, pill, px, y + 15.5, pw, 9.5, True, (*amber, 1), align_center=True)
-            _pango_text(cr, widget, size, x0 + w - 16 - sw, y + 13, sw + 2, 11.5, True, (*accent, 1))
+                _pango_text(cr, widget, pill, px, mid - 7.5, pw, 9.5, True, (*amber, 1), align_center=True)
+            _pango_text(cr, widget, size, x0 + w - 16 - sw, mid - 10, sw + 2, 11.5, True, (*accent, 1))
             y += self.ROW_H + 8
         if any(i.saves for i in self.items):
             _pango_text(cr, widget, self.app._("tm_left_saves"), 28, y + 4, W - 56, 10.5, False,
@@ -2376,6 +2516,9 @@ class TreasureMap(Gtk.Box):
                     g.cover = faugus_ui().launcher_cover(kind, Path(self.opts["cache"]), self)
         self.states = states
         self.games_by_uid = {g.uid: g for st in states.values() for g in st.games}
+        if not getattr(self, "_recovered", False):
+            self._recovered = True
+            self._recover_installs()
         self._index_library()
         # a finished download: the launchers' files decide from now on
         for uid in [u for u, dl in self.downloads.items() if dl.get("state") == "done"]:
@@ -2704,6 +2847,9 @@ class TreasureMap(Gtk.Box):
 
     def _cover_ready(self, uid: str):
         self.grid.cover_ready(uid)
+        page = getattr(self.app, "_ld_view", None)
+        if page is not None:
+            page.cover_ready(uid)
         for card in list(InstallingCard.live):          # the library's installing cards
             if card.game.uid == uid and card.get_mapped():
                 card.area.queue_draw()
@@ -2770,6 +2916,8 @@ class TreasureMap(Gtk.Box):
             win = self.downloads[game.uid].get("window")
             if win is not None and not win.closed:
                 win.show()          # a launcher's install window, hidden: back
+            else:
+                self.app._set_home_nav("dock")  # being dug up: the Loading Dock shows it
             return
         if game.store == "faugus":
             if game.installed:
@@ -2805,7 +2953,13 @@ class TreasureMap(Gtk.Box):
         elif answer == "dig" and card.choice and game.store == "steam":
             # Steam installs every owned DLC unless told otherwise: the unticked ones
             off = [i for i in (card.choice.get("dlc_sizes") or {}) if i not in (card.choice.get("dlcs") or [])]
-            self.start_steam_install(game, card.choice["path"], card.info or {}, disabled_dlcs=off)
+            from plunderhub.core.dlc import _steam_optional
+            try:
+                optional = [i for i in card.choice.get("dlcs") or [] if i in _steam_optional(game.app_id)]
+            except Exception:  # noqa: BLE001 - unreadable appinfo: Steam's own default for them
+                optional = []
+            self.start_steam_install(game, card.choice["path"], card.info or {}, disabled_dlcs=off,
+                                     optional_dlcs=optional)
         elif answer == "dig":
             self.start_download(game)
         elif answer == "sail":
@@ -2903,11 +3057,17 @@ class TreasureMap(Gtk.Box):
         size = int(info.get("download") or info.get("size") or 0)
         dl = {"frac": 0.0, "state": "downloading", "size": size, "speed": 0, "rate": 0, "place": 0,
               "launcher": "Heroic", "t0": time.monotonic(), "wall0": time.time(), "last": None, "bytes": 0,
-              "direct": True, "got": 0}
+              "direct": True, "got": 0, "pausable": True}
         self.downloads[game.uid] = dl
         self.queue.append(game.uid)
         self._refresh(keep_scroll=True)                 # up into Aboard
         logger.info(f"Treasure Map: install {game.title}: Heroic's steps -> {choice['path']}")
+        self._own_submit(game.uid, dl, lambda: self._run_heroic_install(game, choice, info, dl))
+
+    def _run_heroic_install(self, game: OwnedGame, choice: Dict, info: Dict, dl: Dict):
+        """One run of Heroic's tool - again after a pause (legendary and
+        gogdl carry on from what's already downloaded)."""
+        dl.update(state="downloading", paused=False, stopped=False, t0=time.monotonic(), last=None, rate=0)
 
         def progress(pct, got, speed):
             def put():
@@ -2928,10 +3088,19 @@ class TreasureMap(Gtk.Box):
                 lang=info.get("lang") or "en-US", dlcs=choice.get("dlcs"))
 
             def done():
+                if dl.get("paused"):
+                    # Pause on the Loading Dock: it stays in the queue, waiting for Resume
+                    dl["state"] = "paused"
+                    dl["rate"] = 0
+                    self._own_next()
+                    self._update_dock()
+                    self._loading_dock_changed()
+                    return False
                 if game.uid in self.queue:
                     self.queue.remove(game.uid)
                 if ok:
                     dl["state"] = "done"
+                    self.record_aboard(game.uid, game.title, "Heroic", dl.get("size") or 0)
                     self._toast = self.app._("tm_toast_aboard").format(game=game.title)
                     self._toast_sub = self.app._("tm_toast_aboard_sub")
                     self._toast_until = time.monotonic() + 5
@@ -2946,16 +3115,135 @@ class TreasureMap(Gtk.Box):
                             self.app._("tm_install_failed").format(game=game.title), why,
                             [(self.app._("dialog_ok"), Gtk.ResponseType.CLOSE, "ghost")],
                             icon_name="circle-alert-symbolic", transient_for=self.get_toplevel())
+                self._own_next()
                 self._update_dock()
+                self._loading_dock_changed()
                 return False
             GLib.idle_add(done)
         threading.Thread(target=work, daemon=True).start()
         self._update_dock()
         self._ensure_tick()
 
-    def stop_direct(self, uid: str):
+    # --- our own installs, one at a time (the Loading Dock: order, pause, stop) --------
+
+    def _own_running(self) -> Optional[str]:
+        return next((u for u in self.queue if self.downloads.get(u, {}).get("direct")
+                     and self.downloads[u].get("state") in ("downloading", "installing")), None)
+
+    def _own_submit(self, uid: str, dl: Dict, starter: Callable[[], None]):
+        """Starts it now, or queues it behind the one of ours that runs."""
+        dl["starter"] = starter
+        if self._own_running() not in (None, uid):
+            dl["state"] = "waiting"
+            logger.info(f"Treasure Map: {uid} waits in the Loading Dock's queue")
+            self._update_dock()
+            self._loading_dock_changed()
+            return
+        starter()
+
+    def _own_next(self):
+        """The next waiting install of ours, once none runs."""
+        if self._own_running() is not None:
+            return
+        uid = next((u for u in self.queue if self.downloads.get(u, {}).get("state") == "waiting"), None)
+        if uid is not None:
+            starter = self.downloads[uid].get("starter")
+            if starter is not None:
+                starter()
+
+    def pause_own(self, uid: str):
+        dl = self.downloads.get(uid)
+        if not dl or not dl.get("pausable"):
+            return
+        if dl.get("state") == "waiting":
+            dl["state"] = "paused"
+            self._loading_dock_changed()
+            return
+        dl["paused"] = True
+        self.stop_direct(uid, pausing=True)
+
+    def resume_own(self, uid: str):
+        dl = self.downloads.get(uid)
+        if not dl or dl.get("state") != "paused":
+            return
+        dl["paused"] = False
+        self._own_submit(uid, dl, dl["starter"])
+
+    def move_in_queue(self, uid: str, step: int):
+        """Up / down among the installs of ours (Steam keeps its own order)."""
+        own = [u for u in self.queue if self.downloads.get(u, {}).get("direct")]
+        if uid not in own:
+            return
+        i = own.index(uid)
+        j = max(0, min(len(own) - 1, i + step))
+        if i == j:
+            return
+        other = own[j]
+        a, b = self.queue.index(uid), self.queue.index(other)
+        self.queue[a], self.queue[b] = self.queue[b], self.queue[a]
+        self._update_dock()
+        self._loading_dock_changed()
+
+    def record_aboard(self, uid: str, title: str, launcher: str, size: int):
+        """A finished install, for the Loading Dock's Aboard list (till cleared)."""
+        log = self.__dict__.setdefault("aboard_log", [])
+        log[:] = [e for e in log if e["uid"] != uid]
+        log.insert(0, {"uid": uid, "title": title, "launcher": launcher, "size": int(size or 0),
+                       "at": time.time()})
+        self._loading_dock_changed()
+
+    def _recover_installs(self):
+        """PlunderHub started again while installs went on (Steam and Heroic
+        carry on by themselves): they're followed again from where they are -
+        Steam's not-yet-installed manifests, Heroic's own download queue.
+        Heroic's tools started from here had their process stopped with us:
+        those are dug up anew from the map."""
+        now = time.monotonic()
+        base = {"frac": 0.0, "state": "asked", "size": 0, "speed": 0, "rate": 0, "place": 0,
+                "t0": now, "last": None, "bytes": 0, "recovered": True}
+        found = []
+        try:
+            for appid, mtime in hold_data.steam_installing().items():
+                uid = f"steam:{appid}"
+                game = self.games_by_uid.get(uid)
+                if game is None or uid in self.downloads:
+                    continue
+                self.downloads[uid] = dict(base, launcher="Steam", wall0=min(time.time(), mtime) - 60)
+                self.queue.append(uid)
+                found.append(game.title)
+            for app_name in hold_data.heroic_queue():
+                uid = next((u for u, g in self.games_by_uid.items()
+                            if g.store in ("epic", "gog", "amazon") and g.app_id == app_name), None)
+                if uid is None or uid in self.downloads or self.games_by_uid[uid].installed:
+                    continue
+                h = hold_data.heroic_download(app_name) or {}
+                self.downloads[uid] = dict(base, launcher="Heroic", wall0=(h.get("added") or time.time()) - 5)
+                self.queue.append(uid)
+                found.append(self.games_by_uid[uid].title)
+        except Exception as e:  # noqa: BLE001 - not followed then, as before
+            logger.warning(f"Treasure Map: installs going on not taken up again: {e}")
+        if found:
+            logger.info(f"Treasure Map: installs going on taken up again: {', '.join(found)}")
+            self._ensure_tick()
+            self._update_dock()
+
+    def _loading_dock_changed(self):
+        """The Loading Dock (sidebar row, card, page) follows the installs."""
+        from plunderhub.ui import loading_dock
+        loading_dock.changed(self.app)
+
+    def stop_direct(self, uid: str, pausing: bool = False):
         """Stop on the dock: the tool's whole process group goes."""
         dl = self.downloads.get(uid)
+        if dl is not None and not pausing and dl.get("state") in ("waiting", "paused"):
+            # never started (or paused): just out of the queue
+            if uid in self.queue:
+                self.queue.remove(uid)
+            self.downloads.pop(uid, None)
+            self._refresh(keep_scroll=True)
+            self._update_dock()
+            self._loading_dock_changed()
+            return
         if dl is not None and dl.get("job") is not None:      # a Faugus install
             job = dl["job"]
             if dl.get("phase") in ("signin", "close_it"):
@@ -2969,7 +3257,7 @@ class TreasureMap(Gtk.Box):
         if proc is not None and proc.poll() is None:
             import os as _os
             import signal
-            dl["stopped"] = True
+            dl["stopped"] = not pausing
             try:
                 _os.killpg(proc.pid, signal.SIGTERM)
             except OSError:
@@ -3077,6 +3365,7 @@ class TreasureMap(Gtk.Box):
         running = self.app._launcher_is_running("Steam")
         if not self._steam_busy():
             self._steam_ran_before = running
+            self._steam_windowed = running and self.app.launcher_windowed("Steam") is True
         if running and not self.app.close_launcher_asking("Steam", self.get_toplevel()):
             return False
         return True
@@ -3084,6 +3373,8 @@ class TreasureMap(Gtk.Box):
     def _steam_start_silent(self) -> bool:
         section = next((s for s in getattr(self.app, "_cached_launchers", []) or [] if s.get("name") == "Steam"), None)
         cmd = list(section["cmd"]) + ["-silent"] if section and section.get("cmd") else ["steam", "-silent"]
+        if getattr(self, "_steam_windowed", False):
+            cmd = [w for w in cmd if w != "-silent"]     # it had a window before: it comes back with one
         import subprocess
         try:
             subprocess.Popen(cmd, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -3136,10 +3427,20 @@ class TreasureMap(Gtk.Box):
                 pass
         logger.info("Treasure Map: Steam closed again (it wasn't running before)")
 
-    def start_steam_install(self, game: OwnedGame, library: str, info: Dict, disabled_dlcs=None):
+    def start_steam_install(self, game: OwnedGame, library: str, info: Dict, disabled_dlcs=None,
+                            optional_dlcs=None):
+        # not known whether it shows a window (GNOME on Wayland): the gentle way, its own window
+        if self.app._launcher_is_running("Steam") and self.app.launcher_windowed("Steam") is not False:
+            # Steam is open with its window: not closed and started again for a
+            # manifest - its own install window instead (user's call 11-15; the
+            # library and DLCs are picked there). In the tray only: in the
+            # background as when it's closed (it comes back to the tray)
+            logger.info(f"Treasure Map: install {game.title}: Steam runs - its own install window")
+            self.start_download(game)
+            return
         if not self._steam_stop_for_work():
             return
-        ok, why = hold_data.steam_queue_install(game.app_id, library, disabled_dlcs)
+        ok, why = hold_data.steam_queue_install(game.app_id, library, disabled_dlcs, optional_dlcs)
         logger.info(f"Treasure Map: install {game.title}: manifest in {library} ({'ok' if ok else why})")
         if not ok:
             self.app._card_dialog(self.app._("tm_install_failed").format(game=game.title), why,
@@ -3195,8 +3496,14 @@ class TreasureMap(Gtk.Box):
                 continue
             if game.store == "steam":
                 m = hold_data.steam_manifest(game.app_id)
+                if m is not None and not self.app._launcher_is_running("Steam"):
+                    dl["activity"] = ("steam", "")
                 if m is None:
-                    if now - dl["t0"] > 300:         # the install window was closed: nothing came
+                    # Steam's install window is inside its own window (no window of
+                    # its own to watch) and Cancel leaves no line in its logs: waited
+                    # for a while, saying so, then let go quietly
+                    dl["activity"] = ("dialog", "")
+                    if now - dl["t0"] > 60:          # the install window was closed: nothing came
                         self._give_up(uid, self.app._("tm_gave_up").format(game=game.title, launcher="Steam"))
                         changed = True
                     continue
@@ -3205,10 +3512,13 @@ class TreasureMap(Gtk.Box):
                 # then the game's files, then the commit) and how big it is, and
                 # the part's own folder shows how much has landed
                 apps = Path(m["lib"]) / "steamapps"
+                # nothing landing yet: what Steam does meanwhile (the Loading Dock says it)
+                dl["activity"] = hold_data.steam_activity(game.app_id, dl["wall0"])
                 p = hold_data.steam_phase(game.app_id, dl["wall0"]) or {}
                 phase = p.get("phase") or "game"
                 if phase != dl.get("phase"):
                     dl["last"], dl["rate"], dl["bytes"] = None, 0, 0     # a new part: its own count
+                    dl["bytes0"] = dl["got0"] = None
                 dl["phase"] = phase
                 if phase == "shaders":
                     folders = [apps / "shadercache" / game.app_id / "downloads"]
@@ -3220,7 +3530,14 @@ class TreasureMap(Gtk.Box):
                 stage = p.get("stage") or m["BytesToStage"] or size
                 got = m["BytesDownloaded"] if phase == "game" and m["BytesToDownload"] == size else 0
                 if stage and dl["bytes"]:
-                    got = max(got, int(size * min(1.0, dl["bytes"] / stage)))
+                    # from where it stood when first measured (a download taken up
+                    # again after a restart has its folder full already): what
+                    # the manifest said then, plus the folder's growth since
+                    if dl.get("bytes0") is None:
+                        dl["bytes0"], dl["got0"] = dl["bytes"], got
+                    grown = max(0, dl["bytes"] - dl["bytes0"]) * size / stage
+                    got = max(got, int(dl["got0"] + grown)) if dl["got0"] else \
+                        max(got, int(size * min(1.0, dl["bytes"] / stage)))
                 dl["size"] = size
                 self._step(dl, got, now)
                 if m["StateFlags"] == 4 and phase in ("game", "between", "commit") and \
@@ -3348,16 +3665,41 @@ class TreasureMap(Gtk.Box):
                         ip = i.path
                     if (real is not None and ip == real) or i.path.name.lower() in names:
                         mine.append(i)
+            mine = [i for i in mine if i.size != 0]      # an empty one: nothing to swab
             if mine:
-                GLib.idle_add(show, mine)
-
-        def show(items):
-            parent = self.get_toplevel()
-            if LeftoversCard(app, parent, game.title, LAUNCHER_OF[game.store], items, hero_pb=hero,
-                             game=game, cache=self.opts.get("cache")).run():
-                app.show_shipwright(focus="bilge", parent=parent)
-            return False
+                GLib.idle_add(lambda: self._leftovers_found(game, mine, hero) and False)
         threading.Thread(target=work, daemon=True).start()
+
+    LEFTOVERS_WAIT_S = 3
+
+    def _leftovers_found(self, game: OwnedGame, items, hero):
+        """Several games thrown overboard at once: what they left is gathered
+        and shown in one card once the uninstalls are through (and nothing
+        more came for a few seconds)."""
+        for i in items:
+            i.game_title = game.title
+        self.__dict__.setdefault("_leftovers", []).append((game, items, hero))
+        self._leftovers_at = time.monotonic()
+        if not getattr(self, "_leftovers_timer", 0):
+            self._leftovers_timer = GLib.timeout_add(500, self._leftovers_flush)
+
+    def _leftovers_flush(self) -> bool:
+        if self.removing or time.monotonic() - self._leftovers_at < self.LEFTOVERS_WAIT_S:
+            return True                 # still throwing overboard: wait for the rest
+        self._leftovers_timer = 0
+        batch, self._leftovers = self._leftovers, []
+        if not batch:
+            return False
+        app, parent = self.app, self.get_toplevel()
+        game, _items, hero = batch[0]
+        items = [i for _g, its, _h in batch for i in its]
+        title = game.title if len(batch) == 1 else app._("tm_left_many").format(n=len(batch))
+        covers = [self.loader.get(g.uid) for g, _its, _h in batch] if len(batch) > 1 else None
+        if LeftoversCard(app, parent, title, LAUNCHER_OF[game.store], items, hero_pb=None if covers else hero,
+                         game=game, cache=self.opts.get("cache"), several=len(batch) > 1,
+                         covers=covers).run():
+            app.show_shipwright(focus="bilge", parent=parent)
+        return False
 
     def _library_changed(self):
         """The library's page shows the games being installed: brought up
@@ -3373,6 +3715,7 @@ class TreasureMap(Gtk.Box):
         self.downloads[uid]["state"] = "done"
         game.installed = True
         game.size = size or game.size
+        self.record_aboard(uid, game.title, self.downloads[uid].get("launcher") or "Steam", game.size)
         self._toast = self.app._("tm_toast_aboard").format(game=game.title)
         self._toast_sub = self.app._("tm_toast_aboard_sub")
         self._toast_until = time.monotonic() + 5
@@ -3402,6 +3745,10 @@ class TreasureMap(Gtk.Box):
                 self.grid.queue_item(it)
 
     def _update_dock(self):
+        self._loading_dock_changed()
+        # the sidebar's card and the Loading Dock show the installs now
+        self.dock_rev.set_reveal_child(False)
+        return
         current = next((u for u in self.queue if self.downloads[u]["state"] in ("downloading", "installing")), None)
         if current is None and self.queue:
             current = self.queue[0]
@@ -3424,9 +3771,12 @@ class TreasureMap(Gtk.Box):
         if dl["state"] == "asked":
             self.dock_title.set_text(self.app._("tm_dock_asked").format(launcher=dl["launcher"], game=name))
             self.dock_sub.set_text(self.app._("tm_dock_asked_sub"))
-        elif dl["state"] == "queued":
+        elif dl["state"] in ("queued", "waiting"):
             self.dock_title.set_text(self.app._("tm_dock_queued").format(launcher=dl["launcher"], game=name))
             self.dock_sub.set_text(self.app._("tm_dock_queued_sub"))
+        elif dl["state"] == "paused":
+            self.dock_title.set_text(self.app._("ld_dock_paused").format(game=name))
+            self.dock_sub.set_text(self.app._("ld_dock_paused_sub"))
         else:
             self.dock_title.set_text(self.app._("tm_dock_unpacking" if dl["state"] == "installing" else "tm_dock_digging")
                                      .format(launcher=dl["launcher"], game=name))
@@ -3446,7 +3796,7 @@ class TreasureMap(Gtk.Box):
                 mins, secs = divmod(int(left), 60)
                 parts += [f"{rate / 1e6:.0f} MB/s", self.app._("tm_left").format(m=mins, s=f"{secs:02d}")]
             self.dock_sub.set_text("   ·   ".join(parts))
-        waiting = [self.games_by_uid[u].title for u in self.queue if self.downloads[u]["state"] == "queued"
+        waiting = [self.games_by_uid[u].title for u in self.queue if self.downloads[u]["state"] in ("queued", "waiting")
                    and u in self.games_by_uid]
         self.dock_next.set_text(self.app._("tm_next").format(names=", ".join(waiting)) if waiting else "")
         # only Stop (an install of ours); the launcher's own window isn't needed
@@ -3608,6 +3958,8 @@ def attach(app, opts):
     app.home_nav_main.insert(row, 3)          # under Recently sailed
     row.show_all()
     app._tm_row = row
+    from plunderhub.ui import loading_dock
+    loading_dock.attach(app, view)
     app._refresh_home_counts()
     return view
 

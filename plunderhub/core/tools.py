@@ -31,7 +31,7 @@ from typing import Dict, List, Optional, Tuple
 from plunderhub.core.utils import which
 from plunderhub.launchers.registry import NativeRecipe
 
-GROUPS = ("performance", "graphics", "proton", "controllers", "apps")
+GROUPS = ("performance", "graphics", "proton", "controllers", "apps", "system")
 
 
 @dataclass(frozen=True)
@@ -57,7 +57,12 @@ class ToolDef:
                repositories don't have it
     recipes    distribution family -> NativeRecipe
     flatpak    Flathub app ids (only for apps - MangoHud and gamescope
-               on Flathub are extensions for Flatpak launchers)"""
+               on Flathub are extensions for Flatpak launchers)
+    aur        the AUR package built when the repositories don't have
+               `arch` (paru-bin: ready-made, no Rust build)
+    also       other binaries that count as the tool being there (yay
+               does paru's job)
+    families   offered only on these distribution families (empty: all)"""
     id: str
     name: str
     group: str
@@ -77,6 +82,9 @@ class ToolDef:
     ready_key: str = ""
     removable: bool = True
     opens: Tuple[str, ...] = ()
+    aur: str = ""
+    also: Tuple[str, ...] = ()
+    families: Tuple[str, ...] = ()
 
 
 def _same(*packages: str, **extra) -> Dict[str, NativeRecipe]:
@@ -85,6 +93,12 @@ def _same(*packages: str, **extra) -> Dict[str, NativeRecipe]:
 
 
 TOOLS: List[ToolDef] = [
+    # An AUR helper: AUR launchers (Bottles) install through it, and it
+    # keeps them updated. yay is just as good - with either one there,
+    # nothing is installed. CachyOS, EndeavourOS and Manjaro have paru in
+    # their repositories; plain Arch builds paru-bin from the AUR.
+    ToolDef("paru", "paru", "system", "package-symbolic", "paru", "paru", aur="paru-bin", also=("yay",),
+            families=("arch",), removable=False, ready_key="tool_ready_text_paru"),
     ToolDef("gamemode", "GameMode", "performance", "zap-symbolic", "gamemoderun", "gamemode",
             _same("gamemode"), extras={"arch": ("lib32-gamemode",), "fedora": ("gamemode.i686",)}),
     ToolDef("mangohud", "MangoHud", "performance", "gauge-symbolic", "mangohud", "mangohud",
@@ -168,11 +182,22 @@ _LAYER_DIRS = ("/usr/share/vulkan/implicit_layer.d", "/usr/share/vulkan/explicit
                "/etc/vulkan/implicit_layer.d", "/etc/vulkan/explicit_layer.d")
 
 
+def offered(tool: ToolDef, family: str) -> bool:
+    """Whether the tool belongs on this distribution at all (paru: Arch, and
+    not a read-only one - SteamOS is Arch underneath but takes no packages)."""
+    if not tool.families:
+        return True
+    if family not in tool.families:
+        return False
+    from plunderhub.core.utils import immutable_system
+    return not immutable_system()
+
+
 def installed_path(tool: ToolDef) -> Optional[str]:
     """The binary or Vulkan layer file that shows the tool is installed
     natively - its owning package is what gets removed."""
     if tool.binary:
-        return which(tool.binary)
+        return next((p for p in (which(b) for b in (tool.binary,) + tool.also) if p), None)
     for directory in _LAYER_DIRS:
         for pattern in tool.layers:
             hits = sorted(glob.glob(f"{directory}/{pattern}"))

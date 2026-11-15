@@ -237,6 +237,28 @@
       <sub>Swap&nbsp;what&nbsp;starts</sub>
     </td>
   </tr>
+  <tr>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/dock.svg" width="40" height="40" alt=""><br>
+      <b>Loading&nbsp;Dock</b><br>
+      <sub>Every&nbsp;install&nbsp;in&nbsp;order</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/dlc.svg" width="40" height="40" alt=""><br>
+      <b>DLCs</b><br>
+      <sub>Install&nbsp;or&nbsp;remove&nbsp;them</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/steam-downloads.svg" width="40" height="40" alt=""><br>
+      <b>Steam&nbsp;downloads</b><br>
+      <sub>Pause&nbsp;and&nbsp;reorder</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/icons/hdr.svg" width="40" height="40" alt=""><br>
+      <b>HDR</b><br>
+      <sub>Through&nbsp;gamescope</sub>
+    </td>
+  </tr>
 </table>
 
 <details>
@@ -244,7 +266,9 @@
 
 #### Your games and stores
 
-- **Treasure Map**: every game you own on Steam, Epic, GOG and Amazon on one page, installed or not. Install or uninstall one with a click. Right-click an installed game for the same menu as in your library.
+- **Treasure Map**: every game you own on Steam, Epic, GOG and Amazon on one page, installed or not. Install or uninstall one with a click, its DLCs picked along. Right-click an installed game for the same menu as in your library.
+- **Loading Dock**: every install you start from the Treasure Map, in one place - what's loading now, what's next (in order, move them up and down), what's paused, and a speed graph. Heroic installs pause and resume, any can be stopped. It picks up installs that went on while PlunderHub was closed, and says what Steam is busy with while a download stands at 0 %.
+- **Steer Steam's downloads**: an opt-in switch in the Loading Dock to pause, resume and reorder Steam's own downloads. Off by default, and it switches itself off once Steam's installs are done.
 - **Harbors**: Battle.net, EA app, Epic, GOG Galaxy, Ubisoft Connect, Rockstar, Amazon and Wargaming get a row of their own under your games, one click away.
 - **Faugus**: install store launchers, Windows games or Linux games from the Treasure Map, each in its own Wine prefix.
 - **Games from store launchers**: games installed with them get their own card, cover, launch options and playtime.
@@ -255,12 +279,13 @@
 - **Proton**: Proton-GE and Proton-CachyOS, downloaded once and used by every launcher, native or Flatpak. A new Proton-GE shows up at the bottom left and downloads when you press Download.
 - **What changed?**: when a game doesn't start or crashes, PlunderHub shows what changed since it last ran fine (Proton, launch options, game version, GPU driver, kernel) and takes it back to the Proton it worked with, downloading it if it's gone.
 - **Ship inspection**: checks Vulkan drivers (AMD, NVIDIA, Intel, hybrid laptops), 32-bit libraries, the memory map limit, ntsync and fonts, and fixes them in one click.
-- **Shipwright**: installs launchers (native or Flathub) and tools like GameMode, MangoHud, gamescope, controller drivers and much more.
+- **Shipwright**: installs launchers (native or Flathub) and tools like GameMode, MangoHud, gamescope, controller drivers and much more. On Arch-based systems also paru, for launchers that are only in the AUR.
 - **Bilge cleaning**: finds what removed games left behind - Wine prefixes, shader caches, unused Proton versions - with their size. You pick what goes, to the Trash or for good. Backs up the saves in them first and can put them back later.
 
 #### Each game
 
-- **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and patch notes links. Launch options with a Recommended preset; winecfg, winetricks and running an .exe in the game's prefix.
+- **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and news links. Launch options with a Recommended preset, gamescope with HDR; winecfg, winetricks and running an .exe in the game's prefix.
+- **DLCs**: a game's DLC tab shows which DLCs it has and which are installed - install or uninstall the ones you tick (Steam, Epic, GOG).
 - **Game EXE**: start another .exe for a Heroic game, or swap a Faugus or Lutris game's file, in Launch options.
 - **Performance**: switch it on for a game and MangoHud logs every session in the background. The game page shows FPS, 1% lows and frame times session by session, marked where Proton or the driver changed.
 - **Live status**: see what's running, stop it anytime.
@@ -283,7 +308,7 @@
 PlunderHub reads what your launchers already have. Browsing your library changes nothing, and you need no extra account.
 
 - **Games you own but haven't installed:** Steam and Heroic keep a list of them on your PC. Epic, GOG and Amazon come through your Heroic sign-in.
-- **A new game turns up:** PlunderHub asks whether you want the recommended launch options and Proton-GE Latest for it.
+- **A new game turns up:** PlunderHub asks whether you want the recommended launch options and Proton-GE Latest for it. Steam games with a Linux version run natively unless you pick a Proton.
 - **Launch options, installs, uninstalls and cleaning:** only when you ask.
 - **Prefer it automatic?** Settings can apply the recommended options and update Proton-GE without asking. Both are off by default.
 
@@ -383,6 +408,8 @@ Other distros (in the PlunderHub folder):
 - **Hyprland rules for `steam_app_*` windows** (forced fullscreen, monitor size) also catch a Windows game's installer: it can open as a blank fullscreen window. Leave installer titles (`Setup`, `Select Setup Language`) out of such a rule.
 - **Games inside store launchers** are new and haven't been tried with every store yet. Wargaming Game Center opens on its own page, press Play there. Uninstall them in their launcher.
 - **Read-only systems** (Bazzite, Silverblue): Shipwright installs launchers and tools as Flatpaks. System packages come through your system's own tools.
+- **Installing with Steam**: with Steam's window open, Steam's own install window asks. If you press Cancel there, PlunderHub lets the install go after a minute - Steam doesn't tell. With Steam closed or in the tray, Steam is closed for a moment and started again the way it was. On GNOME PlunderHub can't see whether Steam shows a window, so Steam's own install window always asks there.
+- **Steer Steam's downloads** opens Steam's debugging port (127.0.0.1:8080, this computer only) while it's on: other programs on your PC could steer Steam through it. That's why it's off by default and switches itself off when Steam's installs are done. Turning it on restarts Steam once.
 
 ## Tested launcher versions
 
@@ -390,7 +417,7 @@ Launchers change their file formats now and then. These are the versions Plunder
 
 | Launcher | Version | Status |
 |---|---|---|
-| Steam | client build 1792618285 | Tested |
+| Steam | client build 1794536281 | Tested |
 | Heroic | 2.22.4 | Tested |
 | Faugus Launcher | 2.5.7 | Tested |
 | Lutris | 0.5.22 | Installed, no games tried on this version yet |
@@ -401,13 +428,16 @@ Launchers change their file formats now and then. These are the versions Plunder
 PlunderHub collects no data. It only connects to:
 
 - Steam and your launchers' image servers, for art
-- Steam's store, with a game's title, when you open its patch notes, and with a Steam ID when Bilge cleaning finds a left folder of a game PlunderHub never saw
+- Steam's store, with a game's title, when you open its news, and with a Steam ID when Bilge cleaning finds a left folder of a game PlunderHub never saw
 - Steam's store and GOG, for the Treasure Map: a game's details when you open its card (by its ID), and your GOG games list, with the GOG sign-in Heroic already has, until Heroic has written its own
+- Epic and GOG through Heroic's own tools, for a game's DLC list when you open its DLC tab (Steam's comes from Steam's files on your PC)
 - SteamGridDB, only with your key
 - ProtonDB, with a game's Steam ID, for its rating on the game page (a game not from Steam is first looked up by its title in Steam's store search; you can turn this off in Settings)
 - GitHub, for updates and Proton downloads
 - LootScraper's feeds (feed.eikowagenknecht.com) every few hours, for the Bounty Board, and the stores' image servers for its pictures - nothing about you is sent (you can turn it off in Settings)
 - Your distro's repositories, the AUR, Flathub, Launchpad (Ubuntu PPAs) or RPM Fusion (Fedora), when you install something
+
+**Steer Steam's downloads** (off by default) talks to Steam on your own computer, through a port Steam opens on 127.0.0.1 - nothing leaves your PC.
 
 Settings are stored in <code>~/.config/plunderhub</code>. The SteamGridDB key goes to your system's password manager when there is one.
 

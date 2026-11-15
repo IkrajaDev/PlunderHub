@@ -803,6 +803,8 @@ class GameCard(Gtk.Box):
             return False
         _ = self.app._
         running = self._phase() == "running"
+        if self._hot == "play" and not running:
+            return False        # the play button says itself what it does (Stop, while running, is told)
         tooltip.set_text({"fav": _("gm_unfavorite") if self.game.uid in self.app.favorites else _("gm_favorite"),
                           "menu": _("lm_more_tooltip"),
                           "play": _("stop_game_tooltip") if running else _("launch_label"),
@@ -1471,7 +1473,7 @@ class HomeMixin:
 
         def work():
             from plunderhub.core import flatpak_layers, inspection
-            from plunderhub.core.tools import TOOLS, TOOLS_BY_ID, pending_updates
+            from plunderhub.core.tools import TOOLS, TOOLS_BY_ID, offered, pending_updates
             from plunderhub.core.utils import detect_linux_distro_family
             from plunderhub.launchers.registry import LAUNCHER_REGISTRY
             from plunderhub.ui import launcher_tasks
@@ -1492,8 +1494,11 @@ class HomeMixin:
                 launchers = flatpak_layers.flatpak_launchers()
                 have = flatpak_layers.installed_refs() if launchers else set()
                 missing = []
+                family = detect_linux_distro_family()
                 for key in RECOMMENDED:
                     tool = TOOLS_BY_ID[key]
+                    if not offered(tool, family):
+                        continue
                     ok = tool.name in here
                     if ok and key in FLATPAK_PARTS and launchers:
                         layer = flatpak_layers.LAYERS_BY_ID[FLATPAK_PARTS[key].split(":", 1)[1]]
@@ -1849,7 +1854,15 @@ class HomeMixin:
         self._refresh_home_counts()
 
     def _home_select_nav_row(self):
-        from plunderhub.ui import bounty_board
+        from plunderhub.ui import bounty_board, loading_dock
+        if loading_dock.shown(self) is not None:
+            self._home_nav_updating = True
+            try:
+                self.home_nav_launchers.unselect_all()
+                self.home_nav_main.select_row(self._ld_row)
+            finally:
+                self._home_nav_updating = False
+            return
         if bounty_board.shown(self) is not None:
             self._home_nav_updating = True
             try:
@@ -1907,6 +1920,9 @@ class HomeMixin:
         counts["map"] = _treasure_map().map_count(self)
         board = getattr(self, "_bb_view", None)
         counts["bounty"] = board.count() if board is not None else 0
+        dock = getattr(self, "_ld_view", None)
+        counts["dock"] = len([u for u in dock.view.queue if dock.view.downloads.get(u, {}).get("state") != "done"]) \
+            if dock is not None else 0
         for key, label in self._home_count_labels.items():
             n = counts.get(key, 0)
             label.set_text(str(n) if n else "")
@@ -1924,7 +1940,17 @@ class HomeMixin:
     def _set_home_nav(self, key: str):
         # the Treasure Map is shown over the page picked last (home_nav is
         # never "map": the app still starts on a library page)
-        from plunderhub.ui import bounty_board
+        from plunderhub.ui import bounty_board, loading_dock
+        if key == "dock":
+            _treasure_map().show_map(self, False)
+            bounty_board.show_board(self, False)
+            loading_dock.show_dock(self, True)
+            return
+        if loading_dock.shown(self) is not None:
+            loading_dock.show_dock(self, False)
+            if key == self.home_nav:
+                self._home_select_nav_row()
+                return
         if key == "bounty":
             _treasure_map().show_map(self, False)
             bounty_board.show_board(self, True)
