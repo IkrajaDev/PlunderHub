@@ -23,7 +23,7 @@ from typing import Dict, List
 
 
 APP_NAME = "PlunderHub"
-APP_VERSION = "1.0.10"
+APP_VERSION = "1.1.0"
 # "beta" puts a Beta badge on the home screen, About and Settings; "" for a
 # stable release.
 APP_CHANNEL = "beta"
@@ -80,6 +80,8 @@ HIDDEN_FILE = CONFIG_DIR / "hidden.json"
 SETTINGS_FILE = CONFIG_DIR / "settings.json"
 FAVORITES_FILE = CONFIG_DIR / "favorites.json"
 RECENT_FILE = CONFIG_DIR / "recent.json"
+# the Loading Dock's Aboard list: finished installs, till the player clears it
+ABOARD_FILE = CONFIG_DIR / "aboard.json"
 PLAYTIME_FILE = CONFIG_DIR / "playtime.json"
 PLAYTIME_HISTORY_FILE = CONFIG_DIR / "playtime_history.json"
 FIRST_SEEN_FILE = CONFIG_DIR / "first_seen.json"

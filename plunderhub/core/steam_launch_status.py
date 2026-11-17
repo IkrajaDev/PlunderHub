@@ -40,7 +40,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from plunderhub.core.steam_heroic import parse_vdf_text, steam_libraries, steam_roots
+from plunderhub.core.steam_heroic import parse_vdf_text, steam_libraries, steam_localconfig_path, steam_roots
 from plunderhub.logging_setup import logger
 
 
@@ -56,6 +56,8 @@ class SteamLaunchStage:
     # a download's bytes so far and in all, when Steam says
     done: int = 0
     total: int = 0
+    # while waiting: the step Steam asks the player in (ShowEula, ...)
+    asks: str = ""
 
 
 _TAIL_BYTES = 256 * 1024
@@ -210,7 +212,8 @@ def steam_launch_stage(appid: str, since: float) -> Optional[SteamLaunchStage]:
                 # go on at once: "continues with user response" follows in the
                 # same second. Waiting until that line comes.
                 before_wait = stage
-                stage = SteamLaunchStage("waiting", stamp)
+                asks = action[len("waiting for user response to "):].split(" ", 1)[0]
+                stage = SteamLaunchStage("waiting", stamp, asks=asks)
             elif action.startswith("continues with user response"):
                 if stage.stage == "waiting":
                     stage = before_wait
@@ -245,3 +248,50 @@ def steam_launch_stage(appid: str, since: float) -> Optional[SteamLaunchStage]:
     except Exception as e:
         logger.debug(f"Couldn't read Steam's launch progress for {appid}: {e}")
         return None
+
+
+_EULA_IDS: dict = {}
+
+
+def _eula_ids(appid: str) -> List[str]:
+    """The game's EULA ids as Steam knows them (appinfo common/eulas):
+    "<appid>_eula_0" mostly, a publisher's shared one sometimes
+    ("eula_eidos" - Hitman: Codename 47)."""
+    if appid in _EULA_IDS:
+        return _EULA_IDS[appid]
+    ids: List[str] = []
+    try:
+        from plunderhub.core.treasure import _app_infos
+        for root in steam_roots():
+            if (root / "appcache" / "appinfo.vdf").is_file():
+                info = _app_infos(root, {int(appid)}).get(int(appid)) or {}
+                eulas = (info.get("common") or {}).get("eulas") or {}
+                ids = [str(e.get("id")) for e in eulas.values() if isinstance(e, dict) and e.get("id")]
+                if ids:
+                    break
+    except Exception as e:
+        logger.debug(f"Couldn't read the EULA ids of {appid}: {e}")
+    _EULA_IDS[appid] = ids
+    return ids
+
+
+def eula_accepted_since(appid: str, since: float) -> bool:
+    """Whether the player accepted the game's EULA after `since`: Steam
+    writes its id ("<appid>_eula_<n>", or a publisher's shared one like
+    "eula_eidos") into localconfig.vdf on accepting - but the launch that
+    showed the EULA doesn't go on (11-17 PAYDAY 2, Hitman: Codename 47:
+    no "continues with user response", stuck for good); asked again, the
+    game starts."""
+    path = steam_localconfig_path()
+    if path is None:
+        return False
+    try:
+        if path.stat().st_mtime < since:
+            return False
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+    ids = _eula_ids(appid)
+    if ids:
+        return all(f'"{i}"' in text for i in ids)
+    return f'"{appid}_eula_' in text

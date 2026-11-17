@@ -1112,9 +1112,7 @@ class HomeOfferCard(Gtk.Revealer):
         self.download.connect("clicked", lambda *_: self._download())
         card.pack_start(buttons, False, False, 0)
         self.add(card)
-        self.set_margin_start(12)
-        self.set_margin_end(12)
-        self.set_margin_bottom(8)
+        # the card's own CSS margin (.home-update-card), as the app's update card: the same width
         self.show_all()
         stop = data.listen(self._refresh)
         self.connect("destroy", lambda *_: stop())
@@ -1200,9 +1198,7 @@ class HomeDownloadCard(Gtk.Revealer):
         top.pack_start(texts, True, True, 0)
         button.add(top)
         self.add(button)
-        self.set_margin_start(12)
-        self.set_margin_end(12)
-        self.set_margin_bottom(8)
+        # the card's own CSS margin (.home-update-card), as the app's update card: the same width
         self.show_all()
         stop = data.listen(self._refresh)
         self.connect("destroy", lambda *_: stop())

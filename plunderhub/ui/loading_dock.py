@@ -58,6 +58,32 @@ def _fmt(n: float) -> str:
     return f"{n / 1e9:.1f} GB" if n >= 1e9 else f"{n / 1e6:.0f} MB"
 
 
+def _speed(v) -> str:
+    if not v:
+        return "–"
+    return f"{v / 1e6:.1f} MB/s" if v < 1e8 else f"{v / 1e6:.0f} MB/s"
+
+
+def _took(seconds) -> str:
+    """h:mm:ss"""
+    if not seconds:
+        return "–"
+    s = int(round(seconds))
+    return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}"
+
+
+def _when(at: float) -> str:
+    """The time, with the day before it when it wasn't today."""
+    t, now = time.localtime(at), time.localtime()
+    if t[:3] == now[:3]:
+        return time.strftime("%H:%M", t)
+    return time.strftime("%Y-%m-%d %H:%M", t)
+
+
+# hero pictures, decoded once (path -> pixbuf)
+_HERO_CACHE: Dict[str, object] = {}
+
+
 class LoadingDock(Gtk.ScrolledWindow):
     def __init__(self, view):
         super().__init__()
@@ -81,9 +107,11 @@ class LoadingDock(Gtk.ScrolledWindow):
         # the Steam switch first, then the speed over the last minutes
         self.steam_card = self._steam_card()
         box.pack_start(self.steam_card, False, False, 0)
-        self.graph_card = self._graph_card()
-        self.graph_card.set_no_show_all(True)
-        box.pack_start(self.graph_card, False, False, 0)
+        # every install at once - in the first section's header
+        self.all_btn = Gtk.Button(label=self._("ld_pause_all"))
+        self.all_btn.get_style_context().add_class("bg-icon-btn")
+        self.all_btn.set_valign(Gtk.Align.CENTER)
+        self.all_btn.connect("clicked", lambda *_a: self._pause_all())
         self.list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         box.pack_start(self.list, False, False, 0)
         self.rows: Dict[str, Dict] = {}
@@ -92,6 +120,13 @@ class LoadingDock(Gtk.ScrolledWindow):
         self._asking = False
         self._order: list = []
         self._groups: Dict[str, List[str]] = {}
+        # the cards' layout for the room there is: 0 wide (all in a row), 1 the
+        # graph under the numbers, 2 narrow (numbers 2x2, buttons at the foot);
+        # what a wider one needed, measured when it didn't fit
+        self._mode = 0
+        self._need: Dict[int, int] = {}
+        self._mode_pending = False
+        self.connect("size-allocate", lambda *_a: self._fit())
         self.connect("map", lambda *_a: self._start_poll())
         # not stopped when the page goes: the sidebar's foot follows Steam's state too
 
@@ -126,28 +161,6 @@ class LoadingDock(Gtk.ScrolledWindow):
         self.steam_note.get_style_context().add_class("gp-card-sub")
         self.steam_note.set_no_show_all(True)
         card.pack_start(self.steam_note, False, False, 0)
-        return card
-
-    # the speed, over the last minutes (as Heroic's Downloads page shows it) ------------------
-
-    def _graph_card(self) -> Gtk.Widget:
-        _ = self._
-        card = Gtk.Box(spacing=20)
-        card.get_style_context().add_class("gp-card")
-        self.graph = SpeedGraph(self.app)
-        card.pack_start(self.graph, True, True, 0)
-        side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        side.set_valign(Gtk.Align.CENTER)
-        self.rate_label = Gtk.Label(label="0 MB/s", xalign=0)
-        self.rate_label.get_style_context().add_class("ld-rate")
-        self.app._apply_tabular_figures(self.rate_label)
-        side.pack_start(self.rate_label, False, False, 0)
-        cap = Gtk.Label(label=_("ld_rate_caption"), xalign=0)
-        cap.get_style_context().add_class("gp-card-sub")
-        side.pack_start(cap, False, False, 0)
-        card.pack_start(side, False, False, 0)
-        self.all_btn = self._icon_btn("pause-symbolic", _("ld_pause_all"), self._pause_all)
-        card.pack_end(self.all_btn, False, False, 0)
         return card
 
     def _pause_all(self):
@@ -246,7 +259,7 @@ class LoadingDock(Gtk.ScrolledWindow):
             it = iter(st)
             uids = [next(it) if self.view.downloads[u].get("launcher") == "Steam" else u for u in uids]
         groups = {k: [u for u in uids if self._kind(u) == k] for k in ("now", "next", "paused")}
-        done = [e for e in getattr(self.view, "aboard_log", []) if e["uid"] not in uids]
+        done = [e for e in self.view.aboard() if e["uid"] not in uids]
         layout = [(k, tuple(groups[k])) for k in ("now", "next", "paused")] + [("done", tuple(e["uid"] for e in done))]
         if layout != self._order:
             self._order = layout
@@ -254,21 +267,26 @@ class LoadingDock(Gtk.ScrolledWindow):
             for child in self.list.get_children():
                 self.list.remove(child)
             self.rows.clear()
+            # every card the same columns: the buttons, each number tile and the
+            # speed right now - lined up page-wide
+            H = Gtk.SizeGroupMode.HORIZONTAL
+            self._sizes = {k: Gtk.SizeGroup(mode=H) for k in ("right", "tile", "now")}
             if not uids:
                 self.list.pack_start(self._empty(), False, False, 0)
-            # no_show_all keeps it out of the page's show_all while idle - and makes
-            # its own show_all a no-op: lifted before showing it (else an empty frame)
-            self.graph_card.set_no_show_all(not uids)
-            if uids:
-                self.graph_card.show_all()
-            else:
-                self.graph_card.hide()
+            if self.all_btn.get_parent() is not None:
+                self.all_btn.get_parent().remove(self.all_btn)
+            first = True
             for key, title in (("now", "ld_sec_now"), ("next", "ld_sec_next"), ("paused", "ld_sec_paused")):
                 if not groups[key]:
                     continue
-                head = Gtk.Label(label=self._(title).upper(), xalign=0)
-                head.get_style_context().add_class("gp-card-label")
+                head = Gtk.Box(spacing=10)
                 head.set_margin_top(6)
+                lab = Gtk.Label(label=self._(title).upper(), xalign=0)
+                lab.get_style_context().add_class("gp-card-label")
+                head.pack_start(lab, True, True, 0)
+                if first:
+                    head.pack_end(self.all_btn, False, False, 0)
+                    first = False
                 self.list.pack_start(head, False, False, 0)
                 for i, uid in enumerate(groups[key]):
                     self.list.pack_start(self._row(uid, key, i), False, False, 0)
@@ -291,6 +309,42 @@ class LoadingDock(Gtk.ScrolledWindow):
         self._update_steam_card()
         self.auto_off()
 
+    # fitting the room (1080p at 150 %, laptops at 200 %, big text) ------------------------
+
+    def _room(self) -> int:
+        """The width the cards get: what's shown of the page (the page itself
+        is laid out at least as wide as its widest card, so its parent's)."""
+        parent = self.get_parent()
+        width = parent.get_allocated_width() if parent is not None else self.get_allocated_width()
+        return width - 20 - 24 - 14          # the page's margins and the scrollbar
+
+    def _fit(self):
+        """A layout that fits: a narrower one when the cards are wider than the
+        room, back to a wider one once there's room for what it needed."""
+        if self._mode_pending or not self.list.get_children():
+            return
+        room = self._room()
+        if room < 50:
+            return
+        need = self.list.get_preferred_width()[0]
+        mode = self._mode
+        if need > room and mode < 2:
+            self._need[mode] = need
+            mode += 1
+        elif mode > 0 and room >= self._need.get(mode - 1, 1 << 30) + 8:
+            mode -= 1
+        if mode == self._mode:
+            return
+        self._mode = mode
+        self._mode_pending = True
+
+        def rebuild():
+            self._mode_pending = False
+            self._order = []
+            self.refresh()
+            return False
+        GLib.idle_add(rebuild)
+
     def _empty(self) -> Gtk.Widget:
         """Nothing coming aboard: the quiet dock, and the way to the map."""
         from plunderhub.gi_setup import Gdk
@@ -300,7 +354,7 @@ class LoadingDock(Gtk.ScrolledWindow):
         box.get_style_context().add_class("gp-card")
         box.get_style_context().add_class("ld-empty")
         scale = self.get_scale_factor() or 1
-        pb = get_icon_pixbuf("anchor-symbolic", 56 * scale, self.app._home_accent_hex())
+        pb = get_icon_pixbuf("anchor-symbolic", 56, self.app._home_accent_hex())
         if pb is not None:
             box.pack_start(Gtk.Image.new_from_surface(Gdk.cairo_surface_create_from_pixbuf(pb, scale, None)),
                            False, False, 0)
@@ -320,44 +374,211 @@ class LoadingDock(Gtk.ScrolledWindow):
         box.pack_start(go, False, False, 0)
         return box
 
-    def _done_row(self, e: Dict) -> Gtk.Widget:
-        """A finished install: its cover, name, launcher, size and when."""
-        _ = self._
-        card = Gtk.Box(spacing=14)
+    def _shell(self, uid: str, hero: Optional[str] = None):
+        """A Loading Dock card: the game's hero picture faint behind it
+        (darkening to the left, where the words are), the content on top."""
+        card = Gtk.Box()
         card.get_style_context().add_class("gp-card")
-        card.get_style_context().add_class("ld-done")
-        game = self._game(e["uid"])
-        card.pack_start(self._art(game, {"launcher": e["launcher"]}), False, False, 0)
-        mid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        card.get_style_context().add_class("ld-card")
+        back = HeroBack()
+        content = Gtk.Box(spacing=16)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_margin_top(14)
+        content.set_margin_bottom(14)
+        back.pack_start(content, True, True, 0)
+        card.pack_start(back, True, True, 0)
+        self._find_hero(uid, hero, back)
+        return card, content
+
+    def _find_hero(self, uid: str, hero: Optional[str], back: "HeroBack"):
+        """The hero picture: the one the Dig up card showed, the library's,
+        Steam's own - read off the main thread."""
+        paths = [hero] if hero else []
+        got = (self.view.__dict__.get("_card_cache") or {}).get(uid)
+        if got and got[0].get("hero"):
+            paths.append(str(got[0]["hero"]))
+        try:
+            lib = self.app.hero_path(uid)
+            if lib is not None:
+                paths.append(str(lib))
+        except Exception:
+            pass
+        appid = uid.split(":", 1)[1] if uid.startswith("steam:") else None
+        scale = self.get_scale_factor() or 1
+        game = self._game(uid)
+        cache_dir = (self.view.opts or {}).get("cache") if hasattr(self.view, "opts") else None
+
+        def work():
+            from pathlib import Path
+            from plunderhub.gi_setup import GdkPixbuf
+            more = list(paths)
+            if appid:
+                from plunderhub.core import launcher_art
+                h = launcher_art._steam(appid).get("hero")
+                if h:
+                    more.append(str(h))
+            if game is not None and cache_dir and getattr(game, "store", "") != "faugus":
+                # last: the one the Dig up card would show (fetched once, kept in the map's cache)
+                try:
+                    from plunderhub.core import treasure
+                    h = treasure.details(game, Path(cache_dir), slow=False).get("hero")
+                    if h:
+                        more.append(str(h))
+                except Exception as e:
+                    logger.debug(f"Loading Dock: no hero for {uid}: {e}")
+            for path in more:
+                pb = _HERO_CACHE.get(path)
+                if pb is None and Path(path).is_file():
+                    try:
+                        pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 1100 * scale, -1, True)
+                    except Exception:
+                        pb = None
+                    if pb is not None:
+                        _HERO_CACHE[path] = pb
+                        while len(_HERO_CACHE) > 24:
+                            _HERO_CACHE.pop(next(iter(_HERO_CACHE)))
+                if pb is not None:
+                    GLib.idle_add(lambda p=pb: back.set_picture(p) and False)
+                    return
+        threading.Thread(target=work, name="plunderhub-dock-hero", daemon=True).start()
+
+    def _launcher_line(self, launcher: str, parts: List[str]) -> Gtk.Widget:
+        line = Gtk.Box(spacing=7)
+        icon = self.app._load_launcher_icon(launcher, 16)
+        icon.set_valign(Gtk.Align.CENTER)
+        line.pack_start(icon, False, False, 0)
+        lab = Gtk.Label(label="   ·   ".join([launcher] + parts), xalign=0)
+        lab.set_ellipsize(Pango.EllipsizeMode.END)
+        lab.get_style_context().add_class("gp-card-sub")
+        line.pack_start(lab, True, True, 0)
+        line.label = lab
+        return line
+
+    def _stat(self, value: str, caption: str):
+        tile = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        tile.get_style_context().add_class("ld-stat")
+        tile.set_valign(Gtk.Align.CENTER)
+        cap = Gtk.Label(label=caption.upper(), xalign=0)
+        cap.get_style_context().add_class("ld-stat-cap")
+        tile.pack_start(cap, False, False, 0)
+        val = Gtk.Label(label=value, xalign=0)
+        val.get_style_context().add_class("ld-stat-value")
+        self.app._apply_tabular_figures(val)
+        tile.pack_start(val, False, False, 0)
+        tile.value = val
+        return tile
+
+    STAT_KEYS = ["ld_stat_time", "ld_stat_max", "ld_stat_min", "ld_stat_avg"]
+
+    def _stats_row(self, live: bool = False):
+        """The numbers (time, max, min, average), the speed graph and how far
+        it is with the speed right now: in a row when there's room, the
+        graph under the numbers when less, the numbers 2x2 when narrow."""
+        mode = self._mode
+        row = Gtk.Grid()
+        row.set_column_spacing(4)
+        row.set_row_spacing(8)
+        tiles = {}
+        for i, key in enumerate(self.STAT_KEYS):
+            tiles[key] = self._stat("–", self._(key))
+            self._sizes["tile"].add_widget(tiles[key])
+            if mode == 2:
+                row.attach(tiles[key], i % 2, i // 2, 1, 1)
+            else:
+                row.attach(tiles[key], i, 0, 1, 1)
+        graph = MiniGraph(self.app, wide=mode == 0)
+        graph.set_hexpand(True)
+        if mode == 0:
+            graph.set_margin_start(10)
+            row.attach(graph, 4, 0, 1, 1)
+        elif mode == 1:
+            row.attach(graph, 0, 1, 5, 1)
+        # narrow: no graph - only what matters (it's back when there's room)
+        # how far it is, the speed right now under it (the place kept on every
+        # card: the graphs end in line)
+        side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        side.set_valign(Gtk.Align.CENTER)
+        pct = Gtk.Label(label="", xalign=1)
+        pct.get_style_context().add_class("ld-now-pct")
+        self.app._apply_tabular_figures(pct)
+        side.pack_start(pct, False, False, 0)
+        now = Gtk.Label(label="", xalign=1)
+        now.get_style_context().add_class("ld-now-rate")
+        now.set_width_chars(10)
+        self.app._apply_tabular_figures(now)
+        side.pack_start(now, False, False, 0)
+        self._sizes["now"].add_widget(side)
+        if mode == 0:
+            row.attach(side, 5, 0, 1, 1)
+        else:
+            side.set_hexpand(True)
+            side.set_halign(Gtk.Align.END)
+            row.attach(side, 2 if mode == 2 else 4, 0, 1, 1)
+        tiles["now"], tiles["pct"] = now, pct
+        return row, tiles, graph
+
+    def _done_row(self, e: Dict) -> Gtk.Widget:
+        """A finished install: its cover with the launcher's mark, how long
+        it took and how fast it came, its speed graph."""
+        _ = self._
+        card, content = self._shell(e["uid"], e.get("hero"))
+        mid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         mid.set_valign(Gtk.Align.CENTER)
+        top = Gtk.Box(spacing=10)
         title = Gtk.Label(label=e["title"], xalign=0)
         title.set_ellipsize(Pango.EllipsizeMode.END)
-        title.get_style_context().add_class("dlc-row-title")
-        mid.pack_start(title, False, False, 0)
-        parts = [e["launcher"]] + ([_fmt(e["size"])] if e.get("size") else []) + \
-            [_("ld_done_at").format(time=time.strftime("%H:%M", time.localtime(e["at"])))]
-        sub = Gtk.Label(label="   ·   ".join(parts), xalign=0)
-        sub.get_style_context().add_class("gp-card-sub")
-        mid.pack_start(sub, False, False, 0)
-        card.pack_start(mid, True, True, 0)
-        pill = Gtk.Label(label=_("ld_state_aboard"))
+        title.get_style_context().add_class("ld-title")
+        top.pack_start(title, True, True, 0)
+        pill = Gtk.Label(label="✓  " + _("ld_state_aboard"))
         pill.set_valign(Gtk.Align.CENTER)
         for c in ("bg-pill", "bg-pill-ok"):
             pill.get_style_context().add_class(c)
-        card.pack_end(pill, False, False, 0)
+        drop = self._icon_btn("window-close-symbolic", _("ld_remove"), lambda u=e["uid"]: self._drop_done(u))
+        if self._mode == 2:
+            top.pack_end(drop, False, False, 0)
+        top.pack_end(pill, False, False, 0)
+        mid.pack_start(top, False, False, 0)
+        mid.pack_start(self._launcher_line(e["launcher"], ([_fmt(e["size"])] if e.get("size") else [])
+                                           + [_("ld_done_at").format(time=_when(e["at"]))]), False, False, 0)
+        bar = Gtk.ProgressBar()
+        bar.get_style_context().add_class("ld-bar")
+        bar.set_margin_top(2)
+        bar.set_fraction(1.0)
+        mid.pack_start(bar, False, False, 0)
+        row, tiles, graph = self._stats_row()
+        row.set_margin_top(2)
+        tiles["ld_stat_time"].value.set_text(_took(e.get("took")))
+        for key, field in (("ld_stat_avg", "avg"), ("ld_stat_max", "max"), ("ld_stat_min", "min")):
+            tiles[key].value.set_text(_speed(e.get(field)))
+        graph.set_samples(e.get("curve") or [], e.get("avg"))
+        mid.pack_start(row, False, False, 0)
+        content.pack_start(mid, True, True, 0)
+        if self._mode < 2:
+            right = Gtk.Box()
+            right.set_valign(Gtk.Align.CENTER)
+            right.pack_end(drop, False, False, 0)
+            self._sizes["right"].add_widget(right)
+            content.pack_end(right, False, False, 0)
         return card
 
+    def _drop_done(self, uid: str):
+        """One finished install out of the Aboard list."""
+        log = self.view.aboard()
+        log[:] = [e for e in log if e["uid"] != uid]
+        self.view.save_aboard()
+        self.refresh()
+
     def _clear_done(self):
-        log = getattr(self.view, "aboard_log", None)
-        if log is not None:
-            log.clear()
+        self.view.aboard().clear()
+        self.view.save_aboard()
         self.refresh()
 
     def _set_icon(self, button: Gtk.Button, icon: str, colour: Optional[str], px: int):
         from plunderhub.gi_setup import Gdk
         from plunderhub.icons import get_icon_pixbuf
         scale = self.get_scale_factor() or 1
-        pb = get_icon_pixbuf(icon, px * scale, colour or self.app._home_accent_hex())
+        pb = get_icon_pixbuf(icon, px, colour or self.app._home_accent_hex())
         if pb is not None:
             button.set_image(Gtk.Image.new_from_surface(Gdk.cairo_surface_create_from_pixbuf(pb, scale, None)))
         button._icon = icon
@@ -382,93 +603,64 @@ class LoadingDock(Gtk.ScrolledWindow):
         _ = self._
         dl = self.view.downloads[uid]
         game = self._game(uid)
-        card = Gtk.Box(spacing=14)
-        card.get_style_context().add_class("gp-card")
-        # the order: its number, and moving it right beside it
-        order = Gtk.Box(spacing=6)
-        order.set_valign(Gtk.Align.CENTER)
-        num = Gtk.Label(label=str(index + 1) if kind == "next" else "")
-        num.get_style_context().add_class("ld-num")
-        num.set_valign(Gtk.Align.CENTER)
-        self._hold(num, kind == "next")
-        order.pack_start(num, False, False, 0)
-        arrows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        arrows.set_valign(Gtk.Align.CENTER)
-        up = self._icon_btn("go-up-symbolic", _("ld_up"), lambda: self._move(uid, -1), mini=True)
-        down = self._icon_btn("go-down-symbolic", _("ld_down"), lambda: self._move(uid, 1), mini=True)
-        arrows.pack_start(up, False, False, 0)
-        arrows.pack_start(down, False, False, 0)
-        order.pack_start(arrows, False, False, 0)
-        card.pack_start(order, False, False, 0)
-        art = self._art(game, dl)
-        card.pack_start(art, False, False, 0)
+        card, content = self._shell(uid)
         mid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         mid.set_valign(Gtk.Align.CENTER)
         line = Gtk.Box(spacing=10)
+        # its place in the line, before the name
+        num = Gtk.Label(label=f"#{index + 1}")
+        num.get_style_context().add_class("ld-num")
+        num.set_valign(Gtk.Align.CENTER)
+        num.set_no_show_all(kind != "next")
+        line.pack_start(num, False, False, 0)
         title = Gtk.Label(label=game.title if game else uid, xalign=0)
         title.set_ellipsize(Pango.EllipsizeMode.END)
-        title.get_style_context().add_class("dlc-row-title")
+        title.get_style_context().add_class("ld-title")
         line.pack_start(title, True, True, 0)
         pill = Gtk.Label()
         pill.get_style_context().add_class("bg-pill")
+        pill.set_valign(Gtk.Align.CENTER)
         line.pack_end(pill, False, False, 0)
         mid.pack_start(line, False, False, 0)
+        launcher = self._launcher_line(dl.get("launcher") or "Steam", [])
+        mid.pack_start(launcher, False, False, 0)
         bar = Gtk.ProgressBar()
         bar.get_style_context().add_class("ld-bar")
+        bar.set_margin_top(2)
         mid.pack_start(bar, False, False, 0)
-        detail = Gtk.Label(xalign=0)
-        detail.get_style_context().add_class("gp-card-sub")
-        mid.pack_start(detail, False, False, 0)
-        card.pack_start(mid, True, True, 0)
+        stats, tiles, graph = self._stats_row(live=True)
+        stats.set_margin_top(2)
+        mid.pack_start(stats, False, False, 0)
+        content.pack_start(mid, True, True, 0)
         buttons = Gtk.Box(spacing=8)
         buttons.set_valign(Gtk.Align.CENTER)
+        # moving it in the line: a small pair before the other buttons
+        narrow = self._mode == 2
+        arrows = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL if narrow else Gtk.Orientation.VERTICAL,
+                         spacing=8 if narrow else 6)
+        arrows.set_valign(Gtk.Align.CENTER)
+        up = self._icon_btn("go-up-symbolic", _("ld_up"), lambda: self._move(uid, -1))
+        down = self._icon_btn("go-down-symbolic", _("ld_down"), lambda: self._move(uid, 1))
+        arrows.pack_start(up, False, False, 0)
+        arrows.pack_start(down, False, False, 0)
+        buttons.pack_start(arrows, False, False, 0)
         pause = self._icon_btn("pause-symbolic", _("ld_pause"), lambda: self._pause(uid))
         stop = self._icon_btn("media-playback-stop-symbolic", _("tm_stop"), lambda: self._stop(uid), colour="#e05252")
         steam = self._icon_btn("external-link-symbolic", _("ld_open_steam"),
                                lambda: self.view._steam_quietly("steam://open/downloads"))
         for b in (pause, stop, steam):
             buttons.pack_start(b, False, False, 0)
-        card.pack_end(buttons, False, False, 0)
-        self.rows[uid] = {"art": art, "pill": pill, "bar": bar, "detail": detail, "up": up, "down": down,
-                          "pause": pause, "stop": stop, "steam": steam, "kind": kind, "arrows": arrows}
-        return card
-
-    ART_W, ART_H = 42, 56
-
-    def _art(self, game, dl) -> Gtk.Widget:
-        """A slot for the game's cover, small - from the map's own cover
-        loader (never a download here); its launcher's logo meanwhile."""
-        slot = Gtk.Box()
-        slot.set_size_request(self.ART_W, self.ART_H)
-        slot.set_valign(Gtk.Align.CENTER)
-        slot.dl_launcher = dl.get("launcher") or "Steam"
-        self._fill_art(slot, game)
-        return slot
-
-    def _fill_art(self, slot: Gtk.Box, game):
-        for child in slot.get_children():
-            slot.remove(child)
-        pb = self.view.loader.get(game.uid) if game is not None else None
-        if pb is None and game is not None and not self.view.loader.known(game.uid):
-            self.view.loader.want(game)
-        if pb is not None:
-            scale = self.get_scale_factor() or 1
-            from plunderhub.gi_setup import Gdk, GdkPixbuf
-            small = pb.scale_simple(self.ART_W * scale, self.ART_H * scale, GdkPixbuf.InterpType.BILINEAR)
-            img = Gtk.Image.new_from_surface(Gdk.cairo_surface_create_from_pixbuf(small, scale, None))
-            img.get_style_context().add_class("ld-cover")
+        if narrow:
+            # under how far it is, beside the numbers' second row
+            buttons.set_halign(Gtk.Align.END)
+            stats.attach(buttons, 2, 1, 1, 1)
         else:
-            img = self.app._load_launcher_icon(slot.dl_launcher, 32)
-        img.set_valign(Gtk.Align.CENTER)
-        img.set_halign(Gtk.Align.CENTER)
-        slot.pack_start(img, True, True, 0)
-        slot.show_all()
-
-    def cover_ready(self, uid: str):
-        """The map's loader has the cover now: into the row's slot."""
-        row = self.rows.get(uid)
-        if row is not None and row.get("art") is not None:
-            self._fill_art(row["art"], self._game(uid))
+            self._sizes["right"].add_widget(buttons)
+            content.pack_end(buttons, False, False, 0)
+        self.rows[uid] = {"pill": pill, "bar": bar, "detail": launcher.label, "up": up, "down": down,
+                          "pause": pause, "stop": stop, "steam": steam, "kind": kind, "arrows": arrows,
+                          "tiles": tiles, "graph": graph, "stats": stats, "launcher": dl.get("launcher") or "Steam"}
+        return card
 
     def _steam_item(self, uid: str) -> Optional[Dict]:
         s = self.steam_state
@@ -501,7 +693,7 @@ class LoadingDock(Gtk.ScrolledWindow):
             (ctx.add_class if c == kind else ctx.remove_class)(c)
         frac = max(0.0, min(1.0, float(dl.get("frac") or 0)))
         r["bar"].set_fraction(frac)
-        parts = [f"{int(frac * 100)} %"]
+        parts = []
         size = dl.get("size") or 0
         if size:
             parts.append(_("tm_of").format(done=_fmt(dl.get("got") or frac * size), total=_fmt(size)))
@@ -509,9 +701,21 @@ class LoadingDock(Gtk.ScrolledWindow):
         if rate > 1e5 and not paused and key == "ld_state_downloading":
             left = max(0, (size - (dl.get("got") or frac * size)) / rate) if size else 0
             mins, secs = divmod(int(left), 60)
-            parts += [f"{rate / 1e6:.0f} MB/s"] + ([_("tm_left").format(m=mins, s=f"{secs:02d}")] if left else [])
+            parts += [_("tm_left").format(m=mins, s=f"{secs:02d}")] if left else []
         act = activity_text(_, dl)
-        r["detail"].set_text(act if act else "   ·   ".join(parts))
+        r["detail"].set_text("   ·   ".join([r["launcher"], act] if act else [r["launcher"]] + parts))
+        samples = dl.get("samples") or []
+        tiles = r["tiles"]
+        tiles["pct"].set_text(f"{int(frac * 100)} %")
+        began = dl.get("began")
+        tiles["ld_stat_time"].value.set_text(_took(time.time() - began) if began else "–")
+        tiles["now"].set_text(_speed(rate) if rate > 1e5 and not paused and key == "ld_state_downloading" else "")
+        from plunderhub.ui.treasure_map import rate_stats
+        st = rate_stats(samples) if samples else {}
+        for k, field in (("ld_stat_avg", "avg"), ("ld_stat_max", "max"), ("ld_stat_min", "min")):
+            tiles[k].value.set_text(_speed(st.get(field)))
+        if len(samples) != r["graph"].count:
+            r["graph"].set_samples(st.get("curve") or [], st.get("avg"), count=len(samples))
         steer = is_steam and item is not None          # Steam's control on and answering
         own = bool(dl.get("direct"))
         kind = r["kind"]
@@ -624,22 +828,9 @@ class LoadingDock(Gtk.ScrolledWindow):
             note = ""           # on and answering: the switch says it
         self.steam_note.set_text(note)
         self.steam_note.set_visible(bool(note))
-        # the graph's numbers and the Pause all / Resume all button
-        rate = sum(self._rate(u) for u in (self._groups.get("now") or []))
-        self.graph.add(rate)
-        self.rate_label.set_text(f"{rate / 1e6:.1f} MB/s")
+        # the Pause all / Resume all button
         everything_paused = bool(self._uids()) and not self._groups.get("now") and not self._groups.get("next")
-        icon = "media-playback-start-symbolic" if everything_paused else "pause-symbolic"
-        if getattr(self.all_btn, "_icon", None) != icon:
-            self._set_icon(self.all_btn, icon, None, 16)
-            self.all_btn.set_tooltip_text(_("ld_resume_all") if everything_paused else _("ld_pause_all"))
-        self._hold(self.all_btn, bool(self._uids()))
-
-    def _rate(self, uid: str) -> float:
-        dl = self.view.downloads.get(uid) or {}
-        if dl.get("launcher") == "Steam" and self.steam_state:
-            return float(self.steam_state.get("rate") or 0)
-        return float(dl.get("rate") or dl.get("speed") or 0)
+        self.all_btn.set_label(_("ld_resume_all") if everything_paused else _("ld_pause_all"))
 
     def _start_poll(self):
         self.refresh()
@@ -688,69 +879,110 @@ class LoadingDock(Gtk.ScrolledWindow):
         return False
 
 
-class SpeedGraph(Gtk.DrawingArea):
-    """The download speed over the last few minutes: a line and the area
-    under it, in the accent. A sample a second (from the page's refresh);
-    drawn again only when one comes - or under the pointer: a marker and
-    that moment's speed and time."""
-    SAMPLES = 180
+class HeroBack(Gtk.Box):
+    """A card's background: the game's hero picture, faint, filling it
+    (cropped), under a wash of the card's own colour that's thick on the
+    left where the words sit. Drawn once per size into a surface."""
+    RADIUS = 13
 
-    def __init__(self, app):
+    def __init__(self):
         super().__init__()
-        from plunderhub.gi_setup import Gdk
-        self.app = app
-        self.samples: List[float] = []
-        self.times: List[float] = []
-        self._last = 0.0
-        self.hover_x: Optional[float] = None
-        self.set_size_request(-1, 86)
-        self.add_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
+        self.picture = None
+        self._surface = None
+        self._for = None
         self.connect("draw", self._draw)
-        self.connect("motion-notify-event", self._motion)
-        self.connect("leave-notify-event", lambda *_a: self._set_hover(None))
 
-    def add(self, rate: float):
-        now = time.monotonic()
-        if now - self._last < 0.9:
-            return
-        self._last = now
-        self.samples = (self.samples + [max(0.0, rate)])[-self.SAMPLES:]
-        self.times = (self.times + [time.time()])[-self.SAMPLES:]
+    def set_picture(self, pb):
+        self.picture = pb
+        self._surface = None
         self.queue_draw()
 
-    def _motion(self, _w, ev):
-        self._set_hover(ev.x)
+    def _draw(self, widget, cr):
+        if self.picture is None:
+            return False
+        w, h = widget.get_allocated_width(), widget.get_allocated_height()
+        if w < 2 or h < 2:
+            return False
+        scale = widget.get_scale_factor() or 1
+        if self._surface is None or self._for != (w, h, scale):
+            self._surface = self._paint(widget, w, h, scale)
+            self._for = (w, h, scale)
+        cr.set_source_surface(self._surface, 0, 0)
+        cr.paint()
         return False
 
-    def _set_hover(self, x):
-        if x != self.hover_x:
-            self.hover_x = x
-            self.queue_draw()             # only the graph: the page isn't laid out again
-        return False
+    def _paint(self, widget, w, h, scale):
+        import cairo
+        from plunderhub.gi_setup import Gdk
+        surf = widget.get_window().create_similar_image_surface(cairo.FORMAT_ARGB32, w * scale, h * scale, scale) \
+            if widget.get_window() is not None else cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+        cr = cairo.Context(surf)
+        r = self.RADIUS
+        cr.new_sub_path()
+        cr.arc(w - r, r, r, -math.pi / 2, 0)
+        cr.arc(w - r, h - r, r, 0, math.pi / 2)
+        cr.arc(r, h - r, r, math.pi / 2, math.pi)
+        cr.arc(r, r, r, math.pi, 3 * math.pi / 2)
+        cr.close_path()
+        cr.clip()
+        pb = self.picture
+        pw, ph = pb.get_width() / scale, pb.get_height() / scale
+        k = max(w / pw, h / ph)
+        cr.save()
+        # filling the card's width, the picture's upper middle shown (faces, titles)
+        cr.translate((w - pw * k) / 2, (h - ph * k) * 0.35)
+        cr.scale(k / scale, k / scale)
+        Gdk.cairo_set_source_pixbuf(cr, pb, 0, 0)
+        cr.paint_with_alpha(0.5)
+        cr.restore()
+        ctx = widget.get_parent().get_style_context()
+        bg = ctx.get_property("background-color", ctx.get_state())
+        grad = cairo.LinearGradient(0, 0, w, 0)
+        grad.add_color_stop_rgba(0.0, bg.red, bg.green, bg.blue, 0.97)
+        grad.add_color_stop_rgba(0.45, bg.red, bg.green, bg.blue, 0.86)
+        grad.add_color_stop_rgba(0.8, bg.red, bg.green, bg.blue, 0.66)
+        grad.add_color_stop_rgba(1.0, bg.red, bg.green, bg.blue, 0.8)
+        cr.set_source(grad)
+        cr.paint()
+        return surf
 
-    def _values(self) -> List[float]:
-        # a short running mean: one odd reading (a manifest's late jump) doesn't spike it
-        return [sum(self.samples[max(0, i - 2):i + 1]) / len(self.samples[max(0, i - 2):i + 1])
-                for i in range(len(self.samples))]
+
+class MiniGraph(Gtk.DrawingArea):
+    """An install's speed over its whole run, small: the area and line in
+    the accent, its average as a dashed line."""
+
+    def __init__(self, app, wide: bool = True):
+        super().__init__()
+        self.app = app
+        self.values: List[float] = []
+        self.avg = None
+        self.count = -1
+        # beside the numbers: as tall as they are; under them: a flatter strip
+        self.set_size_request(140 if wide else 60, 50 if wide else 34)
+        self.set_valign(Gtk.Align.CENTER)
+        self.connect("draw", self._draw)
+
+    def set_samples(self, values, avg=None, count=None):
+        self.values = [float(v) for v in values or []]
+        self.avg = avg
+        self.count = len(self.values) if count is None else count
+        self.queue_draw()
 
     def _draw(self, widget, cr):
         w, h = widget.get_allocated_width(), widget.get_allocated_height()
         hexs = self.app._home_accent_hex().lstrip("#")
         r, g, b = (int(hexs[i:i + 2], 16) / 255 for i in (0, 2, 4))
-        cr.set_source_rgba(r, g, b, 0.18)
+        cr.set_source_rgba(r, g, b, 0.22)
         cr.set_line_width(1)
         cr.move_to(0, h - 0.5)
         cr.line_to(w, h - 0.5)
         cr.stroke()
-        if len(self.samples) < 2:
-            return
-        vals = self._values()
-        # scaled to the usual speed, not to the one highest reading; above it: clipped
-        ordered = sorted(vals)
-        top = max(ordered[int(0.95 * (len(ordered) - 1))] * 1.15, 1.0)
-        step = w / (self.SAMPLES - 1)
-        x0 = w - step * (len(vals) - 1)
-        pts = [(x0 + i * step, h - 4 - (h - 12) * min(v, top) / top) for i, v in enumerate(vals)]
+        vals = self.values
+        if len(vals) < 2:
+            return False
+        top = max(max(vals), 1.0) * 1.1
+        step = w / (len(vals) - 1)
+        pts = [(i * step, h - 2 - (h - 6) * v / top) for i, v in enumerate(vals)]
 
         def curve():
             cr.move_to(*pts[0])
@@ -759,61 +991,23 @@ class SpeedGraph(Gtk.DrawingArea):
                 cr.curve_to(mid, ya, mid, yb, xb, yb)
         curve()
         cr.line_to(pts[-1][0], h)
-        cr.line_to(pts[0][0], h)
+        cr.line_to(0, h)
         cr.close_path()
-        cr.set_source_rgba(r, g, b, 0.20)
+        cr.set_source_rgba(r, g, b, 0.22)
         cr.fill()
         curve()
         cr.set_source_rgba(r, g, b, 0.95)
-        cr.set_line_width(2)
-        cr.set_line_join(1)
+        cr.set_line_width(1.6)
         cr.stroke()
-        if self.hover_x is None or self.hover_x < pts[0][0] - step:
-            return
-        i = max(0, min(len(pts) - 1, round((self.hover_x - x0) / step)))
-        x, y = pts[i]
-        cr.set_source_rgba(r, g, b, 0.45)
-        cr.set_line_width(1)
-        cr.move_to(round(x) + 0.5, 0)
-        cr.line_to(round(x) + 0.5, h)
-        cr.stroke()
-        cr.arc(x, y, 4, 0, 2 * math.pi)
-        cr.set_source_rgba(r, g, b, 1)
-        cr.fill()
-        # the moment's speed and time, in a small box beside the marker
-        from gi.repository import PangoCairo
-        text = f"{vals[i] / 1e6:.1f} MB/s  ·  {time.strftime('%H:%M:%S', time.localtime(self.times[i]))}"
-        layout = PangoCairo.create_layout(cr)
-        ctx = widget.get_style_context()
-        font = ctx.get_font(ctx.get_state()).copy()
-        font.set_size(int(font.get_size() * 0.85))
-        font.set_weight(Pango.Weight.BOLD)
-        layout.set_font_description(font)
-        layout.set_text(text, -1)
-        tw, th = (v / Pango.SCALE for v in layout.get_size())
-        pad = 6
-        bx = x + 10 if x + 10 + tw + 2 * pad < w else x - 10 - tw - 2 * pad
-        by = 4
-        cr.new_sub_path()
-        rad = 6
-        cr.arc(bx + tw + 2 * pad - rad, by + rad, rad, -math.pi / 2, 0)
-        cr.arc(bx + tw + 2 * pad - rad, by + th + 2 * pad - rad, rad, 0, math.pi / 2)
-        cr.arc(bx + rad, by + th + 2 * pad - rad, rad, math.pi / 2, math.pi)
-        cr.arc(bx + rad, by + rad, rad, math.pi, 3 * math.pi / 2)
-        cr.close_path()
-        ok, base = ctx.lookup_color("theme_base_color")
-        if ok:
-            cr.set_source_rgba(base.red, base.green, base.blue, 0.94)
-        else:
-            cr.set_source_rgba(0.05, 0.09, 0.10, 0.94)
-        cr.fill_preserve()
-        cr.set_source_rgba(r, g, b, 0.6)
-        cr.set_line_width(1)
-        cr.stroke()
-        fg = ctx.get_color(ctx.get_state())
-        cr.set_source_rgba(fg.red, fg.green, fg.blue, 1)
-        cr.move_to(bx + pad, by + pad)
-        PangoCairo.show_layout(cr, layout)
+        if self.avg:
+            y = round(h - 2 - (h - 6) * self.avg / top) + 0.5
+            cr.set_dash([3, 3])
+            cr.set_source_rgba(r, g, b, 0.55)
+            cr.set_line_width(1)
+            cr.move_to(0, y)
+            cr.line_to(w, y)
+            cr.stroke()
+        return False
 
 
 class InstallCard(Gtk.Revealer):
@@ -874,6 +1068,13 @@ class InstallCard(Gtk.Revealer):
         self.show_all()
         self.set_reveal_child(False)
 
+    def set_compact(self, on: bool):
+        """A short sidebar: the title, state and bar only."""
+        self._compact = on
+        self.detail.set_visible(not on)
+        if on:
+            self.more.set_visible(False)
+
     def update(self, view):
         _ = self.app._
         uids = [u for u in view.queue if view.downloads.get(u, {}).get("state") != "done"]
@@ -908,7 +1109,7 @@ class InstallCard(Gtk.Revealer):
         self.detail.set_text(activity_text(_, dl) or "  ·  ".join(parts))
         # the others waiting behind it, in words
         self.more.set_text(_("ld_card_more").format(n=len(uids) - 1))
-        self.more.set_visible(len(uids) > 1)
+        self.more.set_visible(len(uids) > 1 and not getattr(self, "_compact", False))
 
 
 # --- in the main window: a sidebar row under the Treasure Map's, shown while something installs ---

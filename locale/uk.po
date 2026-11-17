@@ -42,6 +42,98 @@ msgstr "Версія {version}"
 msgid "about_view_github"
 msgstr "Переглянути на GitHub"
 
+#. English: All of them unlocked – well sailed, captain!
+msgid "ach_all_unlocked"
+msgstr "Усі отримано – попутного вітру, капітане!"
+
+#. English: Hidden achievement – click to reveal
+msgid "ach_hidden"
+msgstr "Приховане досягнення – натисніть, щоб відкрити"
+
+#. English: Latest
+msgid "ach_hl_latest"
+msgstr "Останнє"
+
+#. English: Rare ones
+msgid "ach_hl_rare"
+msgstr "Рідкісні"
+
+#. English: under 10 % of players
+msgid "ach_hl_rare_sub"
+msgstr "менше 10% гравців"
+
+#. English: Rarest you hold
+msgid "ach_hl_rarest"
+msgstr "Ваше найрідкісніше"
+
+#. English: Reading the achievements…
+msgid "ach_loading"
+msgstr "Читаємо досягнення…"
+
+#. English: Locked
+msgid "ach_locked"
+msgstr "Не отримані"
+
+#. English: No achievements could be read for this game.
+msgid "ach_none"
+msgstr "Не вдалося прочитати досягнення цієї гри."
+
+#. English: None unlocked yet – the first one will show up here.
+msgid "ach_none_unlocked"
+msgstr "Поки жодного – перше з’явиться тут."
+
+#. English: {p} % of players
+msgid "ach_players"
+msgstr "{p}% гравців"
+
+#. English: {n} / {total}
+msgid "ach_progress"
+msgstr "{n} / {total}"
+
+#. English: Common
+msgid "ach_rarity_common"
+msgstr "Звичайне"
+
+#. English: Rare
+msgid "ach_rarity_rare"
+msgstr "Рідкісне"
+
+#. English: Ultra rare
+msgid "ach_rarity_ultra"
+msgstr "Ультрарідкісне"
+
+#. English: Uncommon
+msgid "ach_rarity_uncommon"
+msgstr "Незвичайне"
+
+#. English: Very rare
+msgid "ach_rarity_very"
+msgstr "Дуже рідкісне"
+
+#. English: Most common
+msgid "ach_sort_common"
+msgstr "Поширені"
+
+#. English: A–Z
+msgid "ach_sort_name"
+msgstr "А–Я"
+
+#. English: Newest
+msgid "ach_sort_newest"
+msgstr "Нові"
+
+#. English: Rarest
+msgid "ach_sort_rarest"
+msgstr "Рідкісні"
+
+#. English: Achievements
+msgid "ach_title"
+msgstr "Досягнення"
+
+#. English: Unlocked
+msgid "ach_unlocked"
+msgstr "Отримані"
+
 #. English: AI-translated and may contain mistakes.
 msgid "ai_translation_note"
 msgstr "Перекладено ШІ, може містити помилки."
@@ -2354,9 +2446,9 @@ msgstr "Пауза"
 msgid "ld_pause_all"
 msgstr "Призупинити все"
 
-#. English: Download
-msgid "ld_rate_caption"
-msgstr "Завантаження"
+#. English: Remove from the list
+msgid "ld_remove"
+msgstr "Прибрати зі списку"
 
 #. English: Restart Steam
 msgid "ld_restart_btn"
@@ -2393,6 +2485,22 @@ msgstr "Зараз завантажується"
 #. English: Paused
 msgid "ld_sec_paused"
 msgstr "На паузі"
+
+#. English: Average
+msgid "ld_stat_avg"
+msgstr "Середня"
+
+#. English: Max
+msgid "ld_stat_max"
+msgstr "Макс."
+
+#. English: Min
+msgid "ld_stat_min"
+msgstr "Мін."
+
+#. English: Time
+msgid "ld_stat_time"
+msgstr "Час"
 
 #. English: Aboard
 msgid "ld_state_aboard"
@@ -4638,9 +4746,17 @@ msgstr "Додає PlunderHub до бібліотеки Steam, щоб запус
 msgid "ss_title"
 msgstr "PlunderHub у Steam"
 
+#. English: Bringing the pictures aboard…
+msgid "startup_art"
+msgstr "Піднімаємо картинки на борт…"
+
 #. English: Preparing the ship…
 msgid "startup_loading"
 msgstr "Підготовка корабля…"
+
+#. English: Reading the {launcher} games…
+msgid "startup_reading"
+msgstr "Читаємо ігри {launcher}…"
 
 #. English: Couldn't start {title}
 msgid "steam_launch_failed"

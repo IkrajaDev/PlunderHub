@@ -411,6 +411,22 @@ class _CappedBox(Gtk.Box):
         return minimum, max(minimum, self._natural)
 
 
+class _ShrinkingBar(Gtk.EventBox):
+    """The top bar: asks for no more width than its smallest form (min_w,
+    measured once shown), so a window can be made - or tiled - that
+    narrow; HomeMixin._fit_topbar picks the form for the width it gets."""
+
+    def __init__(self):
+        super().__init__()
+        self.min_w = 0
+
+    def do_get_preferred_width(self):
+        minimum, natural = Gtk.EventBox.do_get_preferred_width(self)
+        if self.min_w:
+            minimum = min(minimum, self.min_w)
+        return minimum, max(minimum, natural)
+
+
 _HINT_GLYPHS: Dict[Tuple[float, ...], Optional[GdkPixbuf.Pixbuf]] = {}
 
 
@@ -1351,6 +1367,25 @@ class HomeMixin:
         self.home_brand_btn = brand_btn
         side.pack_start(brand_btn, False, False, 0)
 
+        # The rows scroll when the window is short (small screens, big scale,
+        # all five launchers): the logo stays on top, the cards under them -
+        # an install, Proton's, PlunderHub's update - always in sight.
+        nav_scroll = Gtk.ScrolledWindow()
+        nav_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        nav_scroll.set_overlay_scrolling(False)
+        nav_scroll.set_propagate_natural_height(True)
+        nav_scroll.set_min_content_height(96)
+        nav_scroll.get_style_context().add_class("settings-scroll")
+        nav_scroll.get_style_context().add_class("home-nav-scroll")
+        nav = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        nav_scroll.add(nav)
+        viewport = nav_scroll.get_child()
+        if isinstance(viewport, Gtk.Viewport):
+            viewport.set_shadow_type(Gtk.ShadowType.NONE)
+        nav.set_focus_vadjustment(nav_scroll.get_vadjustment())
+        self.home_nav_scroll = nav_scroll
+        side.pack_start(nav_scroll, True, True, 0)
+
         self.home_nav_main = Gtk.ListBox()
         self.home_nav_main.get_style_context().add_class("home-nav")
         for key, icon, text_key in (("all", "view-grid-symbolic", "all_games_section"),
@@ -1364,29 +1399,30 @@ class HomeMixin:
         self.home_nav_harbors.set_no_show_all(True)
         self.home_nav_harbors.hide()
         self.home_nav_main.add(self.home_nav_harbors)
-        side.pack_start(self.home_nav_main, False, False, 0)
+        nav.pack_start(self.home_nav_main, False, False, 0)
 
         self.home_nav_head = Gtk.Label(label=self._("sources_header_launchers").upper(), xalign=0)
         self.home_nav_head.set_line_wrap(True)
         self.home_nav_head.set_max_width_chars(24)
         self.home_nav_head.get_style_context().add_class("home-nav-head")
-        side.pack_start(self.home_nav_head, False, False, 0)
+        nav.pack_start(self.home_nav_head, False, False, 0)
 
         self.home_nav_launchers = Gtk.ListBox()
         self.home_nav_launchers.get_style_context().add_class("home-nav")
-        side.pack_start(self.home_nav_launchers, False, False, 0)
+        nav.pack_start(self.home_nav_launchers, False, False, 0)
 
         from plunderhub.ui.reorder_view import LauncherOrderList
         self.home_launcher_order = LauncherOrderList(
             self, on_reorder=self._on_launchers_reordered,
             on_pick=lambda name: self._set_home_nav(f"l:{name}"))
         self.home_launcher_order.set_no_show_all(True)
-        side.pack_start(self.home_launcher_order, False, False, 0)
+        nav.pack_start(self.home_launcher_order, False, False, 0)
 
         self.home_nav_main.connect("row-selected", self._on_home_nav_selected, self.home_nav_launchers)
         self.home_nav_launchers.connect("row-selected", self._on_home_nav_selected, self.home_nav_main)
 
-        side.pack_start(Gtk.Box(), True, True, 0)
+        # with room: Shipwright & co. at the foot of the rows, as ever
+        nav.pack_start(Gtk.Box(), True, True, 0)
         # while a Proton build downloads (ui/proton_page.py)
         from plunderhub.ui import proton_page
         from plunderhub.ui.proton_hints import ProtonHints
@@ -1395,6 +1431,11 @@ class HomeMixin:
             self, proton_page.RealProtonData(self), lambda: self.show_proton_page())
         side.pack_start(self._proton_card, False, False, 0)
         self._proton_offer_card = proton_page.HomeOfferCard(self, self._proton_card.data)
+        offer = self._proton_offer_card
+        offer_buttons = offer.download.get_parent()
+        self._card_minis(offer_buttons.get_parent().get_children()[0], offer_buttons, "cloud-download-symbolic",
+                         lambda: offer._download(), lambda: offer._later(),
+                         lambda: offer.download.get_label() or "", lambda: offer.later.get_label() or "")
         side.pack_start(self._proton_offer_card, False, False, 0)
         side.pack_start(self._build_update_card(), False, False, 0)
 
@@ -1431,8 +1472,13 @@ class HomeMixin:
         # a quiet look for updates, inspection problems and the Recommended kit, once settled in
         GLib.timeout_add_seconds(40, self._check_shipwright_attention)
         self.home_nav_bottom = bottom
-        bottom.set_margin_bottom(12)
-        side.pack_start(bottom, False, False, 0)
+        bottom.set_margin_bottom(8)
+        nav.pack_start(bottom, False, False, 0)
+        # a focused row (keyboard, controller) scrolled into sight
+        for box in (self.home_nav_main, self.home_nav_launchers, bottom):
+            box.set_adjustment(nav_scroll.get_vadjustment())
+        side.set_margin_bottom(4)
+        side.connect("size-allocate", lambda *_a: self._fit_sidebar())
         self.home_sidebar = side
         return side
 
@@ -1464,6 +1510,16 @@ class HomeMixin:
         badge.set_text(f"⟳ {updates}")
         badge.set_tooltip_text(self._("sw_updates_waiting").format(n=updates) if updates else None)
         badge.set_visible(updates > 0)
+        # more than one waiting: round numbers only (their colours tell them
+        # apart, the tooltips say it) - "Shipwright" keeps its room
+        shown = (warnings > 0) + bool(missing) + (updates > 0)
+        for b, n in ((warn, warnings), (rec, len(missing)), (badge, updates)):
+            ctx = b.get_style_context()
+            if shown > 1:
+                b.set_text(str(n))
+                ctx.add_class("sw-attention-dot")
+            else:
+                ctx.remove_class("sw-attention-dot")
 
     def _check_shipwright_attention(self) -> bool:
         """Once, a while after start: whether the badge should show. Quiet -
@@ -1583,6 +1639,10 @@ class HomeMixin:
         self._update_card_install.connect("clicked", lambda *_: self._show_update_install_choice_dialog())
         self._update_card_later.connect("clicked", lambda *_: self._dismiss_update_banner())
         card.pack_start(buttons, False, False, 0)
+        self._card_minis(top, buttons, "system-software-install-symbolic",
+                         lambda: self._show_update_install_choice_dialog(),
+                         lambda: self._dismiss_update_banner(),
+                         lambda: self._("update_install_btn"), lambda: self._("update_later_btn"))
         revealer = Gtk.Revealer()
         revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
         revealer.set_transition_duration(260)
@@ -1591,6 +1651,79 @@ class HomeMixin:
         self._update_card = revealer
         self._update_glow_id = None
         return revealer
+
+    # --- a short sidebar: the cards in brief -----------------------------------------------
+
+    # what the rows get at least before the cards go compact (~6 rows)
+    _SIDE_ROWS_MIN = 260
+
+    def _card_minis(self, top: Gtk.Box, buttons: Gtk.Box, go_icon: str, go, later, go_tip, later_tip):
+        """Two small round buttons in a card's top line, for when the sidebar is
+        short: they stand in for its row of Install / Later."""
+        from plunderhub.gi_setup import Gdk as _Gdk
+        minis = Gtk.Box(spacing=4)
+        minis.set_valign(Gtk.Align.CENTER)
+        for icon, cb, tip in ((go_icon, go, go_tip), ("window-close-symbolic", later, later_tip)):
+            b = Gtk.Button()
+            b.get_style_context().add_class("home-update-mini")
+            b.set_can_focus(False)
+            b.connect("clicked", lambda *_a, cb=cb: cb())
+            b.connect("query-tooltip", lambda w, *_a, tip=tip: (w.set_tooltip_text(tip()), False)[1])
+            b.set_has_tooltip(True)
+
+            def tint(btn, *_a, icon=icon):
+                scale = btn.get_scale_factor() or 1
+                pb = get_icon_pixbuf(icon, 14, self._home_accent_hex())
+                if pb is not None:
+                    btn.set_image(Gtk.Image.new_from_surface(_Gdk.cairo_surface_create_from_pixbuf(pb, scale, None)))
+            b.connect("realize", tint)
+            minis.pack_start(b, False, False, 0)
+        minis.show_all()
+        minis.set_no_show_all(True)
+        minis.hide()
+        top.pack_end(minis, False, False, 0)
+        # the card's round mark goes too in brief: its title keeps the room
+        mark = top.get_children()[0]
+        self.__dict__.setdefault("_side_compactable", []).append((buttons, minis, mark))
+
+    def _fit_sidebar(self):
+        """A short sidebar (small screen, big scale, every launcher on): the
+        cards in brief - Install / Later as two small buttons, the install
+        card without its detail lines - so the rows keep some room. Back in
+        full once there's room for it again."""
+        scroll = getattr(self, "home_nav_scroll", None)
+        if scroll is None or getattr(self, "_side_fit_pending", False):
+            return
+        room = scroll.get_allocated_height()
+        if room <= 1:
+            return
+        compact = getattr(self, "_side_compact", False)
+        if not compact:
+            if room >= self._SIDE_ROWS_MIN:
+                return
+            self._side_room_before = room
+            self._side_gain = None
+            want = True
+        else:
+            if getattr(self, "_side_gain", None) is None:
+                self._side_gain = max(0, room - getattr(self, "_side_room_before", room))
+            if room - self._side_gain < self._SIDE_ROWS_MIN + 16:
+                return
+            want = False
+        self._side_fit_pending = True
+
+        def apply():
+            self._side_fit_pending = False
+            self._side_compact = want
+            for buttons, minis, mark in self.__dict__.get("_side_compactable", []):
+                buttons.set_visible(not want)
+                minis.set_visible(want)
+                mark.set_visible(not want)
+            card = getattr(self, "_ld_card", None)
+            if card is not None and hasattr(card, "set_compact"):
+                card.set_compact(want)
+            return False
+        GLib.idle_add(apply)
 
     def _set_update_card(self, tag: Optional[str]):
         """Shows the card for tag - or, with None, hides it."""
@@ -2174,7 +2307,7 @@ class HomeMixin:
     # --- chrome: top bar ------------------------------------------------
 
     def _build_home_topbar(self) -> Gtk.Widget:
-        drag = Gtk.EventBox()
+        drag = _ShrinkingBar()
         drag.get_style_context().add_class("home-topbar")
         drag.connect("button-press-event", self._on_home_topbar_press)
         bar = Gtk.Box(spacing=8)
@@ -2350,6 +2483,7 @@ class HomeMixin:
 
         self.home_topbar = drag
         self._home_topbar = drag
+        drag.connect("size-allocate", self._topbar_allocated)
         for pill in (*self._topbar_wide, self._topbar_narrow):
             # shown or hidden as a whole (_set_compact_topbar): what's in
             # it is shown now, show_all doesn't reach inside any more
@@ -2387,10 +2521,44 @@ class HomeMixin:
         if not self.get_mapped():
             self._set_compact_topbar(self._COMPACT_LEVELS if width < self._COMPACT_BELOW * self._text_factor() else 0)
             return
+        self._fit_topbar(force=True)
+
+    def _fit_topbar(self, force: bool = False):
+        """The bar for the width it has now - a window made narrower (or
+        tiled small) too, not just a narrow screen: the fewest steps that
+        fit. It asks for no more than its smallest form, so the window can
+        be made that narrow."""
+        drag = getattr(self, "_home_topbar", None)
+        if drag is None or not isinstance(drag, _ShrinkingBar) or not drag.get_mapped():
+            return
+        bar = drag.get_child()
+        width = drag.get_allocated_width()
+        if width <= 1 or (not force and width == getattr(self, "_topbar_fit_width", None)):
+            return
+        self._topbar_fit_width = width
+        level_now = getattr(self, "_topbar_compact", 0) or 0
+        if not drag.min_w:
+            self._set_compact_topbar(self._COMPACT_LEVELS)
+            drag.min_w = bar.get_preferred_width()[0]
+        chosen = self._COMPACT_LEVELS
         for level in range(self._COMPACT_LEVELS + 1):
             self._set_compact_topbar(level)
-            if self.get_preferred_width()[0] <= width:
+            if bar.get_preferred_width()[0] <= width:
+                chosen = level
                 break
+        self._set_compact_topbar(chosen)
+        if chosen != level_now:
+            logger.debug(f"Top bar: step {chosen} for {width} px")
+
+    def _topbar_allocated(self, *_a):
+        if not getattr(self, "_topbar_fit_queued", False):
+            self._topbar_fit_queued = True
+
+            def run():
+                self._topbar_fit_queued = False
+                self._fit_topbar()
+                return False
+            GLib.idle_add(run)
 
     def _set_compact_topbar(self, level: int):
         if getattr(self, "_topbar_compact", None) == level:

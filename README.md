@@ -265,6 +265,13 @@
       <sub>Wayland&nbsp;or&nbsp;gamescope</sub>
     </td>
   </tr>
+  <tr>
+    <td align="center" valign="top" colspan="4">
+      <img src="docs/icons/achievements.svg" width="40" height="40" alt=""><br>
+      <b>Achievements</b><br>
+      <sub>Steam&nbsp;and&nbsp;GOG,&nbsp;with&nbsp;rarity</sub>
+    </td>
+  </tr>
 </table>
 
 <details>
@@ -273,7 +280,7 @@
 #### Your games and stores
 
 - **Treasure Map**: every game you own on Steam, Epic, GOG and Amazon on one page, installed or not. Install or uninstall one with a click, its DLCs picked along. Right-click an installed game for the same menu as in your library.
-- **Loading Dock**: every install you start from the Treasure Map, in one place - what's loading now, what's next (in order, move them up and down), what's paused, and a speed graph. Heroic installs pause and resume, any can be stopped. It picks up installs that went on while PlunderHub was closed, and says what Steam is busy with while a download stands at 0 %.
+- **Loading Dock**: every install you start from the Treasure Map, in one place - what's loading now, what's next (in order, move them up and down), what's paused. Each one shows how long it's been going, its top, lowest and average speed and its own speed graph. Heroic installs pause and resume, any can be stopped. Finished installs stay under Aboard with their numbers until you clear the list. It picks up installs that went on while PlunderHub was closed, and says what Steam is busy with while a download stands at 0 %.
 - **Steer Steam's downloads**: an opt-in switch in the Loading Dock to pause, resume and reorder Steam's own downloads. Off by default, and it switches itself off once Steam's installs are done.
 - **Harbors**: Battle.net, EA app, Epic, GOG Galaxy, Ubisoft Connect, Rockstar, Amazon and Wargaming get a row of their own under your games, one click away.
 - **Faugus**: install store launchers, Windows games or Linux games from the Treasure Map, each in its own Wine prefix.
@@ -292,6 +299,7 @@
 
 - **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and news links. Launch options with a Recommended preset and gamescope; winecfg, winetricks and running an .exe in the game's prefix.
 - **HDR**: one switch, in the game's own Wayland window or through gamescope. Hyprland and KDE switch the screen to HDR only once a game asks, so games saw no HDR and greyed it out - PlunderHub adds what Proton-GE and gamescope need there by itself, also to games set up with an older version.
+- **Achievements**: how many you've unlocked, on the game page. A click lists them - unlocked (newest first) and still locked, each with how rare it is among all players and when you got it. Sort by newest, rarest or most common. Hidden ones stay covered until you click. Steam games, and GOG games through Heroic.
 - **DLCs**: a game's DLC tab shows which DLCs it has and which are installed - install or uninstall the ones you tick (Steam, Epic, GOG).
 - **Game EXE**: start another .exe for a Heroic game, or swap a Faugus or Lutris game's file, in Launch options.
 - **Performance**: switch it on for a game and MangoHud logs every session in the background. The game page shows FPS, 1% lows and frame times session by session, marked where Proton or the driver changed.
@@ -418,6 +426,7 @@ Other distros (in the PlunderHub folder):
 - **Installing with Steam**: with Steam's window open, Steam's own install window asks. If you press Cancel there, PlunderHub lets the install go after a minute - Steam doesn't tell. With Steam closed or in the tray, Steam is closed for a moment and started again the way it was. On GNOME PlunderHub can't see whether Steam shows a window, so Steam's own install window always asks there.
 - **HDR inside gamescope**: a game in its own exclusive fullscreen mode can start black or as a small picture in a corner. Pick borderless (windowed) in the game's settings - gamescope fills the screen itself.
 - **HDR with an HDR and an SDR monitor**: on Hyprland and KDE PlunderHub sets HDR up for the monitor that's active (KDE: the primary one) when you save. A game opening on the other monitor may then look washed out.
+- **Achievements** come from Steam and from GOG through Heroic. Epic and Amazon games don't show them yet.
 - **Steer Steam's downloads** opens Steam's debugging port (127.0.0.1:8080, this computer only) while it's on: other programs on your PC could steer Steam through it. That's why it's off by default and switches itself off when Steam's installs are done. Turning it on restarts Steam once.
 
 ## Tested launcher versions
@@ -440,6 +449,7 @@ PlunderHub collects no data. It only connects to:
 - Steam's store, with a game's title, when you open its news, and with a Steam ID when Bilge cleaning finds a left folder of a game PlunderHub never saw
 - Steam's store and GOG, for the Treasure Map: a game's details when you open its card (by its ID), and your GOG games list, with the GOG sign-in Heroic already has, until Heroic has written its own
 - Epic and GOG through Heroic's own tools, for a game's DLC list when you open its DLC tab (Steam's comes from Steam's files on your PC)
+- Steam's public achievement numbers (by a game's ID) and Steam's and GOG's image servers, for how rare achievements are and their icons. Your own Steam achievements come from Steam's files on your PC; a GOG game's from GOG, with the GOG sign-in Heroic already has
 - SteamGridDB, only with your key
 - ProtonDB, with a game's Steam ID, for its rating on the game page (a game not from Steam is first looked up by its title in Steam's store search; you can turn this off in Settings)
 - GitHub, for updates and Proton downloads

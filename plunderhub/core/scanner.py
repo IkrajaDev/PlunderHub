@@ -672,6 +672,9 @@ class Scanner:
         return None
 
     def scan_all(self):
+        """self.on_step(launcher name), when set, before each launcher is
+        read (the startup screen says it)."""
+        on_step = getattr(self, "on_step", None)
         self.scan_errors = {}
         launcher_list = []
         for ldef in LAUNCHER_REGISTRY:
@@ -693,6 +696,11 @@ class Scanner:
                     games = cached[1]
 
             if games is None:
+                if on_step is not None:
+                    try:
+                        on_step(ldef.name)
+                    except Exception:
+                        pass
                 scan_fn = getattr(self, ldef.scan_method)
                 try:
                     games = scan_fn()

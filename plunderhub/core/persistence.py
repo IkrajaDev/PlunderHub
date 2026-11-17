@@ -410,3 +410,18 @@ def load_known_titles() -> Dict[str, Dict]:
 def save_known_titles(known_titles: Dict[str, Dict]) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     save_json(known_titles, KNOWN_TITLES_FILE)
+
+
+def load_aboard() -> List[Dict]:
+    """The Loading Dock's finished installs, newest first."""
+    from plunderhub.constants import ABOARD_FILE
+    data = load_config_json(ABOARD_FILE)
+    if not isinstance(data, list):
+        return []
+    return [e for e in data if isinstance(e, dict) and isinstance(e.get("uid"), str) and e.get("title")]
+
+
+def save_aboard(entries: List[Dict]) -> None:
+    from plunderhub.constants import ABOARD_FILE
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    save_json(entries, ABOARD_FILE)

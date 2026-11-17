@@ -877,6 +877,9 @@ button.home-update-install label {{ color: {on_accent}; }}
 button.home-update-install:hover {{ background-color: shade({accent}, 1.08); }}
 button.home-update-later {{ background-color: transparent; border: 1px solid {tint(0.35)}; }}
 button.home-update-later:hover {{ background-color: {tint(0.14)}; }}
+button.home-update-mini {{ min-width: 28px; min-height: 28px; padding: 0; border-radius: 999px; background-image: none;
+    background-color: transparent; border: 1px solid {tint(0.35)}; box-shadow: none; }}
+button.home-update-mini:hover {{ background-color: {tint(0.14)}; }}
 .beta-pill {{
     color: {accent};
     border: 1px solid {tint(0.55)};
@@ -1492,6 +1495,30 @@ button.sw-chip:checked label {{ color: {on_accent}; }}
 /* The release notes window (ui/release_notes_window.py). */
 .notes-sidebar {{ background-color: {tint(0.04)}; border-radius: 20px 0 0 20px; }}
 .notes-divider {{ background-color: {tint(0.14)}; min-width: 1px; }}
+/* the achievements window (ui/achievements_window.py) */
+.ach-count {{ font-size: 120%; font-weight: 800; margin-top: 4px; }}
+.ach-highlight {{ background-color: alpha({sidebar}, 0.62); border: 1px solid {tint(0.12)};
+  border-radius: 12px; padding: 8px 12px; min-width: 110px; }}
+.ach-highlight-value {{ font-weight: 800; }}
+box.ach-segment {{ background-color: alpha({sidebar}, 0.7); border: 1px solid {tint(0.14)}; border-radius: 999px;
+  padding: 3px; }}
+button.ach-segment-btn {{ background-image: none; background-color: transparent; border: none; box-shadow: none;
+  border-radius: 999px; padding: 5px 16px; color: {fg_dim}; font-weight: 700; }}
+button.ach-segment-btn:hover {{ background-color: {tint(0.10)}; }}
+button.ach-segment-btn:checked {{ background-color: {accent}; color: {on_accent}; }}
+button.ach-segment-btn:checked label {{ color: {on_accent}; }}
+list.ach-list, list.ach-list row {{ background-color: transparent; }}
+list.ach-list row.ach-row {{ padding: 3px 4px 3px 0; border: none; }}
+list.ach-list row.ach-row:hover {{ background-color: transparent; }}
+.ach-card {{ background-color: {raised}; border: 1px solid {tint(0.10)}; border-radius: 14px; }}
+list.ach-list row.ach-row:hover .ach-card {{ border-color: {tint(0.26)}; }}
+.ach-card-locked .ach-name {{ color: alpha({fg}, 0.82); }}
+.ach-name {{ font-weight: 700; }}
+.ach-hidden {{ color: {fg_dim}; font-style: italic; }}
+.ach-pct-small {{ font-weight: 800; }}
+.ach-tier {{ font-size: 82%; font-weight: 700; color: {fg_dim}; }}
+.ach-tier-accent {{ color: {accent}; }}
+.ach-when {{ font-size: 85%; color: {fg_dim}; }}
 .notes-nav-title {{ font-weight: 700; }}
 .notes-bullet {{ color: {accent}; font-weight: 800; }}
 .notes-code {{
@@ -1616,11 +1643,16 @@ button.dlc-row:checked {{ background-color: alpha({accent}, 0.12); border-color:
 .dlc-actions button:disabled {{ opacity: 0.45; }}
 /* The Treasure Map's Loading Dock (ui/loading_dock.py): each install's bar. */
 .ld-bar trough {{ min-height: 6px; border-radius: 999px; background-color: {tint(0.10)}; border: none; }}
-.ld-cover {{ border-radius: 6px; }}
 .ld-rate {{ font-size: 150%; font-weight: 800; }}
 .ld-empty {{ padding: 36px 24px 30px; }}
 .ld-empty-title {{ font-size: 140%; font-weight: 800; }}
-.ld-done {{ opacity: 0.85; }}
+.ld-card {{ padding: 0; }}
+.ld-title {{ font-size: 118%; font-weight: 800; }}
+.ld-stat {{ padding: 0 16px 0 0; min-width: 84px; }}
+.ld-stat-value {{ font-weight: 600; }}
+.ld-stat-cap {{ color: {fg_dim}; font-size: 72%; font-weight: 600; letter-spacing: 1px; }}
+.ld-now-pct {{ font-size: 150%; font-weight: 800; color: {accent}; }}
+.ld-now-rate {{ font-weight: 600; color: {fg_dim}; }}
 /* the sidebar's foot while something installs - Heroic's way: words, a bar, no card */
 button.ld-side {{ background-image: none; background-color: transparent; border: none; box-shadow: none;
     border-radius: 12px; padding: 8px 10px; }}
@@ -1630,8 +1662,8 @@ button.ld-side:hover {{ background-color: {tint(0.06)}; }}
 .ld-side-num {{ font-size: 88%; }}
 .ld-side-detail {{ color: {fg_dim}; font-size: 82%; }}
 /* its place in the queue, and the round buttons - one size each, so every row's columns line up */
-.ld-num {{ min-width: 30px; min-height: 30px; border-radius: 999px; background-color: alpha({accent}, 0.16);
-    color: {accent}; font-weight: 800; }}
+.ld-num {{ padding: 1px 9px; border-radius: 999px; background-color: alpha({accent}, 0.16);
+    color: {accent}; font-weight: 800; font-size: 92%; }}
 button.ld-icon-btn {{ min-width: 38px; min-height: 38px; padding: 0; border-radius: 999px; background-image: none;
     background-color: {tint(0.05)}; border: 1px solid {tint(0.10)}; box-shadow: none; }}
 button.ld-icon-btn:hover {{ background-color: {tint(0.12)}; border-color: {tint(0.18)}; }}
@@ -1745,6 +1777,7 @@ button.sw-collapse:hover {{ background-color: {tint(0.12)}; color: {fg}; }}
     font-weight: 700;
 }}
 .sw-attention-badge.sw-attention-warn {{ background-color: #e8a33d; color: #1d1405; }}
+.sw-attention-badge.sw-attention-dot {{ padding: 1px 0; min-width: 19px; }}
 .sw-attention-badge.sw-attention-rec {{
     background-color: transparent;
     color: {accent};

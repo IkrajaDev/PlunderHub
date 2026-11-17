@@ -42,6 +42,98 @@ msgstr "Verzió: {version}"
 msgid "about_view_github"
 msgstr "Megtekintés a GitHubon"
 
+#. English: All of them unlocked – well sailed, captain!
+msgid "ach_all_unlocked"
+msgstr "Mind megvan – szép hajózás, kapitány!"
+
+#. English: Hidden achievement – click to reveal
+msgid "ach_hidden"
+msgstr "Rejtett achievement – kattints a felfedéshez"
+
+#. English: Latest
+msgid "ach_hl_latest"
+msgstr "Legutóbbi"
+
+#. English: Rare ones
+msgid "ach_hl_rare"
+msgstr "Ritkák"
+
+#. English: under 10 % of players
+msgid "ach_hl_rare_sub"
+msgstr "a játékosok 10 %-a alatt"
+
+#. English: Rarest you hold
+msgid "ach_hl_rarest"
+msgstr "A legritkább, ami megvan"
+
+#. English: Reading the achievements…
+msgid "ach_loading"
+msgstr "Az achievementek beolvasása…"
+
+#. English: Locked
+msgid "ach_locked"
+msgstr "Még nincs meg"
+
+#. English: No achievements could be read for this game.
+msgid "ach_none"
+msgstr "Ehhez a játékhoz nem sikerült achievementeket beolvasni."
+
+#. English: None unlocked yet – the first one will show up here.
+msgid "ach_none_unlocked"
+msgstr "Még egy sincs meg – az első itt fog megjelenni."
+
+#. English: {p} % of players
+msgid "ach_players"
+msgstr "A játékosok {p} %-a"
+
+#. English: {n} / {total}
+msgid "ach_progress"
+msgstr "{n} / {total}"
+
+#. English: Common
+msgid "ach_rarity_common"
+msgstr "Gyakori"
+
+#. English: Rare
+msgid "ach_rarity_rare"
+msgstr "Ritka"
+
+#. English: Ultra rare
+msgid "ach_rarity_ultra"
+msgstr "Ultraritka"
+
+#. English: Uncommon
+msgid "ach_rarity_uncommon"
+msgstr "Nem gyakori"
+
+#. English: Very rare
+msgid "ach_rarity_very"
+msgstr "Nagyon ritka"
+
+#. English: Most common
+msgid "ach_sort_common"
+msgstr "Leggyakoribb"
+
+#. English: A–Z
+msgid "ach_sort_name"
+msgstr "A–Z"
+
+#. English: Newest
+msgid "ach_sort_newest"
+msgstr "Legújabb"
+
+#. English: Rarest
+msgid "ach_sort_rarest"
+msgstr "Legritkább"
+
+#. English: Achievements
+msgid "ach_title"
+msgstr "Achievementek"
+
+#. English: Unlocked
+msgid "ach_unlocked"
+msgstr "Megszerzett"
+
 #. English: AI-translated and may contain mistakes.
 msgid "ai_translation_note"
 msgstr "AI-fordítás, tartalmazhat hibákat."
@@ -2354,9 +2446,9 @@ msgstr "Szünet"
 msgid "ld_pause_all"
 msgstr "Mind szüneteltetése"
 
-#. English: Download
-msgid "ld_rate_caption"
-msgstr "Letöltés"
+#. English: Remove from the list
+msgid "ld_remove"
+msgstr "Eltávolítás a listából"
 
 #. English: Restart Steam
 msgid "ld_restart_btn"
@@ -2393,6 +2485,22 @@ msgstr "Most töltődik"
 #. English: Paused
 msgid "ld_sec_paused"
 msgstr "Szüneteltetve"
+
+#. English: Average
+msgid "ld_stat_avg"
+msgstr "Átlag"
+
+#. English: Max
+msgid "ld_stat_max"
+msgstr "Max"
+
+#. English: Min
+msgid "ld_stat_min"
+msgstr "Min"
+
+#. English: Time
+msgid "ld_stat_time"
+msgstr "Idő"
 
 #. English: Aboard
 msgid "ld_state_aboard"
@@ -4638,9 +4746,17 @@ msgstr "Felveszi a PlunderHubot a Steam-könyvtáradba, így Big Picture-ből va
 msgid "ss_title"
 msgstr "PlunderHub a Steamben"
 
+#. English: Bringing the pictures aboard…
+msgid "startup_art"
+msgstr "Képek felhozása a fedélzetre…"
+
 #. English: Preparing the ship…
 msgid "startup_loading"
 msgstr "A hajó előkészítése…"
+
+#. English: Reading the {launcher} games…
+msgid "startup_reading"
+msgstr "A {launcher} játékainak beolvasása…"
 
 #. English: Couldn't start {title}
 msgid "steam_launch_failed"

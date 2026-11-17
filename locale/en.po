@@ -36,6 +36,75 @@ msgstr "Version {version}"
 msgid "about_view_github"
 msgstr "View on GitHub"
 
+msgid "ach_all_unlocked"
+msgstr "All of them unlocked – well sailed, captain!"
+
+msgid "ach_hidden"
+msgstr "Hidden achievement – click to reveal"
+
+msgid "ach_hl_latest"
+msgstr "Latest"
+
+msgid "ach_hl_rare"
+msgstr "Rare ones"
+
+msgid "ach_hl_rare_sub"
+msgstr "under 10 % of players"
+
+msgid "ach_hl_rarest"
+msgstr "Rarest you hold"
+
+msgid "ach_loading"
+msgstr "Reading the achievements…"
+
+msgid "ach_locked"
+msgstr "Locked"
+
+msgid "ach_none"
+msgstr "No achievements could be read for this game."
+
+msgid "ach_none_unlocked"
+msgstr "None unlocked yet – the first one will show up here."
+
+msgid "ach_players"
+msgstr "{p} % of players"
+
+msgid "ach_progress"
+msgstr "{n} / {total}"
+
+msgid "ach_rarity_common"
+msgstr "Common"
+
+msgid "ach_rarity_rare"
+msgstr "Rare"
+
+msgid "ach_rarity_ultra"
+msgstr "Ultra rare"
+
+msgid "ach_rarity_uncommon"
+msgstr "Uncommon"
+
+msgid "ach_rarity_very"
+msgstr "Very rare"
+
+msgid "ach_sort_common"
+msgstr "Most common"
+
+msgid "ach_sort_name"
+msgstr "A–Z"
+
+msgid "ach_sort_newest"
+msgstr "Newest"
+
+msgid "ach_sort_rarest"
+msgstr "Rarest"
+
+msgid "ach_title"
+msgstr "Achievements"
+
+msgid "ach_unlocked"
+msgstr "Unlocked"
+
 msgid "ai_translation_note"
 msgstr "AI-translated and may contain mistakes."
 
@@ -1770,8 +1839,8 @@ msgstr "Pause"
 msgid "ld_pause_all"
 msgstr "Pause all"
 
-msgid "ld_rate_caption"
-msgstr "Download"
+msgid "ld_remove"
+msgstr "Remove from the list"
 
 msgid "ld_restart_btn"
 msgstr "Restart Steam"
@@ -1799,6 +1868,18 @@ msgstr "Now loading"
 
 msgid "ld_sec_paused"
 msgstr "Paused"
+
+msgid "ld_stat_avg"
+msgstr "Average"
+
+msgid "ld_stat_max"
+msgstr "Max"
+
+msgid "ld_stat_min"
+msgstr "Min"
+
+msgid "ld_stat_time"
+msgstr "Time"
 
 msgid "ld_state_aboard"
 msgstr "Aboard"
@@ -3483,8 +3564,14 @@ msgstr "Adds PlunderHub to your Steam library, so you can start it from Big Pict
 msgid "ss_title"
 msgstr "PlunderHub in Steam"
 
+msgid "startup_art"
+msgstr "Bringing the pictures aboard…"
+
 msgid "startup_loading"
 msgstr "Preparing the ship…"
+
+msgid "startup_reading"
+msgstr "Reading the {launcher} games…"
 
 msgid "steam_launch_failed"
 msgstr "Couldn't start {title}"

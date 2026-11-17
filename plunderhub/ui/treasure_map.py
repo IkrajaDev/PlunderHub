@@ -114,6 +114,31 @@ def _sort_key(g: OwnedGame):
     return re.sub(r"^(the|a|an)\s+", "", g.title.lower())
 
 
+def rate_stats(samples: List[float], points: int = 90) -> Dict:
+    """An install's speed in short: average, highest, lowest while it
+    downloaded (stalls and the install step, at 0, left out) and the
+    curve squeezed to `points` values for its graph."""
+    if not samples:
+        return {}
+    smooth = [sum(samples[max(0, i - 2):i + 1]) / len(samples[max(0, i - 2):i + 1]) for i in range(len(samples))]
+    top = max(smooth)
+    going = [v for v in smooth if v > max(1e5, top * 0.02)]
+    out: Dict = {}
+    if going:
+        # the lowest without the first seconds' ramp-up and the last ones' tail
+        settled = smooth[10:-5] if len(smooth) > 40 else smooth
+        low = [v for v in settled if v > max(1e5, top * 0.02)] or going
+        out.update(avg=sum(going) / len(going), max=max(going), min=min(low))
+    n = len(smooth)
+    if n > points:
+        curve = [sum(smooth[int(i * n / points):int((i + 1) * n / points)])
+                 / max(1, int((i + 1) * n / points) - int(i * n / points)) for i in range(points)]
+    else:
+        curve = smooth
+    out["curve"] = [round(v) for v in curve]
+    return out
+
+
 def _load_cover_at(path: Path, tw: int, th: int) -> GdkPixbuf.Pixbuf:
     """path decoded straight at tw x th device px, cropped to fill
     (the top kept: titles sit there)."""
@@ -2847,9 +2872,6 @@ class TreasureMap(Gtk.Box):
 
     def _cover_ready(self, uid: str):
         self.grid.cover_ready(uid)
-        page = getattr(self.app, "_ld_view", None)
-        if page is not None:
-            page.cover_ready(uid)
         for card in list(InstallingCard.live):          # the library's installing cards
             if card.game.uid == uid and card.get_mapped():
                 card.area.queue_draw()
@@ -3184,13 +3206,51 @@ class TreasureMap(Gtk.Box):
         self._update_dock()
         self._loading_dock_changed()
 
+    def aboard(self) -> List[Dict]:
+        """The Loading Dock's Aboard list - kept on disk till the player clears it."""
+        log = self.__dict__.get("aboard_log")
+        if log is None:
+            from plunderhub.core.persistence import load_aboard
+            log = self.aboard_log = load_aboard()
+        return log
+
+    def save_aboard(self):
+        from plunderhub.core.persistence import save_aboard
+        try:
+            save_aboard(self.aboard())
+        except OSError as e:
+            logger.warning(f"Couldn't save the Aboard list: {e}")
+
     def record_aboard(self, uid: str, title: str, launcher: str, size: int):
-        """A finished install, for the Loading Dock's Aboard list (till cleared)."""
-        log = self.__dict__.setdefault("aboard_log", [])
+        """A finished install, for the Loading Dock's Aboard list (till
+        cleared): how long it took and how fast it came, the speed graph."""
+        log = self.aboard()
         log[:] = [e for e in log if e["uid"] != uid]
-        log.insert(0, {"uid": uid, "title": title, "launcher": launcher, "size": int(size or 0),
-                       "at": time.time()})
+        dl = self.downloads.get(uid) or {}
+        now = time.time()
+        entry = {"uid": uid, "title": title, "launcher": launcher, "size": int(size or 0), "at": now}
+        entry.update(rate_stats(dl.get("samples") or []))
+        began = dl.get("began")
+        if began:
+            entry["took"] = int(round(now - began))
+        hero = ((self.__dict__.get("_card_cache") or {}).get(uid) or ({},))[0].get("hero")
+        if hero:
+            entry["hero"] = str(hero)
+        log.insert(0, entry)
+        self.save_aboard()
         self._loading_dock_changed()
+
+    @staticmethod
+    def _sample_rate(dl: Dict):
+        """A sample a second of the speed while it's going, for the
+        Loading Dock's graphs and numbers."""
+        if dl.get("state") not in ("downloading", "installing") or dl.get("steam_paused"):
+            return
+        dl.setdefault("began", time.time())
+        samples = dl.setdefault("samples", [])
+        samples.append(float(dl.get("rate") or dl.get("speed") or 0))
+        if len(samples) > 6 * 3600:
+            del samples[: len(samples) - 6 * 3600]
 
     def _recover_installs(self):
         """PlunderHub started again while installs went on (Steam and Heroic
@@ -3492,6 +3552,7 @@ class TreasureMap(Gtk.Box):
             if game is None:
                 self.queue.remove(uid)
                 continue
+            self._sample_rate(dl)
             if dl.get("direct"):
                 continue
             if game.store == "steam":

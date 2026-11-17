@@ -42,6 +42,98 @@ msgstr "Versión {version}"
 msgid "about_view_github"
 msgstr "Ver en GitHub"
 
+#. English: All of them unlocked – well sailed, captain!
+msgid "ach_all_unlocked"
+msgstr "¡Todos desbloqueados – buena travesía, capitán!"
+
+#. English: Hidden achievement – click to reveal
+msgid "ach_hidden"
+msgstr "Logro oculto – haz clic para verlo"
+
+#. English: Latest
+msgid "ach_hl_latest"
+msgstr "Más reciente"
+
+#. English: Rare ones
+msgid "ach_hl_rare"
+msgstr "Raros"
+
+#. English: under 10 % of players
+msgid "ach_hl_rare_sub"
+msgstr "menos del 10 % de jugadores"
+
+#. English: Rarest you hold
+msgid "ach_hl_rarest"
+msgstr "Tu más rara"
+
+#. English: Reading the achievements…
+msgid "ach_loading"
+msgstr "Leyendo los logros…"
+
+#. English: Locked
+msgid "ach_locked"
+msgstr "Bloqueados"
+
+#. English: No achievements could be read for this game.
+msgid "ach_none"
+msgstr "No se pudieron leer logros de este juego."
+
+#. English: None unlocked yet – the first one will show up here.
+msgid "ach_none_unlocked"
+msgstr "Aún ninguno – el primero aparecerá aquí."
+
+#. English: {p} % of players
+msgid "ach_players"
+msgstr "{p} % de los jugadores"
+
+#. English: {n} / {total}
+msgid "ach_progress"
+msgstr "{n} / {total}"
+
+#. English: Common
+msgid "ach_rarity_common"
+msgstr "Común"
+
+#. English: Rare
+msgid "ach_rarity_rare"
+msgstr "Raro"
+
+#. English: Ultra rare
+msgid "ach_rarity_ultra"
+msgstr "Ultrarraro"
+
+#. English: Uncommon
+msgid "ach_rarity_uncommon"
+msgstr "Poco común"
+
+#. English: Very rare
+msgid "ach_rarity_very"
+msgstr "Muy raro"
+
+#. English: Most common
+msgid "ach_sort_common"
+msgstr "Más comunes"
+
+#. English: A–Z
+msgid "ach_sort_name"
+msgstr "A–Z"
+
+#. English: Newest
+msgid "ach_sort_newest"
+msgstr "Más recientes"
+
+#. English: Rarest
+msgid "ach_sort_rarest"
+msgstr "Más raros"
+
+#. English: Achievements
+msgid "ach_title"
+msgstr "Logros"
+
+#. English: Unlocked
+msgid "ach_unlocked"
+msgstr "Desbloqueados"
+
 #. English: AI-translated and may contain mistakes.
 msgid "ai_translation_note"
 msgstr "Traducido por IA y puede contener errores."
@@ -2354,9 +2446,9 @@ msgstr "Pausar"
 msgid "ld_pause_all"
 msgstr "Pausar todo"
 
-#. English: Download
-msgid "ld_rate_caption"
-msgstr "Descarga"
+#. English: Remove from the list
+msgid "ld_remove"
+msgstr "Quitar de la lista"
 
 #. English: Restart Steam
 msgid "ld_restart_btn"
@@ -2393,6 +2485,22 @@ msgstr "Cargando ahora"
 #. English: Paused
 msgid "ld_sec_paused"
 msgstr "En pausa"
+
+#. English: Average
+msgid "ld_stat_avg"
+msgstr "Media"
+
+#. English: Max
+msgid "ld_stat_max"
+msgstr "Máx"
+
+#. English: Min
+msgid "ld_stat_min"
+msgstr "Mín"
+
+#. English: Time
+msgid "ld_stat_time"
+msgstr "Duración"
 
 #. English: Aboard
 msgid "ld_state_aboard"
@@ -4638,9 +4746,17 @@ msgstr "Añade PlunderHub a tu biblioteca de Steam para abrirlo desde Big Pictur
 msgid "ss_title"
 msgstr "PlunderHub en Steam"
 
+#. English: Bringing the pictures aboard…
+msgid "startup_art"
+msgstr "Subiendo las imágenes a bordo…"
+
 #. English: Preparing the ship…
 msgid "startup_loading"
 msgstr "Preparando el barco…"
+
+#. English: Reading the {launcher} games…
+msgid "startup_reading"
+msgstr "Leyendo los juegos de {launcher}…"
 
 #. English: Couldn't start {title}
 msgid "steam_launch_failed"

@@ -1002,6 +1002,11 @@ def is_steam_client(pid: int) -> bool:
     return "/ubuntu12_" in exe or os.path.basename(exe) in _STEAM_CLIENT_NAMES
 
 
+# a new Steam window during a launch is closed only when Steam still
+# isn't asking anything this long after it came up (its log line about
+# asking is read up to ~1 s late)
+STEAM_WINDOW_GRACE = 2.5
+
 # how long a game's new window is followed (moved back to its workspace)
 WINDOW_SETTLE = 15.0
 
@@ -1020,6 +1025,8 @@ class WorkspaceMover:
         # new Steam window is unwanted now - None once it's over -,
         # windows already seen)
         self._steam_quiet: Dict[str, Tuple[Callable[[], Optional[bool]], Set[str]]] = {}
+        # uid -> {(window, pid): when it was first seen} - Steam windows not decided on yet
+        self._steam_pending: Dict[str, Dict[Tuple[str, int], float]] = {}
         self._thread: Optional[threading.Thread] = None
         self._wake = threading.Event()
         # PlunderHub's workspace at the last launch, and per game watched
@@ -1113,12 +1120,25 @@ class WorkspaceMover:
             if now is None:
                 with self._lock:
                     self._steam_quiet.pop(uid, None)
+                self._steam_pending.pop(uid, None)
                 continue
+            pending = self._steam_pending.setdefault(uid, {})
             for wid, pid, _ws in windows:
                 if (wid, pid) in seen:
                     continue
+                if not (pid and is_steam_client(pid)):
+                    seen.add((wid, pid))
+                    continue
+                # Looked at again after STEAM_WINDOW_GRACE: Steam opens the
+                # window it asks in (ShowEula - 11-17 PAYDAY 2: the EULA
+                # window closed, the launch hung on it) a moment before its
+                # "waiting for user response" line is read
+                first = pending.setdefault((wid, pid), time.monotonic())
+                if time.monotonic() - first < STEAM_WINDOW_GRACE:
+                    continue
                 seen.add((wid, pid))
-                if now and pid and is_steam_client(pid):
+                pending.pop((wid, pid), None)
+                if now:
                     ok = self.compositor.close_window(wid)
                     logger.info(f"Steam opened its window during {uid}'s launch - back to the tray on "
                                 f"{self.compositor.name}: {'done' if ok else 'failed'}")
@@ -1127,6 +1147,7 @@ class WorkspaceMover:
                     # once, again and again, for minutes) - it stays
                     with self._lock:
                         self._steam_quiet.pop(uid, None)
+                    self._steam_pending.pop(uid, None)
                     break
 
     def forget(self, uid: str):

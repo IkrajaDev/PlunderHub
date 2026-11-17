@@ -1323,6 +1323,9 @@ class GamePage(Gtk.Dialog):
         grid.attach(self._facts_row, 0, 3, 3, 1)
         if app.settings.get("protondb_enabled", True):
             threading.Thread(target=self._fetch_protondb, daemon=True).start()
+        from plunderhub.core.achievements import source as _ach_source
+        if _ach_source(game.uid) is not None:
+            threading.Thread(target=self._fetch_achievements, daemon=True).start()
         if runner_of(game.uid) is not None and not updates_before_launch(game.uid):
             note = Gtk.Label(label=_("heroic_update_auto_off_text"), xalign=0)
             note.set_line_wrap(True)
@@ -1330,6 +1333,40 @@ class GamePage(Gtk.Dialog):
             grid.attach(note, 0, 4, 3, 1)
         threading.Thread(target=self._measure, daemon=True).start()
         return grid
+
+    def _fetch_achievements(self):
+        from plunderhub.core import achievements
+        uid = self.game.uid
+        try:
+            found = achievements.for_uid(uid, getattr(self.app, "lang", "en"), rarity=False) \
+                if achievements.available(uid) else None
+        except Exception as e:
+            logger.debug(f"No achievements for {self.game.title!r}: {e}")
+            found = None
+        if found is not None:
+            GLib.idle_add(self._show_achievements, uid, found)
+
+    def _show_achievements(self, uid: str, found) -> bool:
+        """The achievements card: unlocked of all, the share in percent; a
+        click lists them (ui/achievements_window.py)."""
+        if self.get_window() is None:
+            return False
+        _ = self._
+
+        def open_list():
+            from plunderhub.ui.achievements_window import open_achievements
+            open_achievements(self.app, self, uid, self.game.title)
+        card, val = self._card(_("ach_title"), _("ach_progress").format(n=found.unlocked, total=found.total),
+                               open_list)
+        sub = Gtk.Label(label=f"{round(100 * found.unlocked / found.total)} %" if found.total else "",
+                        xalign=0.5)
+        sub.get_style_context().add_class("gp-card-sub")
+        box = val.get_parent()
+        box.pack_start(sub, False, False, 0)
+        box.reorder_child(sub, 2)
+        self._facts_row.pack_start(card, True, True, 0)
+        card.show_all()
+        return False
 
     def _fetch_protondb(self):
         from plunderhub.core.protondb import rating

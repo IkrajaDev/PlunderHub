@@ -48,7 +48,7 @@ from plunderhub.constants import (
     RESOLUTION_TIER_FONT_SCALE, REVEAL_FADE_DURATION_MS, REVEAL_FADE_STEP_MS,
 )
 from plunderhub.core.models import GameItem, resolve_protondb_url, resolve_store_url
-from plunderhub.core.steam_launch_status import STALL_SECONDS
+from plunderhub.core.steam_launch_status import STALL_SECONDS, eula_accepted_since
 from plunderhub.core.heroic_cloud import CloudSaves, cloud_saves_all, run_sync as run_cloud_sync
 from plunderhub.core.save_backup import back_up as back_up_saves, list_backups as list_save_backups
 from plunderhub.core.save_backup import backup_dir as save_backup_dir, restore as restore_saves
@@ -460,6 +460,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         scrim_box.pack_start(self.startup_spinner, False, False, 0)
         startup_label = Gtk.Label(label=self._("startup_loading"))
         startup_label.get_style_context().add_class("startup-scrim-label")
+        self._startup_label = startup_label
         scrim_box.pack_start(startup_label, False, False, 0)
         self.startup_overlay.add(scrim_box)
 
@@ -588,6 +589,15 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             bounty_board.attach(self)
         except Exception as e:
             logger.warning(f"Bounty Board couldn't be set up: {e}")
+        return False
+
+    def _startup_step(self, key: str, launcher: str = ""):
+        """The startup screen says what it's doing now: a launcher's games
+        read, the pictures brought in."""
+        label = getattr(self, "_startup_label", None)
+        if label is None or getattr(self, "startup_overlay", None) is None:
+            return False
+        label.set_text(self._(key).format(launcher=launcher))
         return False
 
     _STARTUP_OVERLAY_MAX_WAIT = 30.0
@@ -3759,13 +3769,20 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             if not uid.startswith("steam:") or uid in self._steam_asked_again:
                 continue
             stage = self._process_probe.stage(uid)
-            if stage is None or stage.stage != "stalled" or time.time() - stage.since < STALL_SECONDS:
+            if stage is None:
+                continue
+            if stage.stage == "stalled" and time.time() - stage.since >= STALL_SECONDS:
+                why = "finished the download"
+            elif stage.stage == "waiting" and stage.asks == "ShowEula" \
+                    and eula_accepted_since(uid.split(":", 1)[1], stage.since):
+                why = "got the EULA accepted"
+            else:
                 continue
             self._steam_asked_again.add(uid)
             cmd, env = self._launch_cmds.get(uid, ([], None))
             if not cmd:
                 continue
-            logger.info(f"Steam finished {uid}'s download but didn't start it - asking again")
+            logger.info(f"Steam {why} for {uid} but didn't start it - asking again")
             try:
                 run(cmd, env)
             except Exception as e:
@@ -6659,6 +6676,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
     def _scan_thread(self, enabled: set, launcher_order: List[str], game_order: Dict):
         try:
             scanner = Scanner(enabled)
+            scanner.on_step = lambda name: GLib.idle_add(lambda: self._startup_step("startup_reading", name) and False)
             launchers = scanner.scan_all()
         except Exception as e:
             # The single most important safety net in the whole app:
@@ -6707,6 +6725,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             self._proton_upkeep.after_scan()
         self._ask_about_new_games([g for section in launchers for g in section.get("games", [])])
         if getattr(self, "startup_overlay", None) is not None:
+            self._startup_step("startup_art")
             self._startup_overlay_deadline = time.monotonic() + self._STARTUP_OVERLAY_MAX_WAIT
             GLib.timeout_add(150, self._poll_startup_ready)
 
