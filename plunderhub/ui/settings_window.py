@@ -86,6 +86,13 @@ class SettingsWindow:
         app._settings_theme_choice = app.theme
         dlg = Gtk.Dialog(title=self._("options"), transient_for=app, flags=0)
         dlg.set_modal(True)
+        # a card like Shipwright and the rest: no title bar of the desktop's
+        # (KDE gave it one, the only window with it)
+        dlg.set_decorated(False)
+        visual = dlg.get_screen().get_rgba_visual()
+        if visual is not None:
+            dlg.set_visual(visual)
+        dlg.get_style_context().add_class("home-launch-dialog")
         dlg.set_default_size(*self._default_size())
         dlg.connect("key-press-event", self._on_key)
         dlg.connect("set-focus", lambda _w, widget: (self._update_hint(widget),

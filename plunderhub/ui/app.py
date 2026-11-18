@@ -152,7 +152,15 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             monitor = display.get_primary_monitor() or display.get_monitor(0) if display else None
             if monitor is not None:
                 work = monitor.get_workarea()
-                if work.width > 0 and work.height > 0 and (width > work.width - 40 or height > work.height - 40):
+                from plunderhub.gi_setup import IN_GAMESCOPE
+                if IN_GAMESCOPE and work.width > 0 and work.height > 0:
+                    # gamescope scales the one window it shows to the screen:
+                    # the screen's size, so nothing is scaled (or barred)
+                    width, height = work.width, work.height
+                    # no shadow round it either: GTK adds its room to the
+                    # window, which then ran 10 px past the screen
+                    self.get_style_context().add_class("gs-main")
+                elif work.width > 0 and work.height > 0 and (width > work.width - 40 or height > work.height - 40):
                     width = max(640, min(width, work.width - 40))
                     height = max(480, min(height, work.height - 40))
                     self.maximize()
@@ -172,10 +180,16 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             monitor = (display.get_monitor_at_window(gdk_window) if gdk_window is not None else None) \
                 or display.get_primary_monitor() or display.get_monitor(0)
             if monitor is not None:
+                before = self._bubble_field.size
                 self._bubble_field.set_screen_height(monitor.get_geometry().height)
-                self._redraw_all_bubbles()
+                if self._bubble_field.size != before:
+                    self._redraw_all_bubbles()
         except Exception as e:
             logger.debug(f"Bubbles: couldn't read the monitor size: {e}")
+
+    def _refit_bubbles_idle(self) -> bool:
+        self._fit_bubbles_to_screen()
+        return False
 
     def __init__(self):
         super().__init__(title=APP_NAME)
@@ -197,6 +211,14 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._bubble_field = BubbleField()
         self._fit_bubbles_to_screen()
         self.connect("map", lambda *_: self._fit_bubbles_to_screen())
+        # and again when the screen changes under it (resolution, scale) or
+        # it goes to another monitor - only measured at map, a scale changed
+        # while it ran left the bubbles sized for the old screen
+        screen = self.get_screen()
+        if screen is not None:
+            screen.connect("monitors-changed", lambda *_: GLib.idle_add(self._refit_bubbles_idle))
+        self.connect("notify::scale-factor", lambda *_: self._fit_bubbles_to_screen())
+        self.connect("configure-event", lambda *_: (self._fit_bubbles_to_screen(), False)[1])
         # the screen it's shown on decides the compact top bar (built before)
         self.connect("map", lambda *_: hasattr(self, "_topbar_narrow") and self._apply_compact_topbar())
         self._bubble_frame_t = 0.0
@@ -502,8 +524,12 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self.scroll_top_revealer.set_transition_duration(1000)
         self.scroll_top_revealer.set_halign(Gtk.Align.END)
         self.scroll_top_revealer.set_valign(Gtk.Align.END)
-        self.scroll_top_revealer.set_margin_end(20)
-        self.scroll_top_revealer.set_margin_bottom(20)
+        # the pill's shadow (0 8px 22px) inside the revealer: it cuts what
+        # reaches past it, and a square patch of shadow showed round the
+        # pill (most as it faded) - the room round it, not the revealer's
+        # margins, keeps the pill where it was
+        self.scroll_top_revealer.set_margin_end(0)
+        self.scroll_top_revealer.set_margin_bottom(0)
         self.scroll_top_revealer.set_reveal_child(False)
 
         # A floating pill: an accent arrow and "Back to top".
@@ -511,6 +537,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self.scroll_top_btn.get_style_context().add_class("scroll-top-btn")
         self.scroll_top_btn.get_style_context().add_class("home-top-btn")
         self.scroll_top_btn.set_focus_on_click(False)
+        self.scroll_top_btn.set_margin_start(30)
+        self.scroll_top_btn.set_margin_top(30)
+        self.scroll_top_btn.set_margin_end(20)
+        self.scroll_top_btn.set_margin_bottom(20)
         top_row = Gtk.Box(spacing=8)
         self.scroll_top_arrow = Gtk.Image()
         self.scroll_top_arrow.set_valign(Gtk.Align.CENTER)
@@ -524,6 +554,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
 
         self.main_overlay.add_overlay(self.scroll_top_revealer)
         self.main_overlay.set_overlay_pass_through(self.scroll_top_revealer, True)
+        # faded out, the spot it was on kept its last frame (a lighter
+        # patch over the bubbles) - the canvas under it is drawn again
+        self.scroll_top_revealer.connect(
+            "notify::child-revealed",
+            lambda r, _p: r.get_child_revealed() or self._redraw_all_bubbles())
         self.scroller.get_vadjustment().connect("value-changed", self._on_main_scroll_value_changed)
 
         outer.pack_start(self.main_overlay, True, True, 0)
@@ -838,8 +873,13 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             image.set_from_pixbuf(pb)
 
     def _set_scroll_top_visible(self, visible: bool):
-        self.scroll_top_revealer.set_reveal_child(visible)
-        self.main_overlay.set_overlay_pass_through(self.scroll_top_revealer, not visible)
+        revealer = self.scroll_top_revealer
+        # in slowly, out quickly: fading out for a second it lingered
+        # after the scroll had already reached the top
+        if revealer.get_reveal_child() != visible:
+            revealer.set_transition_duration(1000 if visible else 250)
+        revealer.set_reveal_child(visible)
+        self.main_overlay.set_overlay_pass_through(revealer, not visible)
 
     def _on_main_scroll_value_changed(self, adjustment):
         if not self.scroll_top_button_enabled or not self.scroller.get_visible():

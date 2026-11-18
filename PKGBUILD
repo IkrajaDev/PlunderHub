@@ -1,6 +1,6 @@
 # Maintainer: Ikraja
 pkgname=plunderhub
-pkgver=1.1.0
+pkgver=1.1.1
 pkgrel=1
 # The upstream git tag. pacman versions can't contain "-" and the tag
 # does, so the two are spelled out separately rather than translated

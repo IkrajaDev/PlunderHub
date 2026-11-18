@@ -37,8 +37,8 @@ from plunderhub.logging_setup import logger
 from plunderhub.perf_guard import allow_hover_relayout
 
 SETTING = "bounty_enabled"
-CARD_W = 330
-ART_H = 210
+CARD_W = 280
+ART_H = 158         # the stores' wide art (16:9) at the card's width
 CHECK_EVERY_S = 30 * 60      # looks whether the cache got old while the app runs
 STORE_COLOURS = {"epic": (0.16, 0.16, 0.18), "steam": (0.10, 0.27, 0.45), "gog": (0.45, 0.20, 0.62),
                  "humble": (0.80, 0.24, 0.20)}
@@ -82,6 +82,10 @@ class OfferCard(Gtk.Button):
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         body.get_style_context().add_class("bb-body")
         title = Gtk.Label(label=offer.title, xalign=0)
+        # a long name on two lines rather than cut short
+        title.set_line_wrap(True)
+        title.set_lines(2)
+        title.set_max_width_chars(20)
         title.set_ellipsize(Pango.EllipsizeMode.END)
         title.get_style_context().add_class("bb-title")
         body.pack_start(title, False, False, 0)
@@ -108,18 +112,27 @@ class OfferCard(Gtk.Button):
         free.get_style_context().add_class("bb-free")
         foot.pack_start(free, False, False, 0)
         claim = Gtk.Box(spacing=6)
-        claim_text = Gtk.Label(label=_("bb_claim").format(store=bounty.STORE_NAMES.get(offer.store, "")), xalign=1)
+        claim_text = Gtk.Label(label=_("bb_claim").format(store=bounty.STORE_NAMES.get(offer.store, "")), xalign=0)
         claim_text.set_ellipsize(Pango.EllipsizeMode.END)      # a narrow card: shortened, not wider
-        claim.pack_start(claim_text, True, True, 0)
+        claim.pack_start(claim_text, False, False, 0)
         pb = get_icon_pixbuf("external-link-symbolic", 14, app._home_accent_hex())
         if pb is not None:
             claim.pack_start(Gtk.Image.new_from_pixbuf(pb), False, False, 0)
         claim.get_style_context().add_class("bb-claim")
-        foot.pack_end(claim, True, True, 0)
+        claim.set_halign(Gtk.Align.START)
         body.pack_start(foot, False, False, 0)
+        # its own line under the price: beside it, a card's width left it "..."
+        body.pack_start(claim, False, False, 0)
         column.pack_start(body, False, False, 0)
         self.add(column)
         self.connect("clicked", lambda *_a: open_uri(offer.url))
+
+    def do_get_preferred_width(self):
+        # its own width, whatever its lines would like: the footer's
+        # natural width (price, FREE, "Get it on ...") made every card
+        # wider than CARD_W (the "Get it on" line shortens instead)
+        minimum = min(CARD_W, Gtk.Button.do_get_preferred_width(self)[0])
+        return minimum, CARD_W
 
     def set_art(self, path):
         try:
@@ -236,6 +249,9 @@ class BountyBoard(Gtk.Box):
         self.flow.set_column_spacing(18)
         self.flow.set_row_spacing(18)
         self.flow.set_valign(Gtk.Align.START)
+        # the cards keep their size: a single offer stretched across the
+        # whole page made it huge
+        self.flow.set_halign(Gtk.Align.START)
         self.flow.set_filter_func(self._shown)
         page.pack_start(self.flow, False, False, 0)
         self.empty = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)

@@ -309,6 +309,128 @@ def _fit_to_screen(window: Gtk.Window):
     window.resize(min(natural.width, max_w), min(natural.height, max_h))
 
 
+def _clear_opaque_region(window, *_args):
+    gdk_window = window.get_window()
+    if gdk_window is not None:
+        gdk_window.set_opaque_region(None)
+
+
+def _see_through_corners(window):
+    """A card dialog (no title bar, see-through visual, rounded in CSS):
+    GTK still tells the compositor the whole box is opaque, rounded
+    corners and all - KWin believes it and fills them black (Hyprland
+    blends them anyway). Nothing of it is called opaque - after GTK's own
+    update on every resize and style change."""
+    screen = window.get_screen()
+    rgba = screen.get_rgba_visual() if screen is not None else None
+    if window.get_decorated() or rgba is None or window.get_visual() != rgba:
+        return
+    window.connect_after("size-allocate", _clear_opaque_region)
+    window.connect_after("style-updated", _clear_opaque_region)
+    _clear_opaque_region(window)
+    # With no compositor (XFCE with it off, a bare X11 window manager)
+    # nothing makes the corners see-through: they're black. Square ones
+    # then (theme.py: .flat-corners), round again when one starts.
+    _flat_unless_composited(window, screen)
+    handler = screen.connect("composited-changed", lambda scr: _flat_unless_composited(window, scr))
+    window.connect("destroy", lambda *_: screen.disconnect(handler))
+
+
+def _flat_unless_composited(window, screen):
+    ctx = window.get_style_context()
+    if screen.is_composited():
+        ctx.remove_class("flat-corners")
+    else:
+        ctx.add_class("flat-corners")
+
+
+IN_GAMESCOPE = bool(os.environ.get("GAMESCOPE_WAYLAND_DISPLAY"))
+# what is left between the card and the screen's edges, at the least
+_GS_EDGE = 48
+
+
+def _gamescope_card(window):
+    """gamescope (Steam Deck game mode, a gamescope session) shows one
+    window at a time, scaled to fill the screen: a card dialog came up
+    alone, blown up twice its size and soft, the main window gone. There
+    the dialog takes the whole screen instead - nothing to scale - with
+    the card at its own size in the middle (theme.py: .gs-backdrop,
+    .gs-card) over a dimmed picture of the window it belongs to, as the
+    desktops show it."""
+    if not IN_GAMESCOPE or window.get_decorated() or window.get_window_type() != Gtk.WindowType.TOPLEVEL:
+        return
+    parent = window.get_transient_for()
+    child = window.get_child()
+    if parent is None or child is None or hasattr(window, "_fit_default_size"):
+        return
+    display = window.get_display()
+    monitor = display.get_monitor_at_window(parent.get_window()) if parent.get_window() else None
+    monitor = monitor or display.get_primary_monitor() or display.get_monitor(0)
+    if monitor is None:
+        return
+    geo = monitor.get_geometry()
+    sw, sh = geo.width, geo.height
+    # the card's own size where it asked for one (Settings, Shipwright),
+    # else what its content needs - measured now, before its lines are
+    # wrapped, that was too tall
+    dw, dh = window.get_default_size()
+    rw, rh = window.get_size_request()      # the Dashboard asks this way
+    dw, dh = max(dw, rw), max(dh, rh)
+    child.set_size_request(min(dw, sw - _GS_EDGE) if dw > 0 else -1,
+                           min(dh, sh - _GS_EDGE) if dh > 0 else -1)
+    child.set_halign(Gtk.Align.CENTER)
+    child.set_valign(Gtk.Align.CENTER)
+    child.get_style_context().add_class("gs-card")
+    window.get_style_context().add_class("gs-backdrop")
+    window.set_default_size(sw, sh)
+    window.set_size_request(sw, sh)
+    window.move(geo.x, geo.y)
+    # the window it belongs to, drawn once and dimmed, behind the card -
+    # taken when the card is first drawn: drawn while the card was being
+    # set up, the window at times came out empty
+    shot = {"surface": None, "tries": 0}
+
+    def backdrop():
+        if shot["surface"] is not None or shot["tries"] >= 20:
+            return shot["surface"]
+        shot["tries"] += 1
+        pw, ph = parent.get_allocated_width(), parent.get_allocated_height()
+        if pw <= 0 or ph <= 0 or not parent.get_mapped():
+            return None
+        try:
+            surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, pw, ph)
+            parent.draw(cairo.Context(surface))
+            surface.flush()
+            data = surface.get_data()
+            # anything drawn at all (a sample of it)
+            if any(data[i] for i in range(3, len(data), 4 * 997)):
+                shot["surface"] = surface
+            else:
+                GLib.timeout_add(100, lambda: window.queue_draw() or False)
+        except Exception as e:
+            logging.getLogger("plunderhub").debug(f"gamescope: no picture of the window behind: {e}")
+        return shot["surface"]
+
+    def draw(widget, cr):
+        aw, ah = widget.get_allocated_width(), widget.get_allocated_height()
+        cr.save()
+        cr.set_source_rgb(0, 0, 0)
+        cr.paint()
+        surface = backdrop()
+        if surface is not None:
+            pw, ph = surface.get_width(), surface.get_height()
+            k = max(aw / pw, ah / ph)
+            cr.translate((aw - pw * k) / 2, (ah - ph * k) / 2)
+            cr.scale(k, k)
+            cr.set_source_surface(surface, 0, 0)
+            cr.paint()
+        cr.restore()
+        cr.set_source_rgba(0, 0, 0, 0.55)
+        cr.paint()
+        return False
+    window.connect("draw", draw)
+
+
 def _on_realize(widget, *_args) -> bool:
     # On realize, however the widget was made (a constructor like
     # Scale.new_with_range never runs a Python __init__).
@@ -326,6 +448,8 @@ def _on_realize(widget, *_args) -> bool:
         # when it's shown, not now: a window realized early gets its
         # content (and its X) only afterwards
         widget.connect("map", _drop_double_close)
+        _see_through_corners(widget)
+        _gamescope_card(widget)
         if isinstance(widget, Gtk.Dialog):
             # out of a list at its ends with the arrows (dialogs of the
             # app's own with their own keys handle them first)

@@ -565,6 +565,18 @@ def _settings_css(accent: str, tint: Callable[[float], str], raised: str, sideba
     background-color: {sidebar};
     border-right: 1px solid {tint(0.18)};
 }}
+/* in the card window: rounded with it, not a square corner over its curve */
+.home-launch-dialog .settings-sidebar {{ border-radius: 19px 0 0 19px; }}
+/* no compositor: the corners can't be see-through, square (gi_setup) */
+window.flat-corners, dialog.flat-corners {{ border-radius: 0; }}
+.home-launch-dialog.flat-corners .settings-sidebar {{ border-radius: 0; }}
+/* gamescope: the dialog fills the screen (nothing scaled up), the card
+   sits in it (gi_setup._gamescope_card) */
+window.gs-backdrop.gs-backdrop, dialog.gs-backdrop.gs-backdrop {{ background-color: transparent; background-image: none;
+    border: none; border-radius: 0; box-shadow: none; }}
+window.gs-main decoration, window.gs-main.solid-csd decoration {{ box-shadow: none; margin: 0; padding: 0;
+    border: none; border-radius: 0; }}
+.gs-card {{ background-color: {sidebar}; border: 1px solid {tint(0.30)}; border-radius: 20px; }}
 list.settings-nav {{ background-color: transparent; }}
 .settings-nav row {{
     padding: 9px 12px;
@@ -664,6 +676,25 @@ scrolledwindow.settings-scroll scrollbar.vertical slider:hover {{
 }}
 scrolledwindow.settings-scroll scrollbar.vertical slider:active {{
     box-shadow: 0 0 12px {tint(0.8)};
+}}
+/* the sidebar's: quiet - thin, no glow, no trough; a little brighter held */
+scrolledwindow.settings-scroll.home-nav-scroll scrollbar.vertical trough {{
+    background-color: transparent;
+    min-width: 4px;
+    margin: 6px 3px;
+}}
+scrolledwindow.settings-scroll.home-nav-scroll scrollbar.vertical slider {{
+    background-image: none;
+    background-color: {tint(0.28)};
+    min-width: 4px;
+    min-height: 32px;
+    box-shadow: none;
+}}
+scrolledwindow.settings-scroll.home-nav-scroll scrollbar.vertical slider:hover,
+scrolledwindow.settings-scroll.home-nav-scroll scrollbar.vertical slider:active {{
+    background-image: none;
+    background-color: {tint(0.5)};
+    box-shadow: none;
 }}
 .settings-swatch-current {{ color: {accent}; font-weight: 700; }}
 .settings-footer {{ color: {fg_dim}; font-size: 85%; }}

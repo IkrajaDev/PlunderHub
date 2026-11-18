@@ -689,7 +689,9 @@ class HeroAnimation:
     def _unwatch_top(self):
         # the window outlives the rows re-made at every render - its
         # handler would keep this (and the frames) alive with it
-        if self._watched_id and self._watched_top is not None:
+        # (the game page's window, closed, has let go of it already)
+        if (self._watched_id and self._watched_top is not None
+                and self._watched_top.handler_is_connected(self._watched_id)):
             self._watched_top.disconnect(self._watched_id)
         self._watched_top, self._watched_id = None, 0
 

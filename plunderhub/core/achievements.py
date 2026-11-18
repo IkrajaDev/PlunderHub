@@ -54,7 +54,10 @@ from plunderhub.logging_setup import logger
 
 CACHE = CACHE_DIR / "achievements"
 RARITY_MAX_AGE = 24 * 3600
-ICON_URL = "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appid}/{name}"
+# Steam's achievement icons: the community assets server has them all; the
+# old one misses newer games' icons (Valheim: 404)
+ICON_URLS = ("https://shared.akamai.steamstatic.com/community_assets/images/apps/{appid}/{name}",
+             "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appid}/{name}")
 RARITY_URL = ("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/"
               "?gameid={appid}&format=json")
 
@@ -243,30 +246,31 @@ def icon_file(appid: str, name: str) -> Optional[Path]:
     if not name:
         return None
     if name.startswith("https://"):
-        url = name
+        urls = (name,)
         ext = Path(urllib.parse.urlparse(name).path).suffix.lower()
         local = hashlib.sha1(name.encode()).hexdigest() + (ext if ext in (".jpg", ".jpeg", ".png", ".webp") else "")
     elif "/" in name or name.startswith("."):
         return None
     else:
-        url, local = ICON_URL.format(appid=appid, name=name), name
+        urls, local = tuple(u.format(appid=appid, name=name) for u in ICON_URLS), name
     path = CACHE / "icons" / appid.replace("/", "_") / local
     if path.is_file() and path.stat().st_size > 0:
         return path
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            body = resp.read(2 * 1024 * 1024)
-        if not body:
-            return None
-        tmp = path.with_suffix(path.suffix + ".part")
-        tmp.write_bytes(body)
-        tmp.replace(path)
-        return path
-    except Exception as e:
-        logger.debug(f"Achievements: no icon {name} for {appid}: {e}")
-        return None
+    for url in urls:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            req = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                body = resp.read(2 * 1024 * 1024)
+            if not body:
+                continue
+            tmp = path.with_suffix(path.suffix + ".part")
+            tmp.write_bytes(body)
+            tmp.replace(path)
+            return path
+        except Exception as e:
+            logger.debug(f"Achievements: no icon {name} for {appid} at {url}: {e}")
+    return None
 
 
 # --- GOG (Heroic) ------------------------------------------------------------------------

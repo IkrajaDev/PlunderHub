@@ -352,11 +352,22 @@ def _hero_glyph_area(kind: str, size: int, rgba=None) -> Gtk.DrawingArea:
     return area
 
 
-def _paint_grid_shadows(holder, cr, flow) -> bool:
-    """The lifted cards' shadows, under the grid (see
-    GameCard._shadow_under_grid) - before the grid itself is drawn."""
-    if getattr(holder, "_card_shadows_for", None) is not flow:
-        return False
+def _paint_grid_shadows(holder, cr) -> bool:
+    """The lifted cards' shadows, under the grids (see
+    GameCard._shadow_under_grid) - before the grids themselves are drawn.
+    One handler per holder for all its grids: one per grid, connected again
+    whenever the pointer went from one grid to another (the games and the
+    Harbors below them) or the library was built again, painted the same
+    glow on top of itself, stronger every time."""
+    for flow in list(getattr(holder, "_card_shadow_flows", ())):
+        if flow.get_parent() is not holder:
+            holder._card_shadow_flows.discard(flow)     # an old grid, gone
+            continue
+        _paint_flow_shadows(holder, cr, flow)
+    return False
+
+
+def _paint_flow_shadows(holder, cr, flow):
     # only the cards that rose (the holder is drawn again under every
     # bubble that moves over it)
     for card in list(flow._lifted_cards):
@@ -372,7 +383,6 @@ def _paint_grid_shadows(holder, cr, flow) -> bool:
         shadow, pad = _card_shadow(w, h, _accent_rgb(holder))
         cr.set_source_surface(shadow, coords[0] - pad, coords[1] - pad - lift)
         cr.paint_with_alpha(min(1.0, card._lift))
-    return False
 
 
 def _card_shadow(w: int, h: int, accent: Tuple[float, float, float]) -> Tuple[cairo.ImageSurface, int]:
@@ -734,10 +744,13 @@ class GameCard(Gtk.Box):
         holder = flow.get_parent() if isinstance(flow, Gtk.FlowBox) else None
         if holder is None:
             return False
-        if getattr(holder, "_card_shadows_for", None) is not flow:
-            holder._card_shadows_for = flow
+        flows = getattr(holder, "_card_shadow_flows", None)
+        if flows is None:
+            flows = holder._card_shadow_flows = set()
+            holder.connect("draw", _paint_grid_shadows)
+        if flow not in flows:
+            flows.add(flow)
             flow._lifted_cards = set()
-            holder.connect("draw", _paint_grid_shadows, flow)
         flow._lifted_cards.add(self)
         return True
 
