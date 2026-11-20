@@ -87,13 +87,16 @@ def _pointer_moved(window, event) -> bool:
     frame is being painted. With nothing else moving, a 1000 Hz mouse was
     handled event by event - half a core just for moving it over a window
     (the game page: 52 % -> 21 %). So while the pointer moves, a pixel of
-    the window is repainted every frame."""
+    the window is repainted every frame - where that's cheap
+    (_motion_frames_pay)."""
     window._plunderhub_moved_us = GLib.get_monotonic_time()
     # the pointer taking over from the keyboard (ui/keynav)
     from plunderhub.ui import keynav
     keynav.pointer_moved(window, event.x_root, event.y_root)
     if getattr(window, "_plunderhub_motion_paused", False):
         return False            # perf_guard measuring the window's own repaints
+    if not _motion_frames_pay():
+        return False
     if not getattr(window, "_plunderhub_motion_tick", 0):
         window._plunderhub_motion_tick = window.add_tick_callback(_motion_frame)
     return False
@@ -113,6 +116,25 @@ def _list_arrows(window, event) -> bool:
         return False
     from plunderhub.ui import keynav
     return keynav.escape_list(window, direction)
+
+
+_MOTION_FRAMES_PAY = None
+
+
+def _motion_frames_pay() -> bool:
+    """Whether the pixel a frame while the pointer moves is worth it. Not on
+    KDE's Wayland: KWin keeps a window's last buffer until the next one comes,
+    so for every frame GTK3 copies the whole window into a new buffer - the
+    extra frames cost more than the folded events save (Settings, a pointer
+    sweep: 31.5 % with them, 17.8 % without; 152 / 57 repaints a second).
+    Hyprland releases the buffer at once: there they took 52 % -> 21 %."""
+    global _MOTION_FRAMES_PAY
+    if _MOTION_FRAMES_PAY is None:
+        display = Gdk.Display.get_default()
+        wayland = display is not None and display.__gtype__.name == "GdkWaylandDisplay"
+        kde = "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper().split(":")
+        _MOTION_FRAMES_PAY = not (wayland and kde)
+    return _MOTION_FRAMES_PAY
 
 
 def _motion_frame(window, clock) -> bool:
@@ -376,8 +398,15 @@ def _gamescope_card(window):
     dw, dh = window.get_default_size()
     rw, rh = window.get_size_request()      # the Dashboard asks this way
     dw, dh = max(dw, rw), max(dh, rh)
-    child.set_size_request(min(dw, sw - _GS_EDGE) if dw > 0 else -1,
-                           min(dh, sh - _GS_EDGE) if dh > 0 else -1)
+    cw = min(dw, sw - _GS_EDGE) if dw > 0 else -1
+    ch = min(dh, sh - _GS_EDGE) if dh > 0 else -1
+    child.set_size_request(cw, ch)
+    if child is getattr(window, "_plunderhub_fitted", None):
+        # _fit_to_screen's scroller hands on its content's natural size up to the
+        # whole screen - centred, the card took that (1344 of 1366, Shipwright
+        # on a laptop; dialog_sweep 11-20) instead of the room left round it
+        child.set_max_content_width(sw - _GS_EDGE if cw < 0 else cw)
+        child.set_max_content_height(sh - _GS_EDGE if ch < 0 else ch)
     child.set_halign(Gtk.Align.CENTER)
     child.set_valign(Gtk.Align.CENTER)
     child.get_style_context().add_class("gs-card")

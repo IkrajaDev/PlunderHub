@@ -37,8 +37,10 @@ from plunderhub.logging_setup import logger
 from plunderhub.perf_guard import allow_hover_relayout
 
 SETTING = "bounty_enabled"
-CARD_W = 280
-ART_H = 158         # the stores' wide art (16:9) at the card's width
+# 11-20: bigger (was 280 x 158) - the picture was small and the description
+# hardly started before it was cut off
+CARD_W = 380
+ART_H = 214         # the stores' wide art (16:9) at the card's width
 CHECK_EVERY_S = 30 * 60      # looks whether the cache got old while the app runs
 STORE_COLOURS = {"epic": (0.16, 0.16, 0.18), "steam": (0.10, 0.27, 0.45), "gog": (0.45, 0.20, 0.62),
                  "humble": (0.80, 0.24, 0.20)}
@@ -85,7 +87,7 @@ class OfferCard(Gtk.Button):
         # a long name on two lines rather than cut short
         title.set_line_wrap(True)
         title.set_lines(2)
-        title.set_max_width_chars(20)
+        title.set_max_width_chars(28)
         title.set_ellipsize(Pango.EllipsizeMode.END)
         title.get_style_context().add_class("bb-title")
         body.pack_start(title, False, False, 0)
@@ -96,9 +98,9 @@ class OfferCard(Gtk.Button):
         if offer.description:
             text = Gtk.Label(label=offer.description, xalign=0)
             text.set_line_wrap(True)
-            text.set_lines(2)
+            text.set_lines(5)
             text.set_ellipsize(Pango.EllipsizeMode.END)
-            text.set_max_width_chars(30)
+            text.set_max_width_chars(42)
             text.get_style_context().add_class("bb-desc")
             body.pack_start(text, False, False, 0)
         foot = Gtk.Box(spacing=10)
@@ -518,11 +520,7 @@ def show_board(app, on: bool):
     if view is None or on == app._bb_active:
         return
     app._bb_active = on
-    toolbar = app.view_grid_btn.get_parent()
-    kids = toolbar.get_children()
-    divider = kids[kids.index(app.view_list_btn) + 1]
-    for w in (app.view_grid_btn, app.view_list_btn, divider, app.select_btn, app.reorder_btn, app.sort_btn):
-        w.set_visible(not on)
+    app._sync_topbar_tools()
     app.scroller.set_visible(not on)
     if on:
         app._set_scroll_top_visible(False)

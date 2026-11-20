@@ -598,15 +598,30 @@ class ProtonPage(Gtk.Box):
         card.pack_start(self.ring, False, False, 0)
         texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         texts.set_valign(Gtk.Align.CENTER)
-        head = Gtk.Box(spacing=8)
+        # the title and its pills wrap onto a second line where the room is short:
+        # in one row (573 px) they held the whole Shipwright at 1477 px wide - wider
+        # than a 1366 px laptop screen (dialog_sweep in gamescope, 11-20)
+        head = Gtk.FlowBox()
+        head.set_selection_mode(Gtk.SelectionMode.NONE)
+        head.set_homogeneous(False)
+        head.set_max_children_per_line(3)
+        head.set_column_spacing(8)
+        head.set_row_spacing(6)
+        head.set_can_focus(False)
         self.status_title = Gtk.Label(xalign=0)
         self.status_title.get_style_context().add_class("settings-row-title")
         self.status_title.get_style_context().add_class("proton-status-title")
-        head.pack_start(self.status_title, False, False, 0)
         self.status_pills = [_pill(S["recommended"], "proton-pill-accent"),
                              _pill(S["default_all"], "proton-pill-quiet")]
+        for item in (self.status_title, *self.status_pills):
+            item.set_valign(Gtk.Align.CENTER)
+            head.add(item)
+            child = item.get_parent()
+            child.set_can_focus(False)
+            child.set_halign(Gtk.Align.START)
         for pill in self.status_pills:
-            head.pack_start(pill, False, False, 0)
+            # shown or not by _update_status - show_all() mustn't bring them back
+            pill.get_parent().set_no_show_all(True)
         texts.pack_start(head, False, False, 0)
         self.status_line = Gtk.Label(xalign=0)
         # wrapped: what went wrong, and how long to wait, takes two lines
@@ -640,7 +655,8 @@ class ProtonPage(Gtk.Box):
         self.status_title.set_text(st["title"])
         latest_shown = st["title"].endswith("Latest") and "GE" in st["title"]
         for pill in self.status_pills:
-            pill.set_visible(latest_shown)
+            pill.show()
+            pill.get_parent().set_visible(latest_shown)
         self.status_line.set_text(st["line"])
         self.ring.set_progress(st["progress"])
         button = st["button"]

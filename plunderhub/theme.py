@@ -1295,15 +1295,16 @@ button.scroll-top-btn.home-top-btn {{
     padding: 9px 20px 9px 15px;
     min-width: 0;
     min-height: 0;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+    /* only the room for its shadow (0 8px 22px, hovered 0 11px 26px) - App._draw_scroll_top_shadow
+       draws it from a blur made once; GTK blurred it again on every frame the grid scrolled under it */
+    box-shadow: 0 0 0 40px transparent;
     transition: border-color 140ms ease-out, background-color 140ms ease-out;
 }}
 button.scroll-top-btn.home-top-btn label {{ color: {fg}; font-weight: 700; }}
 button.scroll-top-btn.home-top-btn:hover {{
     background-color: {raised};
     border-color: {accent};
-    /* lifted by a deeper shadow, not a margin: geometry would re-lay the window out */
-    box-shadow: 0 11px 26px rgba(0, 0, 0, 0.6);
+    /* lifted by a deeper shadow (drawn), not a margin: geometry would re-lay the window out */
 }}
 button.scroll-top-btn.home-top-btn:active {{ background-color: {tint(0.18)}; }}
 /* "Animations paused" (App._build_animations_paused_bar): a status pill
@@ -2325,12 +2326,17 @@ scrollbar slider:hover {{
 
    The color has to go on the label too; Adwaita targets "tooltip label"
    specifically and a rule on the parent loses to it. The .tooltip
-   variant covers GTK before the 3.20 node rename. */
+   variant covers GTK before the 3.20 node rename.
+
+   The border is a solid colour, the see-through one mixed in advance:
+   on KDE Wayland (11-20) the see-through border flickered between two
+   brightnesses while the tooltip was up - its window's buffers didn't
+   blend it the same way each frame. */
 tooltip, tooltip.background, .tooltip {{
     background-color: {bg_overlay};
     background-image: none;
     color: {p['fg']};
-    border: 1px solid {border};
+    border: 1px solid {_blend(bg_overlay, accent, 0.30)};
     border-radius: {r_sm};
     box-shadow: {shadow_md};
     text-shadow: none;

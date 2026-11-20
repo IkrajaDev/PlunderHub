@@ -1167,11 +1167,7 @@ def show_dock(app, on: bool):
     if page is None or on == app._ld_active:
         return
     app._ld_active = on
-    toolbar = app.view_grid_btn.get_parent()
-    kids = toolbar.get_children()
-    divider = kids[kids.index(app.view_list_btn) + 1]
-    for w in (app.view_grid_btn, app.view_list_btn, divider, app.select_btn, app.reorder_btn, app.sort_btn):
-        w.set_visible(not on)
+    app._sync_topbar_tools()
     app.scroller.set_visible(not on)
     if on:
         app._set_scroll_top_visible(False)

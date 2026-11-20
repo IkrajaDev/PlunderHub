@@ -537,6 +537,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self.scroll_top_btn.get_style_context().add_class("scroll-top-btn")
         self.scroll_top_btn.get_style_context().add_class("home-top-btn")
         self.scroll_top_btn.set_focus_on_click(False)
+        self.scroll_top_btn.connect("draw", self._draw_scroll_top_shadow)
         self.scroll_top_btn.set_margin_start(30)
         self.scroll_top_btn.set_margin_top(30)
         self.scroll_top_btn.set_margin_end(20)
@@ -2383,6 +2384,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return True
         field = self._bubble_field
         beat = frame_clock.get_frame_counter() % self._bubble_beat_frames(frame_clock) == 0
+        # (tried 11-20 for KWin, where every frame is a window copy: the
+        # pushed ones on the beat only, the calm ones at ~24 fps - both
+        # looked laggy to the user; keep this)
         if not beat and not field.lively and not self._bubble_full_redraw:
             mouse = self._bubble_pointer()
             if not field.pointer_moved(mouse):
@@ -2410,6 +2414,23 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                        for ox, oy, ow, oh in hidden):
                 widget.queue_draw_area(x, y, rw, rh)
         return True
+
+    @staticmethod
+    def _draw_scroll_top_shadow(widget, cr) -> bool:
+        """The "Back to top" pill's shadow (CSS 0 8px 22px, hovered 0 11px
+        26px - theme.py keeps only the room for it) from a blur made once:
+        GTK blurred it again on every repaint, and the grid scrolling under
+        the pill repaints it every frame (~1 ms each)."""
+        w, h = widget.get_allocated_width(), widget.get_allocated_height()
+        if w <= 0 or h <= 0:
+            return False
+        from plunderhub.ui.home_mixin import _soft_shadow
+        hover = bool(widget.get_state_flags() & Gtk.StateFlags.PRELIGHT)
+        layer = (26, 11, (0, 0, 0, 0.6)) if hover else (22, 8, (0, 0, 0, 0.5))
+        shadow, pad = _soft_shadow(w, h, h / 2, (layer,))
+        cr.set_source_surface(shadow, -pad, -pad)
+        cr.paint()
+        return False
 
     def _bubble_beat_frames(self, frame_clock) -> int:
         """Every how many frames of the monitor the calm bubbles step - and

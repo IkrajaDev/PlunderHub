@@ -2478,7 +2478,8 @@ class HomeMixin:
             sep.get_style_context().add_class("home-toolbar-sep")
             return sep
         tools_sep = divider()
-        for widget in (self.view_grid_btn, self.view_list_btn, divider(), self.sort_btn, tools_sep,
+        self._view_sep = divider()
+        for widget in (self.view_grid_btn, self.view_list_btn, self._view_sep, self.sort_btn, tools_sep,
                        self.select_btn, self.reorder_btn, self.shortcuts_btn):
             widget.set_valign(Gtk.Align.CENTER)
             toolbar.pack_start(widget, False, False, 0)
@@ -2585,12 +2586,29 @@ class HomeMixin:
         for pill in self._topbar_wide:
             pill.set_visible(level < 2)
         self._topbar_narrow.set_visible(level >= 2)
-        for widget, hidden in ((self.sort_btn_label, level >= 3),
-                               *((w, level >= 4) for w in self._topbar_tools)):
-            widget.set_no_show_all(hidden)
-            widget.set_visible(not hidden)
+        self.sort_btn_label.set_no_show_all(level >= 3)
+        self.sort_btn_label.set_visible(level < 3)
+        self._sync_topbar_tools()
         for item in self._topbar_tool_items:
             item.set_visible(level >= 4)
+
+    def _sync_topbar_tools(self):
+        """The top bar's library tools: the Loading Dock and the Bounty Board
+        have none of them (grid/list, sort, select, reorder - and both of
+        their dividers: the second one was left standing alone before the
+        shortcuts button, 11-20); a narrow window moves select, reorder and
+        shortcuts into the ⋯ menu (_set_compact_topbar)."""
+        page = getattr(self, "_ld_active", False) or getattr(self, "_bb_active", False)
+        narrow = (getattr(self, "_topbar_compact", None) or 0) >= 4
+        tools_sep, select_btn, reorder_btn, shortcuts_btn = self._topbar_tools
+        for widget, shown in ((self.view_grid_btn, not page), (self.view_list_btn, not page),
+                              (self._view_sep, not page), (self.sort_btn, not page),
+                              (tools_sep, not page and not narrow),
+                              (select_btn, not page and not narrow),
+                              (reorder_btn, not page and not narrow),
+                              (shortcuts_btn, not narrow)):
+            widget.set_no_show_all(not shown)
+            widget.set_visible(shown)
 
     def _on_home_topbar_press(self, _w, event) -> bool:
         if event.button != 1:

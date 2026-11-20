@@ -645,7 +645,9 @@ class Shipwright:
         # natural width.
         w, h = parent.get_size()
         dlg.set_size_request(860, 560)
-        dlg.set_default_size(max(860, min(1180, w - 80)), max(560, min(880, h - 60)))
+        # 1480: the width it has always come out at (the Proton page's status row
+        # held it there until 11-20, when that row learned to wrap on small screens)
+        dlg.set_default_size(max(860, min(1480, w - 80)), max(560, min(880, h - 60)))
         action_area = dlg.get_action_area()
         if action_area is not None:
             action_area.set_no_show_all(True)
