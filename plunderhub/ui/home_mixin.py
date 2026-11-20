@@ -2154,6 +2154,14 @@ class HomeMixin:
         view = _treasure_map().shown(self)
         if view is not None:
             return view.grid.kb_enter()
+        page = self._button_page_shown()
+        if page is not None:
+            # the Bounty Board / Loading Dock: their top-left button
+            from plunderhub.ui import spatial_nav
+            target = spatial_nav.first(self, spatial_nav.stops(page))
+            if target is not None:
+                spatial_nav.stand(self, target)
+            return target is not None
         grid = getattr(self, "_reorder_grid", None)
         if self.reorder_mode and grid is not None and grid.get_mapped():
             self._grab_keyboard_focus(grid)
@@ -2928,14 +2936,15 @@ class HomeMixin:
                      transient_for: Optional[Gtk.Window] = None,
                      extra: Optional[Gtk.Widget] = None,
                      other_responses: Tuple[Gtk.ResponseType, ...] = (),
-                     art: Optional[Gtk.Widget] = None, guard_ms: int = 0) -> Gtk.ResponseType:
+                     art: Optional[Gtk.Widget] = None, guard_ms: int = 0,
+                     with_badge: bool = True) -> Gtk.ResponseType:
         """The app's own message and question dialog, in the look of
         "Ready to set sail?": a round badge, a heading, a line or two of
         text and pill buttons. buttons are (label, response, kind), the
         first one the way out (Esc / the controller's B); Enter and A
         press default, else the last one. extra goes under the text;
         other_responses are ones the caller gives the dialog itself; art
-        takes the badge's place. guard_ms: a question that comes up by itself
+        takes the badge's place (with_badge=False: none at all). guard_ms: a question that comes up by itself
         ignores this long the click or Enter meant for what was there."""
         parent = transient_for or self._dialog_transient_parent()
         # the main window not shown yet (started from Steam: the question comes first)
@@ -2973,7 +2982,9 @@ class HomeMixin:
                 cr.paint()
             return False
         badge.connect("draw", draw_badge)
-        card.pack_start(art if art is not None else badge, False, False, 0)
+        if art is not None or with_badge:
+            card.pack_start(art if art is not None else badge, False, False, 0)
+        # with_badge=False: no round badge - a list under the heading takes the whole width
 
         column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         title = Gtk.Label(label=heading, xalign=0)
@@ -3073,7 +3084,8 @@ class HomeMixin:
         stops: List[Gtk.Widget] = []
 
         def gather(widget):
-            if isinstance(widget, Gtk.ToggleButton):
+            # a pick - or a button marked as one (plunderhub_stop: "Select all")
+            if isinstance(widget, Gtk.ToggleButton) or getattr(widget, "plunderhub_stop", False):
                 stops.append(widget)
             elif isinstance(widget, Gtk.Container):
                 widget.foreach(gather)
@@ -3090,6 +3102,22 @@ class HomeMixin:
             at["on"] = widget
             if widget is not None:
                 widget.get_style_context().add_class("kb-focus")
+                into_view(widget)
+
+        def into_view(widget: Gtk.Widget):
+            """A pick in a scrolled list: scrolled to, ring and all."""
+            scroller = widget.get_ancestor(Gtk.ScrolledWindow)
+            if scroller is None or scroller.get_child() is None:
+                return
+            pos = widget.translate_coordinates(scroller.get_child(), 0, 0)
+            if pos is None:
+                return
+            adj = scroller.get_vadjustment()
+            top, bottom = pos[1] - 8, pos[1] + widget.get_allocated_height() + 8
+            if top < adj.get_value():
+                adj.set_value(max(adj.get_lower(), top))
+            elif bottom > adj.get_value() + adj.get_page_size():
+                adj.set_value(min(adj.get_upper() - adj.get_page_size(), bottom - adj.get_page_size()))
 
         def live() -> List[Gtk.Widget]:
             return [w for w in stops if w.get_mapped()]
@@ -3832,6 +3860,29 @@ class HomeMixin:
         # Reaching the hero with the keyboard or a controller brings the
         # whole page back to the top, not just the button into view.
         play.connect("focus-in-event", lambda *_: (GLib.idle_add(self._home_scroll_to_top), False)[1])
+        play_row = play
+        skip = None
+        if phase == "launching":
+            # a launch can wait long (an update, shaders, a launcher): it can be called off,
+            # and Steam's shader processing skipped as Steam's own dialog does
+            play_row = Gtk.Box(spacing=10)
+            play_row.set_halign(Gtk.Align.START)
+            play_row.set_margin_top(10)
+            play.set_margin_top(0)
+            play_row.pack_start(play, False, False, 0)
+            skip = Gtk.Button(label=self._("launch_skip_shaders"))
+            skip.get_style_context().add_class("home-play")
+            skip.get_style_context().add_class("home-play-ghost")
+            skip.get_style_context().add_class("home-play-skip")      # the accent under the pointer
+            skip.set_no_show_all(True)
+            skip.connect("clicked", lambda _b: self.skip_steam_shaders(game.uid))
+            play_row.pack_start(skip, False, False, 0)
+            cancel = Gtk.Button(label=self._("launch_cancel"))
+            cancel.get_style_context().add_class("home-play")
+            cancel.get_style_context().add_class("home-play-ghost")
+            cancel.get_style_context().add_class("home-play-cancel")      # reddish under the pointer
+            cancel.connect("clicked", lambda _b: self.cancel_launch(game))
+            play_row.pack_start(cancel, False, False, 0)
         status = None
         if phase in ("launching", "syncing"):
             # what Steam is up to, so a long launch says why
@@ -3845,10 +3896,12 @@ class HomeMixin:
                 line = self.launch_status(game.uid)
                 status.set_text(line or "")
                 status.set_visible(bool(line))
+                if skip is not None:
+                    skip.set_visible(self.can_skip_steam_shaders(game.uid))
                 return True
             update_status()
             GLib.timeout_add(500, update_status)
-        for widget in (kicker, title, meta, timer_box, play, status):
+        for widget in (kicker, title, meta, timer_box, play_row, status):
             if widget is not None:
                 text.pack_start(widget, False, False, 0)
         overlay.add_overlay(text)

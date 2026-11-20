@@ -71,6 +71,9 @@ class OfferCard(Gtk.Button):
         _ = app._
         self.get_style_context().add_class("bb-card")
         self.set_relief(Gtk.ReliefStyle.NONE)
+        # room in its cell for the keyboard's ring (the cell clipped it at the edges)
+        for side in ("top", "bottom", "start", "end"):
+            getattr(self, f"set_margin_{side}")(4)
         self.set_tooltip_text(_("bb_open_tip").format(store=bounty.STORE_NAMES.get(offer.store, offer.store)))
         self.pixbuf: Optional[GdkPixbuf.Pixbuf] = None
         self._surface = None

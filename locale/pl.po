@@ -1530,6 +1530,146 @@ msgstr "Ulubiona"
 msgid "filter_placeholder"
 msgstr "Przeszukaj łup..."
 
+#. English: All
+msgid "fo_all"
+msgstr "Wszystkie"
+
+#. English: Already set: {list}
+msgid "fo_already_line"
+msgstr "Już tak jest: {list}"
+
+#. English: Saved for {n} games
+msgid "fo_applied"
+msgstr "Zapisano dla gier: {n}"
+
+#. English: Apply to {n} games
+msgid "fo_apply"
+msgstr "Zastosuj do gier: {n}"
+
+#. English: Apply to all games
+msgid "fo_apply_all"
+msgstr "Zastosuj do wszystkich gier"
+
+#. English: Apply to some games…
+msgid "fo_apply_some"
+msgstr "Zastosuj do wybranych gier…"
+
+#. English: Its launcher can't store: {list}
+msgid "fo_cant_line"
+msgstr "Jego launcher nie zapisze: {list}"
+
+#. English: Many games at once
+msgid "fo_card_row"
+msgstr "Wiele gier naraz"
+
+#. English: Set launch options for all your games, or some of them, in Shipwright
+msgid "fo_card_sub"
+msgstr "Ustaw opcje uruchamiania dla wszystkich lub wybranych gier w Shipwright"
+
+#. English: Changes: {list}
+msgid "fo_changes_line"
+msgstr "Zmienia się: {list}"
+
+#. English: Reset all options
+msgid "fo_clear_all"
+msgstr "Zresetuj wszystkie opcje"
+
+#. English: Every launch option off and empty (Esync and Fsync stay on); Proton and running natively stay as they are. Then apply it to all games or some.
+msgid "fo_clear_all_tip"
+msgstr "Wszystkie opcje uruchamiania wyłączone i puste (Esync i Fsync zostają włączone); Proton i tryb natywny bez zmian. Potem zastosuj do wszystkich lub wybranych gier."
+
+#. English: Every option back to default (Proton and native unchanged)
+msgid "fo_clearing"
+msgstr "Wszystkie opcje domyślne (Proton i natywny bez zmian)"
+
+#. English: Apply to {n} games?
+msgid "fo_confirm_title"
+msgstr "Zastosować do gier: {n}?"
+
+#. English: {n} games
+msgid "fo_n_games"
+msgstr "Gry: {n}"
+
+#. English: Runs natively – no Proton set
+msgid "fo_native_line"
+msgstr "Działa natywnie – bez Protona"
+
+#. English: Next
+msgid "fo_next"
+msgstr "Dalej"
+
+#. English: No installed games whose launch options PlunderHub can set.
+msgid "fo_no_games"
+msgstr "Brak zainstalowanych gier, których opcje uruchamiania PlunderHub może ustawić."
+
+#. English: Set what you want below – a row you touch is marked, and only those are applied.
+msgid "fo_nothing"
+msgstr "Ustaw poniżej, co chcesz – to, czego dotkniesz, zostanie oznaczone i tylko to zostanie zastosowane."
+
+#. English: Nothing to save: the picked games already have these settings, or their launchers can't store them.
+msgid "fo_nothing_to_save"
+msgstr "Nie ma czego zapisać: wybrane gry już tak mają albo ich launchery tego nie obsługują."
+
+#. English: off
+msgid "fo_off"
+msgstr "wył."
+
+#. English: on
+msgid "fo_on"
+msgstr "wł."
+
+#. English: Open Fleet orders
+msgid "fo_open"
+msgstr "Otwórz Rozkazy floty"
+
+#. English: Which games?
+msgid "fo_pick_title"
+msgstr "Które gry?"
+
+#. English: Reset
+msgid "fo_reset"
+msgstr "Resetuj"
+
+#. English: Running – takes effect at its next launch
+msgid "fo_running"
+msgstr "Uruchomiona – zadziała przy następnym uruchomieniu"
+
+#. English: Search…
+msgid "fo_search"
+msgstr "Szukaj…"
+
+#. English: Select all
+msgid "fo_select_all"
+msgstr "Zaznacz wszystkie"
+
+#. English: None
+msgid "fo_select_none"
+msgstr "Żadne"
+
+#. English: Steam is running: it will be closed before saving (it would write its settings back).
+msgid "fo_steam_closed"
+msgstr "Steam działa: zostanie zamknięty przed zapisem (inaczej nadpisałby swoje ustawienia)."
+
+#. English: Set launch options once, then apply them to all your games or some of them. Only what you touch is applied.
+msgid "fo_sub"
+msgstr "Ustaw opcje uruchamiania raz, a potem zastosuj je do wszystkich lub wybranych gier. Stosowane jest tylko to, czego dotkniesz."
+
+#. English: Fleet orders
+msgid "fo_title"
+msgstr "Rozkazy floty"
+
+#. English: {n} more games already have all of it.
+msgid "fo_unchanged_games"
+msgstr "Kolejne gry ({n}) już mają to wszystko."
+
+#. English: Undo
+msgid "fo_undo"
+msgstr "Cofnij"
+
+#. English: Undone – {n} games back as they were
+msgid "fo_undone"
+msgstr "Cofnięto – gry jak wcześniej: {n}"
+
 #. English: No program is set up to open folders. The folder is:\n{path}
 msgid "folder_no_opener"
 msgstr "Żaden program nie jest ustawiony do otwierania folderów. Folder to:\n{path}"
@@ -2330,6 +2470,10 @@ msgstr "Pakiet systemowy"
 msgid "language_label"
 msgstr "Język:"
 
+#. English: Cancel
+msgid "launch_cancel"
+msgstr "Anuluj"
+
 #. English: Ready to set sail?
 msgid "launch_confirm_kicker"
 msgstr "Gotowy do wypłynięcia?"
@@ -2346,9 +2490,17 @@ msgstr "Pytaj przed wypłynięciem"
 msgid "launch_mode_instant"
 msgstr "Wypływaj od razu"
 
+#. English: Skip shaders
+msgid "launch_skip_shaders"
+msgstr "Pomiń shadery"
+
 #. English: Close
 msgid "launcher_close"
 msgstr "Zamknij"
+
+#. English: Its launcher is open – waiting for the game to start
+msgid "launcher_game_waiting"
+msgstr "Jego launcher jest otwarty – czekam, aż gra się uruchomi"
 
 #. English: Open
 msgid "launcher_open"
@@ -2850,9 +3002,9 @@ msgstr "Uruchamia tę grę na najnowszym Proton-GE"
 msgid "lo_new_recommended"
 msgstr "Zalecane opcje uruchamiania"
 
-#. English: GameMode, FPS limit, Esync and Fsync, fullscreen and more
+#. English: GameMode, FPS limit, Esync and Fsync and more
 msgid "lo_new_recommended_tip"
-msgstr "GameMode, limit FPS, Esync i Fsync, pełny ekran i więcej"
+msgstr "GameMode, limit FPS, Esync i Fsync i więcej"
 
 #. English: {launcher} is running and has to restart for this.
 msgid "lo_new_restart_note"
@@ -6165,6 +6317,10 @@ msgstr "Uruchamia instalator w prefiksie - przeklikaj go jak zwykle"
 #. English: Runtime
 msgid "tm_fg_step_runtime"
 msgstr "Środowisko"
+
+#. English: First time only: the game runtime (~700 MB) is fetched
+msgid "tm_fg_step_runtime_first"
+msgstr "Tylko za pierwszym razem: pobierane jest środowisko (~700 MB)"
 
 #. English: Save
 msgid "tm_fg_step_save"

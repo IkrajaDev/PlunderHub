@@ -1737,6 +1737,14 @@ class LaunchOptionsTab(Gtk.Box):
         self.ui["recommended"] = recommend
         col.pack_start(self._section("non-starred-symbolic", _("lo_recommended"), [
             self._row(_("lo_recommended_title"), None, recommend)]), False, False, 0)
+        # the same for many games at once: Shipwright's Fleet orders
+        fleet = self.app._dialog_button(_("fo_open"), "ghost")
+        fleet.set_valign(Gtk.Align.CENTER)
+        fleet.connect("clicked", lambda *_a: self._open_fleet_orders())
+        fleet_card = self._section("preferences-other-symbolic", _("fo_title"), [
+            self._row(_("fo_card_row"), _("fo_card_sub"), fleet)])
+        self.ui["fleet_card"] = fleet_card
+        col.pack_start(fleet_card, False, False, 0)
 
         proton = Gtk.ComboBoxText()
         self._fill_proton(proton, self.loaded.proton or "")
@@ -1756,6 +1764,11 @@ class LaunchOptionsTab(Gtk.Box):
         native = backend.native_capable(game)
         proton_row = self._row(_("lo_proton_label").rstrip(":"), None, proton_box,
                                pill=_("task_recommended") if native else None)
+        # its choice under its title: in one line (the long Proton name and
+        # Proton versions) it held the page at 925 px - too wide for a laptop
+        proton_row.set_orientation(Gtk.Orientation.VERTICAL)
+        proton_row.set_spacing(8)
+        proton_box.set_halign(Gtk.Align.START)
         self.ui["proton_row"] = proton_row
         runtime = [proton_row]
         if native:
@@ -1779,7 +1792,14 @@ class LaunchOptionsTab(Gtk.Box):
         fps_entry = self._entry("fps_entry", 5)
         fps_check = ToggleSwitch()
         self.ui["fps_check"] = fps_check
-        fps_check.connect("toggled", lambda s: fps_entry.set_sensitive(s.get_active()))
+        def fps_toggled(s):
+            fps_entry.set_sensitive(s.get_active())
+            # switched on with no number: the monitor's refresh rate, as Recommended sets
+            if s.get_active() and not fps_entry.get_text().strip() and not getattr(self.app, "_lo_writing", False):
+                hz = self.app._lo_monitor_refresh()
+                if hz:
+                    fps_entry.set_text(str(hz))
+        fps_check.connect("toggled", fps_toggled)
         fps_box.pack_start(fps_entry, False, False, 0)
         fps_box.pack_start(fps_check, False, False, 0)
         col.pack_start(self._section("sparkles-symbolic", _("lo_section_performance"), [
@@ -2483,6 +2503,10 @@ class LaunchOptionsTab(Gtk.Box):
         bar.pack_end(save, False, False, 0)
         bar.pack_end(cancel, False, False, 0)
         return bar
+
+    def _open_fleet_orders(self):
+        from plunderhub.ui import shipwright
+        shipwright.show(self.app, self.page, focus="fleet")
 
     def _read(self) -> LaunchOptions:
         if self.current == "text":

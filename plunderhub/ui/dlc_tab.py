@@ -127,6 +127,8 @@ class DlcTab(Gtk.Box):
 
             def done():
                 self._loading = False
+                if self.uninstall_btn.get_child() is None:
+                    return False        # the game page was closed meanwhile (its buttons are gone)
                 self.list = found
                 self._fill()
                 return False

@@ -1172,7 +1172,7 @@ class AddWindow:
             info = fa.LAUNCHERS[k]
             steps.append(self._("tm_fg_step_dl").format(name=info["name"]))
             if not fa.umu_runtime_ready():
-                steps.append(self._("tm_fg_step_runtime"))
+                steps.append(self._("tm_fg_step_runtime_first"))
             steps.append(self._("tm_fg_step_quiet"))
             if info.get("signin"):
                 steps.append(self._("tm_fg_step_signin"))
@@ -1183,7 +1183,7 @@ class AddWindow:
             steps.append(self._("tm_fg_step_launcher_done"))
         elif k == "setup":
             if not fa.umu_runtime_ready():
-                steps.append(self._("tm_fg_step_runtime"))
+                steps.append(self._("tm_fg_step_runtime_first"))
             steps += [self._("tm_fg_step_run_setup"), self._("tm_fg_step_find"), self._("tm_fg_step_pick"),
                       self._("tm_fg_step_aboard")]
         elif k == "exe":

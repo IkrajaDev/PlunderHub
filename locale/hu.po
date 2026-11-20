@@ -436,7 +436,7 @@ msgstr "{store}: üres a kincsesláda"
 
 #. English: The crew turned over every crate on {store} - nothing free to plunder today. The lookout checks again every few hours, matey.
 msgid "bb_store_empty_sub"
-msgstr "A legénység itt minden ládát felforgatott - ma nincs ingyen zsákmány. Az árbockosárból pár óránként újra körbenéznek, pajtás."
+msgstr "A legénység minden ládát felforgatott ({store}) - ma nincs ingyen zsákmány. Az árbockosárból pár óránként újra körbenéznek, pajtás."
 
 #. English: Free PC games to keep, right now · via <a href=\"https://eikowagenknecht.com/lootscraper/\">LootScraper</a>
 msgid "bb_sub"
@@ -1530,6 +1530,146 @@ msgstr "Kedvenc"
 msgid "filter_placeholder"
 msgstr "Keresés a zsákmány között..."
 
+#. English: All
+msgid "fo_all"
+msgstr "Mind"
+
+#. English: Already set: {list}
+msgid "fo_already_line"
+msgstr "Már így van: {list}"
+
+#. English: Saved for {n} games
+msgid "fo_applied"
+msgstr "Elmentve {n} játékra"
+
+#. English: Apply to {n} games
+msgid "fo_apply"
+msgstr "Alkalmaz {n} játékra"
+
+#. English: Apply to all games
+msgid "fo_apply_all"
+msgstr "Alkalmazás minden játékra"
+
+#. English: Apply to some games…
+msgid "fo_apply_some"
+msgstr "Alkalmazás néhány játékra…"
+
+#. English: Its launcher can't store: {list}
+msgid "fo_cant_line"
+msgstr "A launchere nem tudja tárolni: {list}"
+
+#. English: Many games at once
+msgid "fo_card_row"
+msgstr "Több játékra egyszerre"
+
+#. English: Set launch options for all your games, or some of them, in Shipwright
+msgid "fo_card_sub"
+msgstr "Indítási opciók beállítása minden játékra vagy néhányra, a Shipwrightban"
+
+#. English: Changes: {list}
+msgid "fo_changes_line"
+msgstr "Változik: {list}"
+
+#. English: Reset all options
+msgid "fo_clear_all"
+msgstr "Minden opció visszaállítása"
+
+#. English: Every launch option off and empty (Esync and Fsync stay on); Proton and running natively stay as they are. Then apply it to all games or some.
+msgid "fo_clear_all_tip"
+msgstr "Minden indítási opció ki és üres (az Esync és Fsync bekapcsolva marad); a Proton és a natív futás nem változik. Utána alkalmazd minden játékra vagy néhányra."
+
+#. English: Every option back to default (Proton and native unchanged)
+msgid "fo_clearing"
+msgstr "Minden opció alaphelyzetbe (a Proton és a natív futás marad)"
+
+#. English: Apply to {n} games?
+msgid "fo_confirm_title"
+msgstr "Alkalmazod {n} játékra?"
+
+#. English: {n} games
+msgid "fo_n_games"
+msgstr "{n} játék"
+
+#. English: Runs natively – no Proton set
+msgid "fo_native_line"
+msgstr "Natívan fut – nem kap Protont"
+
+#. English: Next
+msgid "fo_next"
+msgstr "Tovább"
+
+#. English: No installed games whose launch options PlunderHub can set.
+msgid "fo_no_games"
+msgstr "Nincs olyan telepített játék, aminek a PlunderHub be tudná állítani az indítási opcióit."
+
+#. English: Set what you want below – a row you touch is marked, and only those are applied.
+msgid "fo_nothing"
+msgstr "Állítsd be lent, amit szeretnél – amihez hozzányúlsz, az megjelölődik, és csak az kerül alkalmazásra."
+
+#. English: Nothing to save: the picked games already have these settings, or their launchers can't store them.
+msgid "fo_nothing_to_save"
+msgstr "Nincs mit menteni: a kijelölt játékoknál már így van, vagy a launcherük nem tudja tárolni."
+
+#. English: off
+msgid "fo_off"
+msgstr "ki"
+
+#. English: on
+msgid "fo_on"
+msgstr "be"
+
+#. English: Open Fleet orders
+msgid "fo_open"
+msgstr "Flottaparancs megnyitása"
+
+#. English: Which games?
+msgid "fo_pick_title"
+msgstr "Melyik játékokra?"
+
+#. English: Reset
+msgid "fo_reset"
+msgstr "Alaphelyzet"
+
+#. English: Running – takes effect at its next launch
+msgid "fo_running"
+msgstr "Fut – a következő indításnál érvényes"
+
+#. English: Search…
+msgid "fo_search"
+msgstr "Keresés…"
+
+#. English: Select all
+msgid "fo_select_all"
+msgstr "Mind kijelölése"
+
+#. English: None
+msgid "fo_select_none"
+msgstr "Egyik sem"
+
+#. English: Steam is running: it will be closed before saving (it would write its settings back).
+msgid "fo_steam_closed"
+msgstr "A Steam fut: mentés előtt bezárjuk (különben visszaírná a saját beállításait)."
+
+#. English: Set launch options once, then apply them to all your games or some of them. Only what you touch is applied.
+msgid "fo_sub"
+msgstr "Állítsd be egyszer az indítási opciókat, aztán alkalmazd minden játékodra vagy néhányra. Csak az kerül át, amihez hozzányúlsz."
+
+#. English: Fleet orders
+msgid "fo_title"
+msgstr "Flottaparancs"
+
+#. English: {n} more games already have all of it.
+msgid "fo_unchanged_games"
+msgstr "További {n} játéknál már minden így van."
+
+#. English: Undo
+msgid "fo_undo"
+msgstr "Visszavonás"
+
+#. English: Undone – {n} games back as they were
+msgid "fo_undone"
+msgstr "Visszavonva – {n} játék a korábbi beállításán"
+
 #. English: No program is set up to open folders. The folder is:\n{path}
 msgid "folder_no_opener"
 msgstr "Nincs beállítva program a mappák megnyitására. A mappa:\n{path}"
@@ -2330,6 +2470,10 @@ msgstr "Rendszercsomag"
 msgid "language_label"
 msgstr "Nyelv:"
 
+#. English: Cancel
+msgid "launch_cancel"
+msgstr "Mégse"
+
 #. English: Ready to set sail?
 msgid "launch_confirm_kicker"
 msgstr "Indulhat a hajó?"
@@ -2346,9 +2490,17 @@ msgstr "Rákérdezés kihajózás előtt"
 msgid "launch_mode_instant"
 msgstr "Azonnali kihajózás"
 
+#. English: Skip shaders
+msgid "launch_skip_shaders"
+msgstr "Shaderek kihagyása"
+
 #. English: Close
 msgid "launcher_close"
 msgstr "Bezárás"
+
+#. English: Its launcher is open – waiting for the game to start
+msgid "launcher_game_waiting"
+msgstr "A launchere nyitva van – várunk, hogy elinduljon a játék"
 
 #. English: Open
 msgid "launcher_open"
@@ -2850,9 +3002,9 @@ msgstr "Ezt a játékot a legújabb Proton-GE-vel futtatja"
 msgid "lo_new_recommended"
 msgstr "Ajánlott indítási opciók"
 
-#. English: GameMode, FPS limit, Esync and Fsync, fullscreen and more
+#. English: GameMode, FPS limit, Esync and Fsync and more
 msgid "lo_new_recommended_tip"
-msgstr "GameMode, FPS-korlát, Esync és Fsync, teljes képernyő és egyebek"
+msgstr "GameMode, FPS-korlát, Esync és Fsync és egyebek"
 
 #. English: {launcher} is running and has to restart for this.
 msgid "lo_new_restart_note"
@@ -6165,6 +6317,10 @@ msgstr "Futtatja a telepítőt a prefixben - kattints végig rajta, ahogy szokta
 #. English: Runtime
 msgid "tm_fg_step_runtime"
 msgstr "Környezet"
+
+#. English: First time only: the game runtime (~700 MB) is fetched
+msgid "tm_fg_step_runtime_first"
+msgstr "Csak először: letölti a futtatókörnyezetet (~700 MB)"
 
 #. English: Save
 msgid "tm_fg_step_save"

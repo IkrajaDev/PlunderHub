@@ -213,7 +213,14 @@ def steam_launch_stage(appid: str, since: float) -> Optional[SteamLaunchStage]:
                 # same second. Waiting until that line comes.
                 before_wait = stage
                 asks = action[len("waiting for user response to "):].split(" ", 1)[0]
-                stage = SteamLaunchStage("waiting", stamp, asks=asks)
+                if asks == "ProcessingShaderCache":
+                    # its window's "wait" is the progress with Skip / Cancel
+                    # (11-20 CS2: 1.8 M shaders) - still the shaders, which
+                    # PlunderHub's own Skip shaders can stop
+                    stage = SteamLaunchStage("shaders", stage.since if stage.stage == "shaders" else stamp,
+                                             asks=asks)
+                else:
+                    stage = SteamLaunchStage("waiting", stamp, asks=asks)
             elif action.startswith("continues with user response"):
                 if stage.stage == "waiting":
                     stage = before_wait

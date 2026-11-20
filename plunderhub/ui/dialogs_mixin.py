@@ -513,7 +513,17 @@ class DialogsMixin:
         timers: Dict[Gtk.Label, int] = {}
 
         dlg, column = card_dialog(parent or self._dialog_transient_parent(), _("bug_title"))
-        column.set_size_request(760, -1)
+        # 760 wide where there's room; on a narrow screen (1080p at 200 %: 960 px)
+        # less - the card round the column takes ~190 more (dialog_sweep 11-20)
+        width = 760
+        try:
+            display = Gdk.Display.get_default()
+            win = (parent or self).get_window()
+            mon = (display.get_monitor_at_window(win) if win is not None else None) or display.get_monitor(0)
+            width = max(460, min(760, mon.get_workarea().width - 48 - 190))
+        except Exception:
+            pass
+        column.set_size_request(width, -1)
         column.set_spacing(12)
 
         def pill(key: str, kind: str = "ghost", small: bool = False) -> Gtk.Button:
@@ -598,6 +608,9 @@ class DialogsMixin:
             texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
             texts.set_valign(Gtk.Align.START)
             head = Gtk.Label(label=_(title_key), xalign=0)
+            # wraps on a narrow screen (three across held the card at 946 px on a 960 px one)
+            head.set_line_wrap(True)
+            head.set_max_width_chars(18)
             head.get_style_context().add_class("home-update-title")
             texts.pack_start(head, False, False, 0)
             sub = Gtk.Label(label=_(sub_key), xalign=0)

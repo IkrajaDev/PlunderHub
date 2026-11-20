@@ -911,6 +911,29 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         except Exception as e:
             logger.warning(f"Scroll-to-top animation failed: {e}")
 
+    def _scroll_up_to_hero(self) -> bool:
+        """Back to the top after a launch from a card, where the top card
+        shows the launch - All Plunder unsearched has it, so a launcher's
+        page, Favorites or a search goes there first."""
+        try:
+            if getattr(self, "reorder_mode", False):
+                return False
+            if self.search_entry.get_text().strip():
+                self.search_entry.set_text("")
+            if self.home_nav != "all":
+                self._set_home_nav("all")       # shown from its top
+                if hasattr(self, "_home_select_nav_row"):
+                    self._home_select_nav_row()
+                return False
+            adjustment = self.scroller.get_vadjustment()
+            if adjustment.get_value() > adjustment.get_lower() + 1:
+                self.scroller.set_kinetic_scrolling(False)
+                self.scroller.set_kinetic_scrolling(True)
+                self._animate_scroll_top(adjustment, adjustment.get_value(), adjustment.get_lower())
+        except Exception as e:
+            logger.debug(f"Scroll up after launch skipped: {e}")
+        return False
+
     def _animate_scroll_top(self, adjustment: Gtk.Adjustment, start_value: float, target_value: float):
         """Glides back up: longer for a longer way, easing in and out, one
         step per frame of the monitor - the bubbles follow it down."""
@@ -1607,11 +1630,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return
         view = _treasure_map().shown(self)
         if view is not None:
-            # the map's tiles; off their left edge back to the sidebar
-            if focused is not view.grid:
-                view.grid.kb_enter()
-            elif not view.grid.kb_move(direction) and direction == "left":
-                self._home_focus_sidebar()
+            self._map_move_focus(view, focused, direction)
+            return
+        page = self._button_page_shown()
+        if page is not None:
+            self._page_move_focus(page, focused, direction)
             return
         if not self._nav_groups:
             if direction == "left":
@@ -1654,6 +1677,51 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                         self._grab_keyboard_focus(hero)
         elif direction == "down":
             self._focus_group_start(group_idx + 1)
+
+    def _button_page_shown(self) -> Optional[Gtk.Widget]:
+        """The Bounty Board or the Loading Dock, when one is the page."""
+        from plunderhub.ui import bounty_board, loading_dock
+        return bounty_board.shown(self) or loading_dock.shown(self)
+
+    def _page_move_focus(self, page: Gtk.Widget, focused: Optional[Gtk.Widget], direction: str):
+        """A page of buttons (Bounty Board, Loading Dock): onto the nearest one
+        that way; off its left edge back to the sidebar."""
+        from plunderhub.ui import spatial_nav
+        stops = spatial_nav.stops(page)
+        if focused is None or not focused.is_ancestor(page):
+            target = spatial_nav.first(self, stops)       # in from the sidebar
+        else:
+            target = spatial_nav.pick(self, stops, focused, direction)
+        if target is not None:
+            spatial_nav.stand(self, target)
+        elif direction == "left":
+            self._home_focus_sidebar()
+
+    def _map_move_focus(self, view, focused: Optional[Gtk.Widget], direction: str):
+        """The Treasure Map: its tiles, and above them its tabs, chips and
+        buttons - up off the top row of tiles onto them, down back."""
+        from plunderhub.ui import spatial_nav
+        grid = view.grid
+        if focused is grid:
+            if grid.kb_move(direction):
+                return
+            if direction == "left":
+                self._home_focus_sidebar()
+                return
+            target = spatial_nav.pick(self, spatial_nav.stops(view, [grid]), grid, direction)
+            if target is not None and target is not grid:
+                spatial_nav.stand(self, target)
+            return
+        if focused is None or not focused.is_ancestor(view):
+            grid.kb_enter()                                 # in from the sidebar: the tiles
+            return
+        target = spatial_nav.pick(self, spatial_nav.stops(view, [grid]), focused, direction)
+        if target is grid:
+            grid.kb_enter()
+        elif target is not None:
+            spatial_nav.stand(self, target)
+        elif direction == "left":
+            self._home_focus_sidebar()
 
     def _populate_sort_popover(self):
         box = self._home_menu_box(self.sort_popover, heading=self._("sort_by"))
@@ -3432,6 +3500,12 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return      # its saves are being synced
         if uid in self._proton_waits:
             return      # its Proton is being downloaded
+        if uid:
+            # started again on purpose after a cancel: let it open
+            self.__dict__.get("_cancelled_launches", {}).pop(uid, None)
+            if uid.startswith("steam:"):
+                from plunderhub.core.steam_launch_guard import cancel_block
+                cancel_block(uid.split(":", 1)[1])
         # The first game launched: whether games open on the next workspace,
         # asked once (where moving them is possible at all).
         if uid and "workspace_choice_asked" not in self.settings and self.workspace_mover() is not None:
@@ -3686,17 +3760,29 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
     _GONE_EARLY_RUN_SECONDS = 180.0
 
     _GONE_QUIET_PREFIX_SECONDS = 3.0
+    _GONE_QUIET_PREFIX_LATE_SECONDS = 0.9
+
+    @staticmethod
+    def _detection_alive(detection) -> bool:
+        """Any of the processes the detector matched still there (none
+        named - Steam's word only - counts as alive)."""
+        pids = getattr(detection, "pids", None)
+        return not pids or any(os.path.exists(f"/proc/{pid}") for pid in pids)
 
     def _gone_for_good(self, uid: str) -> bool:
         now = time.monotonic()
         first_missed = self._gone_since.setdefault(uid, now)
         started = self.running_since.get(uid)
         early = started is None or now - started < self._GONE_EARLY_RUN_SECONDS
-        if early and now - first_missed >= self._GONE_QUIET_PREFIX_SECONDS and self._prefix_quiet(uid):
-            # quit within its first minutes: nothing left in its prefix is
-            # handing over to it (a launcher, a redist) - it's over
+        missed = now - first_missed
+        # Nothing left in its prefix (a launcher, a redist handing over, its
+        # wineserver): it's over after one missed poll - for a Steam game in
+        # its first minutes after a second look (its install scripts blink).
+        if missed >= (self._GONE_QUIET_PREFIX_SECONDS if early and uid.startswith("steam:")
+                      else self._GONE_QUIET_PREFIX_LATE_SECONDS) \
+                and self._prefix_quiet(uid):
             return True
-        return now - first_missed >= (self._GONE_GRACE_EARLY_SECONDS if early else self._GONE_GRACE_SECONDS)
+        return missed >= (self._GONE_GRACE_EARLY_SECONDS if early else self._GONE_GRACE_SECONDS)
 
     def _prefix_quiet(self, uid: str) -> bool:
         """Nothing runs in the game's Wine prefix any more (False when it
@@ -3722,9 +3808,14 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         if uid in self._directory_confirmed_running:
             return False
         started_at = self.running_since.get(uid)
-        if started_at is None:
+        if started_at is not None:
+            waited = time.monotonic() - started_at
+        elif uid in self.launching_uids and self._is_launcher_game(uid):
+            # still waiting for the game in its launcher (no clock yet)
+            waited = time.time() - self.launching_uids[uid]
+        else:
             return False
-        if time.monotonic() - started_at < self._UNCONFIRMED_RUNNING_TIMEOUT_SECONDS:
+        if waited < self._UNCONFIRMED_RUNNING_TIMEOUT_SECONDS:
             return False
         # a launcher started for the game stays open in its process group,
         # game or no game: that says nothing
@@ -3763,6 +3854,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         ended = [u for u in self.detected_running if u not in snapshot or u in self.running_procs]
         for uid in started:
             detection = snapshot[uid]
+            if self._close_if_cancelled(uid, detection):
+                continue
             self.detected_running[uid] = detection
             # Its real start, so the timer is right even for a game that
             # was already running before PlunderHub was.
@@ -3817,6 +3910,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return None         # the game runs: Steam's windows are the player's again
         if uid in self.launching_uids:
             stage = self._process_probe.stage(uid)
+            if stage is not None and getattr(stage, "asks", "") == "ProcessingShaderCache":
+                # Steam's shader window (Skip / Cancel; its X most likely
+                # cancels) and the main window it brings up: minimized, not
+                # closed - Skip shaders is on the hero
+                return "minimize"
             return not (stage is not None and stage.stage == "waiting")
         settled = self._launch_settled_at.get(uid)
         if settled is not None and time.time() - settled < self._STEAM_TRAY_AFTER_START_SECONDS:
@@ -3859,6 +3957,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         launch waits for Steam to say the game runs - an update or the
         shaders can take minutes - unless Steam goes quiet about it; a
         Heroic one for Heroic to start the game itself."""
+        if self._is_launcher_game(uid):
+            # Battle.net, EA app...: its launcher opening is not the game -
+            # the time starts once the game's own processes show up
+            # (_poll_running_games confirms it and ends the launch)
+            return False
         follower = self._heroic_launches.get(uid)
         if follower is not None:
             heroic_stage = self._heroic_stages.get(uid)
@@ -3895,6 +3998,8 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                           "cloud_stage_upload" if mode.endswith("upload") else "cloud_stage_download")
         if uid not in self.launching_uids:
             return None
+        if self._is_launcher_game(uid):
+            return self._("launcher_game_waiting")
         heroic_stage = self._heroic_stages.get(uid)
         if uid in self._heroic_launches:
             if heroic_stage is None or heroic_stage.stage in ("launched", "failed"):
@@ -4255,7 +4360,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 # Heroic itself, staying in its tray) - the game's own
                 # processes, as the running detector finds them (Wine ones
                 # by their command line too), say whether it runs.
-                if uid in detected:
+                # the detector looks every 3 s; whether the processes it found
+                # still live is seen every second (a quit shows up at once)
+                if uid in detected and self._detection_alive(detected[uid]):
                     if uid not in self._directory_confirmed_running and self._is_launcher_game(uid):
                         # its time starts with the game, not with its launcher opening
                         self.running_since[uid] = time.monotonic()
@@ -4265,6 +4372,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 elif uid in self._directory_confirmed_running:
                     if self._gone_for_good(uid):
                         finished.append(uid)
+                elif uid in self.launching_uids and self._is_launcher_game(uid) \
+                        and time.time() - self.launching_uids[uid] >= 20 and self._prefix_quiet(uid):
+                    finished.append(uid)        # its launcher was closed before the game started
                 elif uid.startswith("lutris:") and proc.poll() not in (None, 0) and not self._process_group_alive(proc):
                     finished.append(uid)        # Lutris said no at once
                     failed_launches.append((uid, ""))
@@ -4319,7 +4429,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                                            error=errors.get(uid, ""))
                 perf_tab.after_session(self, uid)
             for uid in finished:
-                self._gone_since.pop(uid, None)
+                gone_at = self._gone_since.pop(uid, None)
+                if gone_at is not None:
+                    logger.info(f"{uid} ended: {time.monotonic() - gone_at:.1f}s after it was first seen gone")
                 self._ignore_detection_briefly(uid)
                 self.running_procs.pop(uid, None)
                 self._end_heroic_launch(uid)
@@ -4403,7 +4515,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self.launching_uids.pop(game.uid, None)
         self._end_heroic_launch(game.uid)
         if self._workspace_mover is not None:
-            self._workspace_mover.forget(game.uid)
+            self._workspace_mover.ended(game.uid)
         self._directory_confirmed_running.discard(game.uid)
         process_match = (self._running_process_match.pop(game.uid, None)
                          or self._game_process_match(game.uid, game.install_dir, game.title))
@@ -4426,6 +4538,72 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             if game.store_platform != "launcher-game":      # its launcher stays open
                 self._terminate_process(proc, resync_playtime=True)
         self._render_launchers()
+
+    # a called-off launch: the game, if its launcher still starts it after
+    # what it was doing (an update, shaders), is closed when it shows up
+    _CANCELLED_LAUNCH_SECONDS = 300.0
+
+    def cancel_launch(self, game: GameItem):
+        """Setting sail called off: PlunderHub stops waiting, and the game
+        doesn't open later by itself."""
+        if game.uid not in self.launching_uids:
+            return
+        logger.info(f"Launch of {game.uid} cancelled by the player")
+        self.__dict__.setdefault("_cancelled_launches", {})[game.uid] = time.monotonic()
+        if game.uid.startswith("steam:"):
+            # Steam can't be told to drop it: its start is stopped as it comes
+            from plunderhub.core.steam_launch_guard import block_next_start
+            block_next_start(game.uid.split(":", 1)[1], self._CANCELLED_LAUNCH_SECONDS)
+        self._on_stop_game_clicked(None, game)
+        self._render_launchers()
+
+    def _close_if_cancelled(self, uid: str, detection) -> bool:
+        """A game showing up soon after its launch was cancelled: closed."""
+        cancelled = self.__dict__.get("_cancelled_launches", {})
+        at = cancelled.get(uid)
+        if at is None:
+            return False
+        if time.monotonic() - at > self._CANCELLED_LAUNCH_SECONDS:
+            cancelled.pop(uid, None)
+            return False
+        cancelled.pop(uid, None)
+        logger.info(f"{uid} started after its launch was cancelled - closing it")
+        if detection.pids:
+            self._terminate_pids(detection.pids)
+        else:
+            game = self.game_index.get(uid)
+            match = self._game_process_match(uid, game.install_dir if game else None, game.title if game else "")
+            if match is not None:
+                self._terminate_game_processes(match)
+        self._ignore_detection_briefly(uid)
+        return True
+
+    def can_skip_steam_shaders(self, uid: str) -> bool:
+        if not uid.startswith("steam:") or uid not in self.launching_uids:
+            return False
+        stage = self._process_probe.stage(uid)
+        return stage is not None and stage.stage == "shaders"
+
+    def skip_steam_shaders(self, uid: str):
+        """As Steam's own Skip in its "Processing Vulkan shaders" window:
+        the processing (fossilize_replay) for this game stops, and Steam
+        goes on to start it."""
+        appid = uid.split(":", 1)[1]
+        mine, others = [], []
+        for entry in os.listdir("/proc"):
+            if not entry.isdigit():
+                continue
+            try:
+                with open(f"/proc/{entry}/cmdline", "rb") as f:
+                    cmd = f.read().decode("utf-8", "replace")
+            except OSError:
+                continue
+            if "fossilize_replay" not in cmd.split("\0", 1)[0]:
+                continue
+            (mine if f"/shadercache/{appid}/" in cmd else others).append(int(entry))
+        pids = mine or others      # its own when they can be told apart
+        logger.info(f"Skipping Steam's shader processing for {uid}: {len(pids)} process(es)")
+        self._terminate_pids(pids)
 
     def _terminate_game_processes(self, process_match: GameProcessMatch, resync_playtime: bool = False):
         self._terminate_pids(find_game_pids(process_match), resync_playtime)
@@ -5318,6 +5496,10 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             return
         asked = self.launch_mode == "confirm"
         self.request_launch(game.launch_cmd, game.title, game.env, game.uid, game.install_dir)
+        if game.uid in self.launching_uids or game.uid in self.running_procs:
+            # it set sail: up to the top card, which says what's going on
+            # (only All Plunder unsearched has it; after the re-render)
+            GLib.timeout_add(60, self._scroll_up_to_hero)
         if asked:
             # The "Ready to set sail?" dialog took the pointer and gave
             # focus back to the card - which then stayed highlighted,

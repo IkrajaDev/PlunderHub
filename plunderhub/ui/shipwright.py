@@ -57,7 +57,7 @@ CATEGORY_ICONS = {"overview": "layout-dashboard-symbolic", "inspection": "stetho
                   "launchers": "applications-games-symbolic", "performance": "zap-symbolic",
                   "graphics": "sparkles-symbolic", "proton": "rocket-symbolic", "flatpak": "package-symbolic",
                   "controllers": "input-gaming-symbolic", "apps": "cpu-symbolic", "system": "preferences-system-symbolic",
-                  "bilge": "user-trash-symbolic"}
+                  "bilge": "user-trash-symbolic", "fleet": "preferences-other-symbolic"}
 TILE_CATEGORIES = [c for c in CATEGORIES if c not in ("overview", "inspection", "updates")]
 # The Flatpak launchers' Vulkan layer of a tool: shown and installed
 # along with the tool, on its tile.
@@ -704,6 +704,10 @@ class Shipwright:
         from plunderhub.ui import bilge_page
         self.bilge_page = bilge_page.BilgePage(self)
         self.stack.add_named(self._scroll(self.bilge_page), "bilge")
+        # Fleet orders: built when first shown (it reads every game's launch options)
+        self.fleet_page = None
+        self.fleet_holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.stack.add_named(self.fleet_holder, "fleet")
 
         content.show_all()
         self._set_collapsed(not self.app.settings.get("shipwright_sidebar_open", True))
@@ -810,7 +814,8 @@ class Shipwright:
         self.nav_icons: Dict[str, "NavIcon"] = {}
         cats = list(CATEGORIES)
         cats.insert(cats.index("inspection") + 1, "protons")
-        cats.insert(cats.index("protons") + 1, "bilge")
+        cats.insert(cats.index("protons") + 1, "fleet")
+        cats.insert(cats.index("fleet") + 1, "bilge")
         for cat in cats:
             row = Gtk.ListBoxRow()
             row.page = cat
@@ -921,6 +926,8 @@ class Shipwright:
             return self.proton_page.TITLE if getattr(self, "proton_page", None) else "Proton"
         if cat == "bilge":
             return self._("bg_title")
+        if cat == "fleet":
+            return self._("fo_title")
         if cat == "launchers":
             return self._("sources_header_launchers")
         return self._(f"sw_group_{cat}" if cat != "overview" else "sw_overview")
@@ -1255,10 +1262,17 @@ class Shipwright:
     def _show_page(self, page: str):
         _ = self._
         self.page = page
+        if page == "fleet" and self.fleet_page is None:
+            from plunderhub.ui.fleet_orders import FleetOrdersPage
+            self.fleet_page = FleetOrdersPage(self)
+            self.fleet_holder.pack_start(self.fleet_page, True, True, 0)
+            self.fleet_page.show_all()
+            for b in (self.fleet_page.undo_btn,) if self.fleet_page.tab is not None else ():
+                b.set_visible(False)
         self.stack.set_visible_child_name(page)
         self.page_title.set_text(_("sw_headline") if page == "overview" else self._cat_title(page))
         self.page_sub.set_text(self.proton_page.SUB if page == "protons" else _("bg_sub") if page == "bilge"
-                               else _(f"sw_cat_sub_{page}"))
+                               else _("fo_sub") if page == "fleet" else _(f"sw_cat_sub_{page}"))
         self._update_action_bar()
 
     # --- the list: jumping to a shelf, the sidebar following the scrolling ----------------

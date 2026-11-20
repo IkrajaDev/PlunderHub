@@ -1530,6 +1530,146 @@ msgstr "Обране"
 msgid "filter_placeholder"
 msgstr "Пошук у здобичі..."
 
+#. English: All
+msgid "fo_all"
+msgstr "Усі"
+
+#. English: Already set: {list}
+msgid "fo_already_line"
+msgstr "Уже так: {list}"
+
+#. English: Saved for {n} games
+msgid "fo_applied"
+msgstr "Збережено для ігор: {n}"
+
+#. English: Apply to {n} games
+msgid "fo_apply"
+msgstr "Застосувати до ігор: {n}"
+
+#. English: Apply to all games
+msgid "fo_apply_all"
+msgstr "Застосувати до всіх ігор"
+
+#. English: Apply to some games…
+msgid "fo_apply_some"
+msgstr "Застосувати до деяких ігор…"
+
+#. English: Its launcher can't store: {list}
+msgid "fo_cant_line"
+msgstr "Його лаунчер не може зберегти: {list}"
+
+#. English: Many games at once
+msgid "fo_card_row"
+msgstr "Одразу кілька ігор"
+
+#. English: Set launch options for all your games, or some of them, in Shipwright
+msgid "fo_card_sub"
+msgstr "Налаштуйте параметри запуску для всіх ігор або деяких – у Shipwright"
+
+#. English: Changes: {list}
+msgid "fo_changes_line"
+msgstr "Зміниться: {list}"
+
+#. English: Reset all options
+msgid "fo_clear_all"
+msgstr "Скинути всі параметри"
+
+#. English: Every launch option off and empty (Esync and Fsync stay on); Proton and running natively stay as they are. Then apply it to all games or some.
+msgid "fo_clear_all_tip"
+msgstr "Усі параметри запуску вимкнені й порожні (Esync і Fsync лишаються ввімкнені); Proton і нативний запуск не змінюються. Потім застосуйте до всіх або деяких ігор."
+
+#. English: Every option back to default (Proton and native unchanged)
+msgid "fo_clearing"
+msgstr "Усі параметри за замовчуванням (Proton і нативний без змін)"
+
+#. English: Apply to {n} games?
+msgid "fo_confirm_title"
+msgstr "Застосувати до ігор: {n}?"
+
+#. English: {n} games
+msgid "fo_n_games"
+msgstr "Ігор: {n}"
+
+#. English: Runs natively – no Proton set
+msgid "fo_native_line"
+msgstr "Працює нативно – Proton не задається"
+
+#. English: Next
+msgid "fo_next"
+msgstr "Далі"
+
+#. English: No installed games whose launch options PlunderHub can set.
+msgid "fo_no_games"
+msgstr "Немає встановлених ігор, параметри запуску яких PlunderHub може налаштувати."
+
+#. English: Set what you want below – a row you touch is marked, and only those are applied.
+msgid "fo_nothing"
+msgstr "Налаштуйте нижче що потрібно – те, що ви чіпаєте, позначається, і застосовується лише це."
+
+#. English: Nothing to save: the picked games already have these settings, or their launchers can't store them.
+msgid "fo_nothing_to_save"
+msgstr "Нічого зберігати: у вибраних ігор уже так, або їхній лаунчер не може це зберегти."
+
+#. English: off
+msgid "fo_off"
+msgstr "вимк."
+
+#. English: on
+msgid "fo_on"
+msgstr "увімк."
+
+#. English: Open Fleet orders
+msgid "fo_open"
+msgstr "Відкрити «Накази флоту»"
+
+#. English: Which games?
+msgid "fo_pick_title"
+msgstr "Які ігри?"
+
+#. English: Reset
+msgid "fo_reset"
+msgstr "Скинути"
+
+#. English: Running – takes effect at its next launch
+msgid "fo_running"
+msgstr "Запущена – набуде чинності під час наступного запуску"
+
+#. English: Search…
+msgid "fo_search"
+msgstr "Пошук…"
+
+#. English: Select all
+msgid "fo_select_all"
+msgstr "Вибрати всі"
+
+#. English: None
+msgid "fo_select_none"
+msgstr "Жодної"
+
+#. English: Steam is running: it will be closed before saving (it would write its settings back).
+msgid "fo_steam_closed"
+msgstr "Steam запущено: його буде закрито перед збереженням (інакше він перезапише свої налаштування)."
+
+#. English: Set launch options once, then apply them to all your games or some of them. Only what you touch is applied.
+msgid "fo_sub"
+msgstr "Налаштуйте параметри запуску один раз і застосуйте до всіх ігор або до деяких. Застосовується лише те, що ви чіпаєте."
+
+#. English: Fleet orders
+msgid "fo_title"
+msgstr "Накази флоту"
+
+#. English: {n} more games already have all of it.
+msgid "fo_unchanged_games"
+msgstr "Ще у {n} ігор уже все так."
+
+#. English: Undo
+msgid "fo_undo"
+msgstr "Скасувати"
+
+#. English: Undone – {n} games back as they were
+msgid "fo_undone"
+msgstr "Скасовано – ігор як раніше: {n}"
+
 #. English: No program is set up to open folders. The folder is:\n{path}
 msgid "folder_no_opener"
 msgstr "Не задано програми для відкриття тек. Тека:\n{path}"
@@ -2330,6 +2470,10 @@ msgstr "Системний пакет"
 msgid "language_label"
 msgstr "Мова:"
 
+#. English: Cancel
+msgid "launch_cancel"
+msgstr "Скасувати"
+
 #. English: Ready to set sail?
 msgid "launch_confirm_kicker"
 msgstr "Готові відплисти?"
@@ -2346,9 +2490,17 @@ msgstr "Запитувати перед відплиттям"
 msgid "launch_mode_instant"
 msgstr "Відпливати одразу"
 
+#. English: Skip shaders
+msgid "launch_skip_shaders"
+msgstr "Пропустити шейдери"
+
 #. English: Close
 msgid "launcher_close"
 msgstr "Закрити"
+
+#. English: Its launcher is open – waiting for the game to start
+msgid "launcher_game_waiting"
+msgstr "Його лаунчер відкрито – чекаємо запуску гри"
 
 #. English: Open
 msgid "launcher_open"
@@ -2850,9 +3002,9 @@ msgstr "Запускає цю гру на найновішому Proton-GE"
 msgid "lo_new_recommended"
 msgstr "Рекомендовані параметри запуску"
 
-#. English: GameMode, FPS limit, Esync and Fsync, fullscreen and more
+#. English: GameMode, FPS limit, Esync and Fsync and more
 msgid "lo_new_recommended_tip"
-msgstr "GameMode, обмеження FPS, Esync і Fsync, повний екран та інше"
+msgstr "GameMode, обмеження FPS, Esync і Fsync та інше"
 
 #. English: {launcher} is running and has to restart for this.
 msgid "lo_new_restart_note"
@@ -6165,6 +6317,10 @@ msgstr "Запускає інсталятор у префіксі - пройді
 #. English: Runtime
 msgid "tm_fg_step_runtime"
 msgstr "Середовище"
+
+#. English: First time only: the game runtime (~700 MB) is fetched
+msgid "tm_fg_step_runtime_first"
+msgstr "Лише вперше: завантажується середовище (~700 МБ)"
 
 #. English: Save
 msgid "tm_fg_step_save"

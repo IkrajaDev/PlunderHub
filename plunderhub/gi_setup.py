@@ -409,6 +409,10 @@ def _gamescope_card(window):
         child.set_max_content_height(sh - _GS_EDGE if ch < 0 else ch)
     child.set_halign(Gtk.Align.CENTER)
     child.set_valign(Gtk.Align.CENTER)
+    # centred, the card took its natural width up to the screen's edge (Report a
+    # bug 946 of 960, 1080p at 200 %; dialog_sweep 11-20): the room kept round it
+    for side in ("start", "end", "top", "bottom"):
+        getattr(child, f"set_margin_{side}")(_GS_EDGE // 2)
     child.get_style_context().add_class("gs-card")
     window.get_style_context().add_class("gs-backdrop")
     window.set_default_size(sw, sh)

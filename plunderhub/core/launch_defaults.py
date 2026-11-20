@@ -21,10 +21,10 @@
 Recommended: GameMode (where it's installed), an FPS limit at the
 monitor's refresh rate, Esync and Fsync, Wayland on a Wayland session,
 NVAPI with an NVIDIA card, the BattlEye and EasyAntiCheat runtimes where
-the launcher has a switch for them (Steam uses them by itself), and the
-game's -fullscreen argument - only switched on, nothing else changed;
-the ones gamescope does itself (window mode, Wayland, FPS limit) left
-alone while it's on.
+the launcher has a switch for them (Steam uses them by itself) - only
+switched on, nothing else changed; the ones gamescope does itself
+(Wayland, FPS limit) left alone while it's on. The game's window mode
+(-fullscreen) is the player's own call (user, 11-20): not part of it.
 
 Launch options' Recommended button sets them; for a game that's new to
 PlunderHub the person is asked, once (ui/launch_options_mixin.py). Nothing
@@ -38,7 +38,7 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from plunderhub.core.launch_options import (
-    LaunchOptions, LaunchOptionsBackend, backend_for, missing_tools, window_mode_in, with_window_mode,
+    LaunchOptions, LaunchOptionsBackend, backend_for, missing_tools, window_mode_in,
 )
 from plunderhub.core.models import GameItem
 from plunderhub.logging_setup import logger
@@ -97,8 +97,6 @@ def recommended(opts: LaunchOptions, ctx: Context, backend: LaunchOptionsBackend
         for key in ("battleye", "eac"):
             if key not in unsupported:
                 setattr(new, key, True)
-    if not gamescope and window_mode_in(new.args) is None:
-        new.args = with_window_mode(new.args, "fullscreen")
     return new
 
 

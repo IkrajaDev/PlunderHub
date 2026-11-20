@@ -235,6 +235,71 @@ def _build_steps(window) -> List[Tuple[str, Callable[[], None]]]:
             shutil.rmtree(tmp, ignore_errors=True)
     steps.append(_step("performance: Shipwright's Bilge page", calm_bilge_page))
 
+    def calm_fleet_orders():
+        # the form starts blank; changing a setting orders just that one, planned
+        # per game, and Reset takes it back - nothing is saved
+        from plunderhub.ui import shipwright
+        sw = shipwright.show(window, focus="fleet")
+        try:
+            page = sw.fleet_page
+            assert page is not None, "Fleet orders didn't build"
+            if page.tab is None:
+                return      # no game whose options can be set: the empty note only
+            perf_guard.assert_calm(sw.dialog, "Shipwright's Fleet orders page")
+            assert page._changed_fields() == [], f"nothing touched, yet ordered: {page._changed_fields()}"
+            switch = page.tab.ui["gamemode"]
+            switch.set_active(not switch.get_active())
+            page._recompute()
+            assert page._changed_fields() == ["gamemode"], f"ordered: {page._changed_fields()}"
+            now = page._now()
+            for g in page.games:
+                _new, verdicts = page._plan(g, now, page.opts[g.uid])
+                assert [f for f, _v in verdicts] == ["gamemode"], f"{g.title}: {verdicts}"
+            page._reset()
+            assert page._changed_fields() == [], "Reset left an order"
+        finally:
+            sw.close()
+    steps.append(_step("performance: Shipwright's Fleet orders page", calm_fleet_orders))
+
+    def keyboard_pages():
+        # the arrows / d-pad on the Bounty Board, the Loading Dock and the map's tabs:
+        # in from the sidebar onto the page, and the map's tiles up onto its tabs
+        from gi.repository import Gtk
+
+        def settle(seconds=0.6):
+            end = time.monotonic() + seconds
+            while time.monotonic() < end:
+                Gtk.main_iteration_do(False)
+        try:
+            for page in ("bounty", "dock"):
+                window._set_home_nav(page)
+                window._home_select_nav_row()
+                settle()
+                window._home_focus_sidebar()
+                window._main_move_focus("right")
+                shown = window._button_page_shown()
+                focus = window.get_focus()
+                assert shown is not None and focus is not None and focus.is_ancestor(shown), \
+                    f"{page}: right from the sidebar didn't reach the page ({type(focus).__name__})"
+                assert "kb-focus" in focus.get_style_context().list_classes(), f"{page}: no ring on the focus"
+            from plunderhub.ui.treasure_map import shown as map_shown
+            window._set_home_nav("map")
+            settle(1.2)
+            view = map_shown(window)
+            if view is not None and view.grid.items:
+                window._home_focus_sidebar()
+                window._main_move_focus("right")
+                assert window.get_focus() is view.grid, "map: right from the sidebar didn't reach the tiles"
+                for _ in range(len({i.y for i in view.grid.items}) + 1):
+                    window._main_move_focus("up")
+                focus = window.get_focus()
+                assert isinstance(focus, Gtk.ToggleButton) and focus.is_ancestor(view), \
+                    f"map: up off the tiles didn't reach the tabs ({type(focus).__name__})"
+        finally:
+            window._set_home_nav("all")
+            window._home_select_nav_row()
+    steps.append(_step("keyboard: the Bounty Board, the Loading Dock and the Treasure Map's tabs", keyboard_pages))
+
     def calm_treasure_map():
         # T opens the map over the library page and closes it back onto it;
         # the arrows / Home / End move the tile cursor; hovering lays nothing out

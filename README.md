@@ -266,10 +266,15 @@
     </td>
   </tr>
   <tr>
-    <td align="center" valign="top" colspan="4">
+    <td align="center" valign="top" colspan="2">
       <img src="docs/icons/achievements.svg" width="40" height="40" alt=""><br>
       <b>Achievements</b><br>
       <sub>Steam&nbsp;and&nbsp;GOG,&nbsp;with&nbsp;rarity</sub>
+    </td>
+    <td align="center" valign="top" colspan="2">
+      <img src="docs/icons/fleet.svg" width="40" height="40" alt=""><br>
+      <b>Fleet&nbsp;orders</b><br>
+      <sub>Launch&nbsp;options&nbsp;for&nbsp;many&nbsp;games</sub>
     </td>
   </tr>
 </table>
@@ -298,19 +303,21 @@
 #### Each game
 
 - **Game page**: the game's ProtonDB rating for every launcher, store, ProtonDB and news links. Launch options with a Recommended preset and gamescope; winecfg, winetricks and running an .exe in the game's prefix.
+- **Fleet orders**: set launch options once - every option, gamescope and Proton included - and apply them to all your games or the ones you pick. Only what you touch is changed, you see game by game what changes before anything is saved, and Undo puts each game back. **Reset all options** clears them all in one go. In Shipwright, or from a game's Launch options.
 - **HDR**: one switch, in the game's own Wayland window or through gamescope. Hyprland and KDE switch the screen to HDR only once a game asks, so games saw no HDR and greyed it out - PlunderHub adds what Proton-GE and gamescope need there by itself, also to games set up with an older version.
 - **Achievements**: how many you've unlocked, on the game page. A click lists them - unlocked (newest first) and still locked, each with how rare it is among all players and when you got it. Sort by newest, rarest or most common. Hidden ones stay covered until you click. Steam games, and GOG games through Heroic.
 - **DLCs**: a game's DLC tab shows which DLCs it has and which are installed - install or uninstall the ones you tick (Steam, Epic, GOG).
 - **Game EXE**: start another .exe for a Heroic game, or swap a Faugus or Lutris game's file, in Launch options.
 - **Performance**: switch it on for a game and MangoHud logs every session in the background. The game page shows FPS, 1% lows and frame times session by session, marked where Proton or the driver changed.
-- **Live status**: see what's running, stop it anytime.
+- **Live status**: see what's running, stop it anytime. A launch that waits (an update, Steam's shaders, a store launcher) can be cancelled, and Steam's shader processing skipped, right on the top card - Steam's own windows stay out of the way meanwhile.
 - **Art**: covers, banners and icons from your launchers, even animated. Add a free SteamGridDB key for more.
 - **Saves**: Heroic cloud sync, backup and restore.
 
 #### Everyday comfort
 
 - **Steam Deck and Big Picture**: adds PlunderHub to Steam as a non-Steam game (Settings > Library).
-- **Controllers**: Xbox, PlayStation, Switch Pro, 8BitDo and more, with matching button icons. Hold View + Start to switch between a game and PlunderHub.
+- **Controllers**: Xbox, PlayStation, Switch Pro, 8BitDo and more, with matching button icons. Hold View + Start to switch between a game and PlunderHub. The arrows or the d-pad reach everything, the Treasure Map's tabs, the Bounty Board and the Loading Dock included.
+- **Next workspace**: games can open on the workspace next to PlunderHub's - one it added for a game is removed again when the game quits.
 - **Welcome tour**: a short guided tour on the first start - open it again from the logo in the sidebar.
 - **Backup**: settings, playtime and art in one file.
 - **Tray**: close to the tray, start hidden at login.
@@ -427,18 +434,20 @@ Other distros (in the PlunderHub folder):
 - **HDR inside gamescope**: a game in its own exclusive fullscreen mode can start black or as a small picture in a corner. Pick borderless (windowed) in the game's settings - gamescope fills the screen itself.
 - **HDR with an HDR and an SDR monitor**: on Hyprland and KDE PlunderHub sets HDR up for the monitor that's active (KDE: the primary one) when you save. A game opening on the other monitor may then look washed out.
 - **Achievements** come from Steam and from GOG through Heroic. Epic and Amazon games don't show them yet.
+- **Steam's shader window** is minimized while Steam processes shaders, on KDE and the X11 desktops. Hyprland, Sway and niri have no minimizing: there it stays open.
+- **Fleet orders and Proton**: each launcher has a list of its own, so a Proton is set by its name. A game whose launcher doesn't have it is left as it is, and a game that runs natively gets none.
 - **Steer Steam's downloads** opens Steam's debugging port (127.0.0.1:8080, this computer only) while it's on: other programs on your PC could steer Steam through it. That's why it's off by default and switches itself off when Steam's installs are done. Turning it on restarts Steam once.
 
 ## Tested launcher versions
 
-Launchers change their file formats now and then. These are the versions PlunderHub was last checked with (November 2026). If yours is newer and something looks off, please [report it](#reporting-bugs).
+Launchers change their file formats now and then. These are the versions PlunderHub was last checked with (November 20, 2026). If yours is newer and something looks off, please [report it](#reporting-bugs).
 
 | Launcher | Version | Status |
 |---|---|---|
-| Steam | client build 1794536281 | Tested |
+| Steam | client build 1792618285 | Tested |
 | Heroic | 2.22.4 | Tested |
-| Faugus Launcher | 2.5.7 | Tested |
-| Lutris | 0.5.22 | Installed, no games tried on this version yet |
+| Faugus Launcher | 2.5.9 | Tested |
+| Lutris | 0.5.22 | Checked on an earlier setup, no games tried on this version yet |
 | Bottles | - | Not checked on a current version yet |
 
 ## Privacy

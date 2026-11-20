@@ -475,7 +475,9 @@ class MapGrid(Gtk.EventBox):
             rows = sorted({i.y for i in self.items if i.y < cur.y}, reverse=True)
         if not rows:
             if direction == "up":
+                # off the top row: up onto the map's tabs and chips (App._map_move_focus)
                 self.scroll_by(-self.adj.get_value())
+                return False
             return True
         row = [i for i in self.items if i.y == rows[0]]
         self._kb_to(min(row, key=lambda i: abs(i.x - cur.x)))
@@ -1490,7 +1492,9 @@ class GameCard:
         if self.view.loader.get(self.game.uid) is None:
             try:
                 path = self.view.loader._path_of(self.game)
-                pw = int(132 * self.f) * d
+                # device pixels (d was never set: the poster quietly failed for a game
+                # not on screen in the grid - pyflakes 11-20)
+                pw = int(132 * self.f) * ui_scale()
                 self.poster_pb = _load_cover_at(path, pw, int(pw * ASPECT)) if path else None
             except Exception:
                 self.poster_pb = None
@@ -3058,10 +3062,6 @@ class TreasureMap(Gtk.Box):
             threading.Thread(target=work, daemon=True).start()
             self._ensure_tick()
             return
-        self.removing.add(game.uid)
-        self._removing_since[game.uid] = (time.monotonic(), limit)
-        self.grid.refresh_game(game.uid)
-        self._ensure_tick()
 
     def start_heroic_install(self, game: OwnedGame, choice: Dict, info: Dict):
         """Installs a Heroic game the way Heroic does, without Heroic

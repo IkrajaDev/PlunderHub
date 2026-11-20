@@ -1155,6 +1155,24 @@ button.home-play.home-play-busy:hover {{
 }}
 button.home-play.home-play-busy label {{ color: #ffffff; }}
 button.home-play.home-play-busy spinner {{ color: {accent}; }}
+/* Cancel / Skip shaders beside Setting sail: quiet pills, hover changes only the background. */
+button.home-play.home-play-ghost {{
+    background-image: none;
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: none;
+    padding: 8px 18px;
+}}
+button.home-play.home-play-ghost:hover {{ background-color: rgba(0, 0, 0, 0.55); }}
+button.home-play.home-play-ghost label {{ color: #ffffff; font-weight: 700; }}
+button.home-play.home-play-ghost.home-play-skip:hover {{
+    background-color: alpha({accent}, 0.35);
+    border-color: {accent};
+}}
+button.home-play.home-play-ghost.home-play-cancel:hover {{
+    background-color: alpha({DANGER}, 0.55);
+    border-color: {DANGER};
+}}
 /* Focused from the keyboard or a controller the button turns white, the
    way console UIs mark the focused button - an outer ring got clipped by
    the hero's text column, and an accent ring vanished on the accent fill. */
@@ -1513,6 +1531,33 @@ button.sw-chip {{
 }}
 button.sw-chip:hover {{ background-color: {tint(0.10)}; color: {fg}; }}
 button.sw-chip:checked {{ background-color: {accent}; border-color: {accent}; color: {on_accent}; }}
+/* Shipwright's Fleet orders (ui/fleet_orders.py): the games strip and list, a changed
+   setting's row and its pills; hovers change only backgrounds. */
+.fo-strip {{ background-color: {tint(0.05)}; border: 1px solid {tint(0.12)}; border-radius: 14px; padding: 10px 14px; }}
+.fo-strong {{ font-weight: 700; }}
+button.fo-chip {{ border-radius: 999px; padding: 4px 14px; min-height: 0; background-image: none; box-shadow: none;
+                  background-color: {tint(0.06)}; border: 1px solid {tint(0.16)}; }}
+button.fo-chip:hover {{ background-color: {tint(0.12)}; }}
+button.fo-chip:checked {{ background-color: alpha({accent}, 0.30); border-color: {accent}; }}
+.fo-badge {{ font-size: 80%; padding: 1px 7px; border-radius: 999px; background-color: alpha({accent}, 0.22); }}
+.fo-launcher {{ font-size: 85%; opacity: 0.6; }}
+.fo-gamelist, .fo-gamelist row {{ background-color: transparent; }}
+.fo-gamelist row {{ border-radius: 10px; padding: 4px 6px; }}
+.fo-gamelist row:hover {{ background-color: transparent; }}
+/* a game's row is one pick (a toggle button): flat; hover / ticked change only its background,
+   its text keeps one colour in every state (a colour change re-lays the window out) */
+button.fo-pick, button.fo-pick:checked, button.fo-pick:active {{ background-image: none; background-color: transparent;
+    border: none; box-shadow: none; border-radius: 10px; padding: 4px 8px; }}
+button.fo-pick:hover {{ background-color: {tint(0.07)}; }}
+button.fo-pick:checked {{ background-color: {tint(0.04)}; }}
+button.fo-pick label, button.fo-pick:hover label, button.fo-pick:checked label {{ color: {fg}; }}
+.fo-pill-mixed {{ font-size: 80%; padding: 1px 8px; border-radius: 999px; color: #e8b25d; background-color: alpha(#e8b25d, 0.16); }}
+.fo-changed {{ color: {accent}; font-weight: 700; }}
+.fo-same {{ opacity: 0.6; }}
+.fo-cant {{ color: #e5a14b; }}
+.fo-bar {{ border-top: 1px solid {tint(0.10)}; padding-top: 12px; }}
+popover.fo-popover, popover.fo-popover.background, popover.fo-popover contents {{ background-color: {sidebar}; }}
+.fo-confirm-card {{ background-color: {tint(0.05)}; border: 1px solid {tint(0.12)}; border-radius: 12px; padding: 12px 14px; }}
 button.sw-chip:checked label {{ color: {on_accent}; }}
 /* Shipwright's Proton page (ui/proton_page.py) */
 .proton-pill {{
@@ -1636,6 +1681,11 @@ button.bb-card {{
     box-shadow: 0 6px 18px rgba(0,0,0,0.22);
 }}
 button.bb-card:hover {{ background-image: linear-gradient({tint(0.13)}, {tint(0.13)}); border-color: {tint(0.45)}; }}
+/* stood on by the keyboard / a pad: an accent ring round the card's own rounding, its shadow kept */
+button.bb-card.kb-focus, button.bb-card.kb-focus:hover, button.bb-card.kb-focus:focus {{
+    border-color: {accent};
+    box-shadow: 0 0 0 3px {accent}, 0 6px 18px rgba(0,0,0,0.22);
+}}
 .bb-body {{ padding: 14px 18px 16px 18px; }}
 .bb-title {{ font-size: 122%; font-weight: 800; }}
 .bb-genres {{ font-size: 85%; font-weight: 700; color: {accent}; }}
@@ -2186,6 +2236,19 @@ button:not(.game-cover):active, button:not(.game-cover):checked {{
 button:not(.game-cover):disabled {{
     background-color: rgba({accent_rgb}, 0.05);
     border-color: rgba({accent_rgb}, 0.12);
+}}
+/* A pill button that can't be pressed now (Apply with nothing to apply...): one look for
+   all of them - accent, red or ghost - flat and faded, no glow; reads as "not now". */
+button.home-play:disabled, button.home-play.suggested-action:disabled,
+button.home-play.destructive-action:disabled, button.home-play.home-pill-ghost:disabled {{
+    background-image: none;
+    background-color: rgba({_hex_to_rgb_str(p['fg'])}, 0.05);
+    border: 1px dashed rgba({_hex_to_rgb_str(p['fg'])}, 0.22);
+    box-shadow: none;
+}}
+button.home-play:disabled label, button.home-play.suggested-action:disabled label,
+button.home-play.destructive-action:disabled label, button.home-play.home-pill-ghost:disabled label {{
+    color: rgba({_hex_to_rgb_str(p['fg'])}, 0.40);
 }}
 /* The drop-down's own button: the arrow in the accent. */
 combobox button arrow, combobox button .arrow {{ color: {accent}; -gtk-icon-shadow: none; }}

@@ -54,9 +54,12 @@ from plunderhub.logging_setup import logger
 
 CACHE = CACHE_DIR / "achievements"
 RARITY_MAX_AGE = 24 * 3600
-# Steam's achievement icons: the community assets server has them all; the
-# old one misses newer games' icons (Valheim: 404)
-ICON_URLS = ("https://shared.akamai.steamstatic.com/community_assets/images/apps/{appid}/{name}",
+# Steam's achievement icons, tried in turn: the community assets store, from the
+# host Steam's own pages use (fastly, 11-20: all 336 icons of 14 games), then its
+# akamai mirror; last the old store, which lacks newer games' icons (Valheim: all
+# 62 missing there - checked 11-20, PlunderHubNotes/game-launch.md "Achievements")
+ICON_URLS = ("https://shared.fastly.steamstatic.com/community_assets/images/apps/{appid}/{name}",
+             "https://shared.akamai.steamstatic.com/community_assets/images/apps/{appid}/{name}",
              "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/{appid}/{name}")
 RARITY_URL = ("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/"
               "?gameid={appid}&format=json")

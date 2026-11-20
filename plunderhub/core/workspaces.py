@@ -104,6 +104,13 @@ class Compositor:
         """Asks the window to close, as its close button would."""
         return False
 
+    def minimize(self, window: str) -> bool:
+        """Minimizes it, where the desktop has minimizing (KWin, the X11
+        desktops) - none of its buttons pressed, back from the taskbar.
+        False where it hasn't (the tiling ones: a hidden workspace would
+        keep it out of sight even when its program shows it again)."""
+        return False
+
     def focus(self, window: Optional[str], workspace: Optional[str]) -> bool:
         """Brings window to the front, its workspace shown - or, without
         one, just shows workspace."""
@@ -114,6 +121,18 @@ class Compositor:
         draws, PlunderHub's undecorated dialogs included - None when it
         doesn't round them (they keep their own)."""
         return None
+
+    def workspace_count(self) -> Optional[int]:
+        """How many workspaces there are - where PlunderHub adds them
+        itself for a game (KWin, the X11 desktops); None where the
+        compositor makes and drops them on its own (Hyprland, Sway, niri,
+        GNOME's dynamic ones)."""
+        return None
+
+    def remove_empty_workspaces(self, keep: int) -> int:
+        """Drops empty workspaces from the end while there are more than
+        keep - the ones added for a game, once it's gone. How many went."""
+        return 0
 
     def workspace_of_pid(self, pid: int) -> Optional[str]:
         for _wid, wpid, ws in self.windows() or []:
@@ -428,7 +447,7 @@ _KWIN_LIST = """
         var w = wins[i];
         if (w.normalWindow) found.push([idOf(w), w.pid, desktopOf(w)]);
     }
-    return {current: current(), windows: found};
+    return {current: current(), count: count(), windows: found};
 """
 
 _KWIN_MOVE = """
@@ -441,6 +460,29 @@ _KWIN_MOVE = """
         if (six) workspace.activeWindow = w;
         else workspace.activeClient = w;
     }
+    return true;
+"""
+
+_KWIN_TRIM = """
+    var keep = %KEEP%, removed = 0;
+    function empty(n) {
+        var now = six ? workspace.windowList() : workspace.clientList();
+        for (var i = 0; i < now.length; i++)
+            if (now[i].normalWindow && desktopOf(now[i]) === n) return false;
+        return true;
+    }
+    while (count() > keep && empty(count()) && removed < 20) {
+        if (six) workspace.removeDesktop(workspace.desktops[count() - 1]);
+        else workspace.desktops = count() - 1;
+        removed++;
+    }
+    return removed;
+"""
+
+_KWIN_MINIMIZE = """
+    var w = find(%WINDOW%);
+    if (!w) return false;
+    w.minimized = true;
     return true;
 """
 
@@ -606,7 +648,15 @@ class KWin(Compositor):
             return None
         found = [w for w in data.get("windows") or [] if isinstance(w, list) and len(w) >= 3]
         self._current = str(data.get("current") or "") or None
+        self._count = int(data.get("count") or 0) or None
         return [(str(w[0]), int(w[1] or 0), str(w[2] or "")) for w in found]
+
+    def workspace_count(self):
+        return self.__dict__.get("_count") if self.windows() is not None else None
+
+    def remove_empty_workspaces(self, keep):
+        removed = self._script(_KWIN_TRIM, keep=int(keep))
+        return removed if isinstance(removed, int) else 0
 
     def focused_workspace(self):
         return self._current if self.windows() is not None else None
@@ -619,6 +669,9 @@ class KWin(Compositor):
 
     def close_window(self, window):
         return self._script(_KWIN_CLOSE, window=window) is True
+
+    def minimize(self, window):
+        return self._script(_KWIN_MINIMIZE, window=window) is True
 
     def focus(self, window, workspace):
         try:
@@ -897,6 +950,34 @@ class Ewmh(Compositor):
             self._x.message(int(window), "_NET_CLOSE_WINDOW", 0, 2)
         return True
 
+    def minimize(self, window):
+        with self._lock:
+            # ICCCM: WM_CHANGE_STATE with IconicState (3) - what a taskbar sends
+            self._x.message(int(window), "WM_CHANGE_STATE", 3)
+        return True
+
+    def workspace_count(self):
+        with self._lock:
+            count = self._x.cardinals(self._x.root, "_NET_NUMBER_OF_DESKTOPS")
+        return int(count[0]) if count else None
+
+    def remove_empty_workspaces(self, keep):
+        removed = 0
+        while removed < 20:
+            count = self.workspace_count() or 0
+            if count <= keep or any(ws == str(count) for _wid, _pid, ws in self.windows() or []):
+                break
+            with self._lock:
+                self._x.message(self._x.root, "_NET_NUMBER_OF_DESKTOPS", count - 1)
+            for _ in range(20):
+                time.sleep(0.05)
+                if (self.workspace_count() or 0) < count:
+                    break
+            else:
+                break       # the window manager keeps its number (GNOME's dynamic ones: its own business)
+            removed += 1
+        return removed
+
     def focus(self, window, workspace):
         """On a Wayland session PlunderHub's own window isn't an X11 one:
         then only its workspace is shown (GTK raises the window)."""
@@ -1035,6 +1116,8 @@ class WorkspaceMover:
         # the controller's switch: per game, its window and workspace when
         # PlunderHub came over it
         self._switched_from: Dict[str, Tuple[Optional[str], Optional[str]]] = {}
+        # how many workspaces there were before PlunderHub added any for a game
+        self._created_keep: Optional[int] = None
 
     # how far right an empty workspace is looked for
     _EMPTY_SEARCH = 32
@@ -1138,6 +1221,14 @@ class WorkspaceMover:
                     continue
                 seen.add((wid, pid))
                 pending.pop((wid, pid), None)
+                if now == "minimize":
+                    # a Steam window whose closing could call the launch off
+                    # (its shader window: X = Cancel) - only put out of sight;
+                    # every one of them, the main window too
+                    ok = self.compositor.minimize(wid)
+                    logger.info(f"Steam opened a window during {uid}'s launch - minimized on "
+                                f"{self.compositor.name}: {'done' if ok else 'not possible here, left open'}")
+                    continue
                 if now:
                     ok = self.compositor.close_window(wid)
                     logger.info(f"Steam opened its window during {uid}'s launch - back to the tray on "
@@ -1158,6 +1249,35 @@ class WorkspaceMover:
             self._homes.pop(uid, None)
             self._switched_from.pop(uid, None)
 
+    def ended(self, uid: str):
+        """The game was stopped from PlunderHub: forgotten, and the
+        workspaces added for it go when no other game needs them."""
+        with self._lock:
+            others = [u for u in self._games if u != uid]
+        self.forget(uid)
+        if not others:
+            threading.Thread(target=self._drop_created, name="plunderhub-workspace-tidy", daemon=True).start()
+
+    def _drop_created(self):
+        """Removes the empty workspaces PlunderHub added for games (never
+        more, never one with a window on it). The game's window can take
+        a moment to go: looked at for a few seconds."""
+        with self._lock:
+            keep, self._created_keep = self._created_keep, None
+        if keep is None:
+            return
+        for _ in range(8):
+            if self._games:
+                with self._lock:        # a new game came: kept for it
+                    self._created_keep = min(self._created_keep or keep, keep)
+                return
+            removed = self.compositor.remove_empty_workspaces(keep)
+            if removed or (self.compositor.workspace_count() or 0) <= keep:
+                if removed:
+                    logger.info(f"Removed {removed} workspace(s) added for games on {self.compositor.name}")
+                return
+            time.sleep(0.5)
+
     def back_home(self, uid: str):
         """The game moved next door has quit: back to PlunderHub's
         workspace, its window in front - when the player is still on the
@@ -1168,7 +1288,10 @@ class WorkspaceMover:
             home = self._homes.get(uid)
             others = [u for u in self._games if u != uid]
         self.forget(uid)
-        if entry is None or others:
+        if others:
+            return
+        if entry is None:
+            threading.Thread(target=self._drop_created, name="plunderhub-workspace-tidy", daemon=True).start()
             return
         target = entry[1]
 
@@ -1177,12 +1300,13 @@ class WorkspaceMover:
             if focused is not None and focused != target:
                 logger.info(f"Game quit - not back to PlunderHub: workspace {focused} is in front, "
                             f"not the game's {target}")
-                return
-            mine = [(wid, ws) for wid, pid, ws in self.compositor.windows() or [] if pid == os.getpid()]
-            window = next((wid for wid, ws in mine if ws == home), mine[0][0] if mine else None)
-            ok = self.compositor.focus(window, home)
-            logger.info(f"Game quit - back to PlunderHub's workspace {home or '?'} on "
-                        f"{self.compositor.name}: {'done' if ok else 'failed'}")
+            else:
+                mine = [(wid, ws) for wid, pid, ws in self.compositor.windows() or [] if pid == os.getpid()]
+                window = next((wid for wid, ws in mine if ws == home), mine[0][0] if mine else None)
+                ok = self.compositor.focus(window, home)
+                logger.info(f"Game quit - back to PlunderHub's workspace {home or '?'} on "
+                            f"{self.compositor.name}: {'done' if ok else 'failed'}")
+            self._drop_created()
         threading.Thread(target=work, name="plunderhub-workspace-home", daemon=True).start()
 
     def _game_window(self, uid: str, match: Optional[GameProcessMatch], launched_at: float,
@@ -1283,7 +1407,15 @@ class WorkspaceMover:
                         # launch - one who went elsewhere isn't pulled back
                         if not follow:
                             follow = self.compositor.focused_workspace() in (target, ws)
+                        before = self.compositor.workspace_count()
                         ok = self.compositor.move(wid, target, follow)
+                        after = self.compositor.workspace_count() if ok and before else None
+                        if after and after > before:
+                            # added for this game: dropped again once it's gone
+                            with self._lock:
+                                self._created_keep = min(self._created_keep or before, before)
+                            logger.info(f"Workspace(s) {before + 1}-{after} added for {uid} on "
+                                        f"{self.compositor.name} - removed again when it quits")
                         logger.info(f"Moving {uid}'s window to workspace {target} on "
                                     f"{self.compositor.name}: {'done' if ok else 'failed'}")
             self._wake.wait(self._interval)

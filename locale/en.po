@@ -1152,6 +1152,111 @@ msgstr "Favorite"
 msgid "filter_placeholder"
 msgstr "Search the plunder..."
 
+msgid "fo_all"
+msgstr "All"
+
+msgid "fo_already_line"
+msgstr "Already set: {list}"
+
+msgid "fo_applied"
+msgstr "Saved for {n} games"
+
+msgid "fo_apply"
+msgstr "Apply to {n} games"
+
+msgid "fo_apply_all"
+msgstr "Apply to all games"
+
+msgid "fo_apply_some"
+msgstr "Apply to some games…"
+
+msgid "fo_cant_line"
+msgstr "Its launcher can't store: {list}"
+
+msgid "fo_card_row"
+msgstr "Many games at once"
+
+msgid "fo_card_sub"
+msgstr "Set launch options for all your games, or some of them, in Shipwright"
+
+msgid "fo_changes_line"
+msgstr "Changes: {list}"
+
+msgid "fo_clear_all"
+msgstr "Reset all options"
+
+msgid "fo_clear_all_tip"
+msgstr "Every launch option off and empty (Esync and Fsync stay on); Proton and running natively stay as they are. Then apply it to all games or some."
+
+msgid "fo_clearing"
+msgstr "Every option back to default (Proton and native unchanged)"
+
+msgid "fo_confirm_title"
+msgstr "Apply to {n} games?"
+
+msgid "fo_n_games"
+msgstr "{n} games"
+
+msgid "fo_native_line"
+msgstr "Runs natively – no Proton set"
+
+msgid "fo_next"
+msgstr "Next"
+
+msgid "fo_no_games"
+msgstr "No installed games whose launch options PlunderHub can set."
+
+msgid "fo_nothing"
+msgstr "Set what you want below – a row you touch is marked, and only those are applied."
+
+msgid "fo_nothing_to_save"
+msgstr "Nothing to save: the picked games already have these settings, or their launchers can't store them."
+
+msgid "fo_off"
+msgstr "off"
+
+msgid "fo_on"
+msgstr "on"
+
+msgid "fo_open"
+msgstr "Open Fleet orders"
+
+msgid "fo_pick_title"
+msgstr "Which games?"
+
+msgid "fo_reset"
+msgstr "Reset"
+
+msgid "fo_running"
+msgstr "Running – takes effect at its next launch"
+
+msgid "fo_search"
+msgstr "Search…"
+
+msgid "fo_select_all"
+msgstr "Select all"
+
+msgid "fo_select_none"
+msgstr "None"
+
+msgid "fo_steam_closed"
+msgstr "Steam is running: it will be closed before saving (it would write its settings back)."
+
+msgid "fo_sub"
+msgstr "Set launch options once, then apply them to all your games or some of them. Only what you touch is applied."
+
+msgid "fo_title"
+msgstr "Fleet orders"
+
+msgid "fo_unchanged_games"
+msgstr "{n} more games already have all of it."
+
+msgid "fo_undo"
+msgstr "Undo"
+
+msgid "fo_undone"
+msgstr "Undone – {n} games back as they were"
+
 msgid "folder_no_opener"
 msgstr "No program is set up to open folders. The folder is:\n{path}"
 
@@ -1752,6 +1857,9 @@ msgstr "System package"
 msgid "language_label"
 msgstr "Language:"
 
+msgid "launch_cancel"
+msgstr "Cancel"
+
 msgid "launch_confirm_kicker"
 msgstr "Ready to set sail?"
 
@@ -1764,8 +1872,14 @@ msgstr "Ask before setting sail"
 msgid "launch_mode_instant"
 msgstr "Set sail instantly"
 
+msgid "launch_skip_shaders"
+msgstr "Skip shaders"
+
 msgid "launcher_close"
 msgstr "Close"
+
+msgid "launcher_game_waiting"
+msgstr "Its launcher is open – waiting for the game to start"
 
 msgid "launcher_open"
 msgstr "Open"
@@ -2143,7 +2257,7 @@ msgid "lo_new_recommended"
 msgstr "Recommended launch options"
 
 msgid "lo_new_recommended_tip"
-msgstr "GameMode, FPS limit, Esync and Fsync, fullscreen and more"
+msgstr "GameMode, FPS limit, Esync and Fsync and more"
 
 msgid "lo_new_restart_note"
 msgstr "{launcher} is running and has to restart for this."
@@ -4628,6 +4742,9 @@ msgstr "Runs the installer in the prefix - click through it as usual"
 
 msgid "tm_fg_step_runtime"
 msgstr "Runtime"
+
+msgid "tm_fg_step_runtime_first"
+msgstr "First time only: the game runtime (~700 MB) is fetched"
 
 msgid "tm_fg_step_save"
 msgstr "Save"

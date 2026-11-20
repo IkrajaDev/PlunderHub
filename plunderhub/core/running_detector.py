@@ -177,6 +177,12 @@ def match_processes(targets: List[GameTarget], proc_root: Path = Path("/proc"),
             exe_full[exe] = t.uid
             if "/drive_c/" in exe:
                 exe_tails["drive_c/" + exe.split("/drive_c/", 1)[1]] = t.uid
+    # A folder inside a Wine prefix: Wine names the game's processes by
+    # their Windows path (C:\...\Wow.exe), so it's matched by that tail too -
+    # a store launcher's game (Battle.net...) has only its folder to go by.
+    # (prefix root, "drive_c/..." tail, uid)
+    dir_tails = [(root.split("/drive_c/", 1)[0], "drive_c/" + root.split("/drive_c/", 1)[1].lower(), uid)
+                 for root, uid in dirs if "/drive_c/" in root]
     bottles = [(t.uid, _resolve_match(t.bottles_match)) for t in targets if t.bottles_match]
     bottles = [(uid, resolved) for uid, resolved in bottles if resolved is not None]
 
@@ -185,6 +191,7 @@ def match_processes(targets: List[GameTarget], proc_root: Path = Path("/proc"),
     except OSError:
         return {}
     own = os.getpid()
+    drive_cache: Dict[Tuple[str, str], Optional[str]] = {}
     found: Dict[str, Set[int]] = {}
     procs: Dict[int, _Proc] = {}
 
@@ -224,8 +231,17 @@ def match_processes(targets: List[GameTarget], proc_root: Path = Path("/proc"),
                 uid = exe_full.get(candidate.lower())
                 if uid is None:
                     uid = next((u for root, u in dirs if _under(candidate, root)), None)
-            elif tail:
-                uid = exe_tails.get(tail)
+            else:
+                # any drive letter, wherever this process's own prefix maps it
+                # (C: -> drive_c, D: -> a second disk...: each user's own)
+                mapped = _drive_path_in_prefix(arg, env, drive_cache)
+                if mapped:
+                    low = mapped.lower()
+                    uid = exe_full.get(low) or next((u for root, u in dirs if _under(low, root.lower())), None)
+                if uid is None and tail:
+                    uid = exe_tails.get(tail)
+                    if uid is None and dir_tails:
+                        uid = _dir_tail_match(tail, env, dir_tails)
             if uid is not None:
                 hit(uid, proc)
                 matched = True
@@ -278,6 +294,43 @@ def prefix_busy(prefix: str, proc_root: Path = Path("/proc")) -> bool:
                 if _under(real, root) or _under(root, real):
                     return True
     return False
+
+
+def _drive_path_in_prefix(arg: str, env: Dict[str, str], cache) -> Optional[str]:
+    """A Windows path (X:\\...) on the host, through the drive links of the
+    process's own Wine prefix (WINEPREFIX/dosdevices/x:) - Wine's own
+    mapping, so whichever letter and disk each user picked. The part after
+    the drive keeps its spelling: Wine finds files without case, the caller
+    compares without it. None when it can't be told."""
+    if len(arg) < 3 or arg[1] != ":" or arg[2] not in "\\/" or not arg[0].isalpha() or not env.get("WINEPREFIX"):
+        return None
+    key = (env["WINEPREFIX"], arg[0].lower())
+    if key not in cache:
+        cache[key] = None
+        for prefix in (env["WINEPREFIX"], os.path.join(env["WINEPREFIX"], "pfx")):
+            link = os.path.join(prefix, "dosdevices", key[1] + ":")
+            if os.path.isdir(link):
+                cache[key] = os.path.realpath(link)
+                break
+    root = cache[key]
+    if not root:
+        return None
+    rest = [p for p in arg[3:].replace("\\", "/").split("/") if p]
+    return os.path.join(root, *rest) if rest else root
+
+
+def _dir_tail_match(tail: str, env: Dict[str, str], dir_tails) -> Optional[str]:
+    """The game whose prefix folder this C:\\ program is in - only in that
+    prefix (another one can hold the same Windows path); a process that
+    doesn't say its prefix is taken at its word."""
+    prefix = _realpath(env.get("WINEPREFIX")) if env.get("WINEPREFIX") else None
+    for root_prefix, dir_tail, uid in dir_tails:
+        if not _under(tail, dir_tail):
+            continue
+        if prefix is None or prefix == _realpath(root_prefix) \
+                or _realpath(os.path.join(prefix, "..")) == _realpath(root_prefix):
+            return uid      # Proton's WINEPREFIX is <prefix>/pfx
+    return None
 
 
 def _usable_install_dir(path: Optional[str]) -> Optional[str]:
