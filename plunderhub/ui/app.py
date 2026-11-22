@@ -54,6 +54,7 @@ from plunderhub.core.save_backup import back_up as back_up_saves, list_backups a
 from plunderhub.core.save_backup import backup_dir as save_backup_dir, restore as restore_saves
 from plunderhub.core.launch_options import SteamBackend, launcher_pids
 from plunderhub.core.heroic_launch import HeroicLaunch, HeroicLaunchStage, heroic_running, updates_before_launch
+from plunderhub.core.battlenet_launch import BattleNetLaunch
 from plunderhub.core.process_probe import ProcessProbe
 from plunderhub.core.workspaces import WorkspaceMover, detect_compositor
 from plunderhub.core.running_detector import Detection, RunningDetector, build_targets
@@ -321,6 +322,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         # Heroic launches being followed in its log (see heroic_launch)
         self._gone_since: Dict[str, float] = {}     # when a running game was last missed
         self._heroic_launches: Dict[str, HeroicLaunch] = {}
+        self._battlenet_launches: Dict[str, BattleNetLaunch] = {}     # waiting for Battle.net's sign-in
         self._heroic_stages: Dict[str, HeroicLaunchStage] = {}
         # Quit chose to wait for the work still running (request_quit)
         self._quit_after_work = False
@@ -2285,7 +2287,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         self._update_animations_paused_banner()
 
     def _animations_paused_reason_text(self) -> str:
-        if self.running_procs or getattr(self, "detected_running", None):
+        running = set(self.running_procs) | set(getattr(self, "detected_running", None) or ())
+        if running:
+            # only a store launcher (GOG Galaxy, EA app...) up, no game: said so (user, 11-22)
+            if all(self._is_store_launcher(uid) for uid in running):
+                return self._("animations_paused_short_launcher_running")
             return self._("animations_paused_short_game_running")
         return self._("animations_paused_short_window_inactive")
 
@@ -3492,8 +3498,12 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
 
     def launch(self, cmd: List[str], label: str = "", env: Optional[Dict[str, str]] = None,
                uid: Optional[str] = None, install_dir: Optional[str] = None):
-        if uid and uid in self.detected_running:
+        if uid and uid in self.detected_running and not self._is_store_launcher(uid):
             return      # already running, started from its own launcher
+        if uid and uid in self.detected_running:
+            # a store launcher found running (hidden in its tray): asked again its window
+            # comes back, or it's restarted (core/launcher_start) - followed as a launch
+            self.detected_running.pop(uid, None)
         if uid and (uid in self.running_procs or uid in self.launching_uids):
             return      # started from here and still running / starting
         if self._saves_busy(uid):
@@ -3513,8 +3523,20 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                 return
         # Where PlunderHub is now, before the launch hides it.
         mover = self.workspace_mover() if uid else None
-        workspace = mover.target_for_launch() if mover is not None and self.launch_on_next_workspace else None
+        # a store launcher's game: its launcher's windows (same prefix) don't keep the game off a workspace
+        launch_game = self.game_index.get(uid) if uid else None
+        own_prefix = install_dir.split("/drive_c/")[0] if install_dir and "/drive_c/" in install_dir \
+            and getattr(launch_game, "store_platform", None) == "launcher-game" else None
+        # a store launcher itself (Battle.net, EA app... in Faugus - in Lutris / Bottles too once they're
+        # read so) opens where the player is: only the games it starts go to the next workspace (user, 11-22)
+        launcher_itself = getattr(launch_game, "store_platform", None) == "store-launcher"
+        workspace = mover.target_for_launch(own_prefix) \
+            if mover is not None and self.launch_on_next_workspace and not launcher_itself else None
         heroic = self._start_heroic_launch(uid, cmd, env, label) if uid and uid.startswith("heroic:") else None
+        # a Battle.net game: the launch switch only works handed to a signed-in Battle.net
+        from plunderhub.core import battlenet_launch
+        battle = battlenet_launch.plan(uid.split(":", 1)[1]) if uid and uid.startswith("faugus:") else None
+        direct_start = False
         try:
             # A Heroic launch may start Heroic alone first, or wait for
             # its update without starting anything yet.
@@ -3522,7 +3544,42 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             # Faugus starts a game from its folder; a game finding its files
             # by a relative path doesn't start from anywhere else
             cwd = install_dir if uid and uid.startswith("faugus:") and install_dir and os.path.isdir(install_dir) else None
-            proc = run(run_cmd, env, cwd) if run_cmd else None
+            proc = battlenet_launch.send(*battle) if battle is not None else None
+            wargaming = battlenet_launch.wargaming_game(uid.split(":", 1)[1]) \
+                if uid and uid.startswith("faugus:") else None
+            if wargaming is not None:
+                # Game Center only opens a game's page: its program run inside Game Center's
+                # container - at once when it's open, else once it's up (core/battlenet_launch)
+                if battlenet_launch.launcher_umu(wargaming[0], None) is not None:
+                    proc = battlenet_launch.start_wargaming_game(*wargaming)
+                    if proc is not None:
+                        run_cmd = None      # else (a Flatpak Faugus): Game Center opened, Play there
+                else:
+                    self._start_wargaming_after_launcher(uid, *wargaming)
+            elif proc is None and battle is None and uid and uid.startswith("faugus:") \
+                    and getattr(self.game_index.get(uid), "store_platform", None) == "launcher-game":
+                proc = battlenet_launch.handover_to_open_launcher(uid.split(":", 1)[1])
+                if proc is None and run_cmd:
+                    # a GOG game while Galaxy is closed: straight from its files (Galaxy takes ~24 s
+                    # under Wine before it starts one - user's choice 11-22, core/gog_direct)
+                    from plunderhub.core import gog_direct
+                    direct = gog_direct.command(uid.split(":", 1)[1])
+                    if direct:
+                        run_cmd, direct_start = direct, True
+                        logger.info(f"{uid}: GOG Galaxy is closed - started straight from its files")
+            again = self._ask_open_launcher(uid) if launcher_itself else None
+            if again is not None:
+                # a store launcher already running (hidden in its tray): asked inside its own
+                # container - a second Faugus run's clean-up killed the running one on exit
+                proc, run_cmd = again or None, None
+            if proc is None and run_cmd:
+                if launch_game is not None and uid.startswith("faugus:"):
+                    from plunderhub.core.launcher_start import clear_stale_locks
+                    if clear_stale_locks(launch_game.exe_path or install_dir or ""):
+                        logger.info(f"{uid}: old lock files of a hard-stopped launcher removed before the start")
+                proc = run(run_cmd, env, cwd) if run_cmd else None
+                if battle is not None:
+                    self._battlenet_launches[uid] = battlenet_launch.BattleNetLaunch(*battle, time.time())
         except Exception as exc:
             md = Gtk.MessageDialog(transient_for=self._dialog_transient_parent(), flags=0,
                                    message_type=Gtk.MessageType.ERROR,
@@ -3547,7 +3604,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             if heroic is not None:
                 self._heroic_launches[uid] = heroic[0]
             self.launching_uids[uid] = time.time()
-            self._launch_cmds[uid] = (cmd, env)
+            self._launch_cmds[uid] = (run_cmd if direct_start else cmd, env)
+            if not direct_start:        # no store launcher comes up for it
+                self._follow_launcher_start(uid, mover)
             from plunderhub.ui import whats_changed
             whats_changed.launch_started(self, uid)
             self._steam_asked_again.discard(uid)
@@ -3577,6 +3636,132 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             self._close_to_tray_or_quit()
         elif self.minimize_on_launch:
             self.iconify()
+
+    def _follow_launcher_start(self, uid: str, mover):
+        """A store launcher in Faugus: how far it has got starting up, for
+        under Setting sail (core/launcher_start)."""
+        game = self.game_index.get(uid)
+        of_game = None
+        if getattr(game, "store_platform", None) == "launcher-game":
+            # a game a store launcher starts: while its launcher comes up (it wasn't running),
+            # what that launcher is doing is said under the game's Setting sail too
+            from plunderhub.core.faugus_store import known
+            owner = known().get(uid.split(":", 1)[1]) or {}
+            of_game, game = game, self.game_index.get(f"faugus:{owner.get('launcher')}")
+        if getattr(game, "store_platform", None) != "store-launcher" or "/drive_c/" not in (game.exe_path or ""):
+            return
+        from plunderhub.core.faugus_add import RUNNING_AS, launcher_kind
+        from plunderhub.core.launcher_start import LauncherStart, prefix_pids
+        kind = launcher_kind(game.exe_path) or ""
+        tails = RUNNING_AS.get(kind) or os.path.basename(game.exe_path.replace("\\", "/"))
+        tails = (tails,) if isinstance(tails, str) else tuple(tails)
+        compositor = getattr(mover, "compositor", None) if mover is not None else None
+        if compositor is None:
+            from plunderhub.core.workspaces import detect_compositor
+            cache = self.__dict__.setdefault("_window_lister", [])
+            if not cache:
+                try:
+                    cache.append(detect_compositor())
+                except Exception:
+                    cache.append(None)
+            compositor = cache[0]
+        prefix = game.exe_path.split("/drive_c/")[0]
+        if of_game is not None and any(t.replace("\\", "/").lower() in cmd
+                                       for cmd in prefix_pids(prefix).values() for t in tails):
+            return          # its launcher is already up: the game's own waiting text says the rest
+
+        def busy() -> bool:
+            from plunderhub.core import store_downloads
+            return any(not d.finished for d in store_downloads.downloads(kind, prefix))
+
+        def restart():
+            GLib.idle_add(lambda: self._restart_store_launcher(uid) and False)
+        start = LauncherStart(prefix, tails, compositor.windows if compositor is not None else None,
+                              busy=busy, restart=restart if of_game is None else None)
+        start.kind = kind
+        start.launcher_title = game.title
+        if of_game is None and compositor is not None:
+            def bring_here(windows):
+                # the launcher's window where the player is, in front (it may have been
+                # left on another workspace - "Now playing" and nothing on screen, 11-22)
+                here = compositor.focused_workspace()
+                for wid, _pid, ws in windows:
+                    if here and ws and ws != here:
+                        compositor.move(wid, here, False)
+                    compositor.focus(wid, here)
+            start.on_window = bring_here
+        old = self.__dict__.setdefault("_launcher_starts", {}).pop(uid, None)
+        if old is not None:
+            old.stop()
+        self._launcher_starts[uid] = start
+
+    def _ask_open_launcher(self, uid: str):
+        """A store launcher whose program already runs: its program asked again
+        inside its running container (most bring their hidden window back) -
+        the process, or False for one that never does (GOG Galaxy: restarted
+        by its start follower instead); None when it isn't running."""
+        game = self.game_index.get(uid)
+        if game is None or "/drive_c/" not in (game.exe_path or ""):
+            return None
+        from plunderhub.core import battlenet_launch
+        from plunderhub.core.faugus_add import RUNNING_AS, launcher_kind
+        from plunderhub.core.launcher_start import NO_RESTORE, prefix_pids
+        prefix = game.exe_path.split("/drive_c/")[0]
+        kind = launcher_kind(game.exe_path) or ""
+        tails = RUNNING_AS.get(kind) or os.path.basename(game.exe_path)
+        tails = (tails,) if isinstance(tails, str) else tuple(tails)
+        if not any(t.replace("\\", "/").lower() in cmd for cmd in prefix_pids(prefix).values() for t in tails):
+            return None
+        if kind in NO_RESTORE:
+            return False
+        proc = battlenet_launch._run_inside(prefix, [game.exe_path], f"{uid} asked again", exe_tail=None)
+        return proc if proc is not None else False
+
+    def _start_wargaming_after_launcher(self, uid: str, prefix: str, exe):
+        """Game Center was closed: started by this launch (its entry runs it);
+        the game's program once its window is up - asked every second, given
+        up after 3 minutes or when the launch is cancelled."""
+        from plunderhub.core import battlenet_launch
+        started = time.time()
+        up = {}
+
+        def look():
+            if time.time() - started > 180 or uid in self.__dict__.get("_cancelled_launches", {}):
+                return False
+            if battlenet_launch.launcher_umu(prefix, None) is None:
+                return True
+            up.setdefault("at", time.time())
+            if not battlenet_launch.wargaming_ready(prefix, started) and time.time() - up["at"] < 25:
+                return True         # its window not up yet (25 s at most: it may start hidden)
+            battlenet_launch.start_wargaming_game(prefix, exe)
+            return False
+        GLib.timeout_add_seconds(1, look)
+
+    def _restart_store_launcher(self, uid: str):
+        """A store launcher hidden in its tray that didn't come back when
+        asked: stopped and started again (its start keeps being told)."""
+        start = self.__dict__.get("_launcher_starts", {}).get(uid)
+        game = self.game_index.get(uid)
+        if start is None or game is None:
+            return
+        cmd, env = self._launch_cmds.get(uid, (game.launch_cmd, game.env))
+        logger.info(f"{uid}: ran hidden with no window and didn't come back when asked - restarting it")
+
+        def work():
+            from plunderhub.core.launcher_start import clear_stale_locks, stop_prefix
+            stop_prefix(start.prefix)
+            clear_stale_locks(game.exe_path or "")      # stopped hard: its locks stay behind
+
+            def again():
+                try:
+                    cwd = game.install_dir if game.install_dir and os.path.isdir(game.install_dir) else None
+                    self.running_procs[uid] = run(cmd, env, cwd)
+                except Exception as e:
+                    logger.warning(f"{uid}: couldn't start it again: {e}")
+                start.restarted()
+                return False
+            GLib.idle_add(again)
+        threading.Thread(target=work, name="plunderhub-launcher-restart", daemon=True).start()
 
     def _start_heroic_launch(self, uid: str, cmd: List[str], env, label: str
                              ) -> Tuple[HeroicLaunch, Optional[List[str]]]:
@@ -3962,6 +4147,13 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             # the time starts once the game's own processes show up
             # (_poll_running_games confirms it and ends the launch)
             return False
+        start = self.__dict__.get("_launcher_starts", {}).get(uid)
+        if start is not None and not self._is_launcher_game(uid):
+            # a store launcher itself: Setting sail till its window is up
+            if start.stage != "ready":
+                return False
+            self._launcher_starts.pop(uid, None)
+            return True
         follower = self._heroic_launches.get(uid)
         if follower is not None:
             heroic_stage = self._heroic_stages.get(uid)
@@ -3998,8 +4190,18 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                           "cloud_stage_upload" if mode.endswith("upload") else "cloud_stage_download")
         if uid not in self.launching_uids:
             return None
-        if self._is_launcher_game(uid):
+        start = self.__dict__.get("_launcher_starts", {}).get(uid)
+        if self._is_launcher_game(uid) and (start is None or start.stage == "ready"):
             return self._("launcher_game_waiting")
+        if start is not None and start.stage != "ready":
+            name = getattr(start, "launcher_title", "")
+            if start.stage == "proton":
+                return self._("launcher_stage_proton")
+            if start.stage in ("background", "restarting", "busy"):
+                return self._(f"launcher_stage_{start.stage}").format(launcher=name)
+            text = self._("launcher_stage_loading").format(launcher=name)
+            hint = self._(f"launcher_stage_hint_{getattr(start, 'kind', '')}")
+            return text if hint.startswith("launcher_stage_hint_") else f"{text} {hint}"
         heroic_stage = self._heroic_stages.get(uid)
         if uid in self._heroic_launches:
             if heroic_stage is None or heroic_stage.stage in ("launched", "failed"):
@@ -4320,6 +4522,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
         finished = []
         failed_launches = []
         crashed: set = set()
+        game_showed_up: List[str] = []      # a launcher's game seen: Setting sail -> playing at once
         detected = self._running_detector.snapshot()
         for uid, proc in self.running_procs.items():
             if uid.startswith("steam:"):
@@ -4367,6 +4570,7 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
                         # its time starts with the game, not with its launcher opening
                         self.running_since[uid] = time.monotonic()
                         self.launching_uids.pop(uid, None)
+                        game_showed_up.append(uid)
                     self._directory_confirmed_running.add(uid)
                     self._gone_since.pop(uid, None)
                 elif uid in self._directory_confirmed_running:
@@ -4385,6 +4589,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             if uid in self._heroic_launches:
                 # what PlunderHub ran only hands the launch to Heroic
                 continue
+            starting = self.__dict__.get("_launcher_starts", {}).get(uid)
+            if starting is not None and starting.stage != "ready":
+                # a store launcher still coming up: its second copy (asked to show the
+                # hidden one) exits at once, or it's being restarted - not over
+                continue
             if proc.poll() is not None and not self._process_group_alive(proc):
                 finished.append(uid)
                 ran = time.monotonic() - self.running_since.get(uid, time.monotonic())
@@ -4401,6 +4610,9 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             if stage is not None and stage.stage == "failed" and uid not in finished:
                 finished.append(uid)
                 failed_launches.append((uid, stage.error))
+        for uid, waiting in list(self._battlenet_launches.items()):
+            if uid not in self.launching_uids or waiting.poll(time.time()):
+                self._battlenet_launches.pop(uid, None)
         for uid in self._follow_heroic_launches():
             if uid not in finished:
                 finished.append(uid)
@@ -4420,6 +4632,11 @@ class App(OptionsMixin, LaunchOptionsMixin, ConsoleModeMixin, PlaytimeMixin, Hom
             # suspended, so a game left running overnight in sleep
             # doesn't come back with hours of playtime it never had.
             self.running_since[uid] = time.monotonic()
+        if game_showed_up and not (finished or expired_launching):
+            for uid in game_showed_up:
+                logger.info(f"{uid}: the game itself is running (its launcher started it)")
+            self._render_launchers()
+            self._update_decorative_animation_pause_state()
         if finished or expired_launching:
             from plunderhub.ui import whats_changed
             errors = dict(failed_launches)

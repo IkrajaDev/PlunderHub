@@ -1122,10 +1122,28 @@ class WorkspaceMover:
     # how far right an empty workspace is looked for
     _EMPTY_SEARCH = 32
 
-    def target_for_launch(self) -> Optional[str]:
+    @staticmethod
+    def _in_prefix(pid: int, prefix: str) -> bool:
+        """Whether this process runs in that Wine prefix (or its pfx)."""
+        try:
+            with open(f"/proc/{pid}/environ", "rb") as f:
+                env = f.read().split(b"\0")
+        except OSError:
+            return False
+        value = next((e[len(b"WINEPREFIX="):].decode("utf-8", "replace") for e in env
+                      if e.startswith(b"WINEPREFIX=")), "")
+        if not value:
+            return False
+        real, root = os.path.realpath(value), os.path.realpath(prefix)
+        return real == root or real == os.path.join(root, "pfx")
+
+    def target_for_launch(self, own_prefix: Optional[str] = None) -> Optional[str]:
         """The workspace right of PlunderHub's (or of the focused one) when
         nothing is open on it - else the next one right of that with
-        nothing on it, so a game never lands among other windows."""
+        nothing on it, so a game never lands among other windows. Windows
+        of own_prefix (the game's own store launcher: it hides in its tray
+        once the game starts - 11-22 EA app) don't count as taking a
+        workspace."""
         # One look at the windows for the whole launch (watch and
         # keep_steam_in_tray take it too): on KWin each look is a script
         # round trip with a 2 s timeout, and this runs on the GTK thread.
@@ -1139,7 +1157,8 @@ class WorkspaceMover:
             here = self.compositor.last_focused() if windows else None
             here = here or self.compositor.focused_workspace()
         self._last_home = here
-        busy = {ws for _wid, pid, ws in windows if ws and pid != mine}
+        busy = {ws for _wid, pid, ws in windows if ws and pid != mine
+                and not (own_prefix and pid and self._in_prefix(pid, own_prefix))}
         target = self.compositor.next_workspace(here) if here else None
         first = target
         for _ in range(self._EMPTY_SEARCH):
@@ -1166,7 +1185,18 @@ class WorkspaceMover:
         # by address AND pid: Hyprland gives a closed window's address to the
         # next one (a game closed and started again got its old window's)
         seen = {(wid, pid) for wid, pid, _ws in self._windows_now() or []}
+        prefix = getattr(match, "wineprefix", None)
         with self._lock:
+            if prefix:
+                # one Wine prefix, one launch watched: a store launcher's game started
+                # while the launcher's own launch was still watched - both took the
+                # same new windows, moved them back and forth (11-22, EA app); the
+                # newest launch owns the prefix's new windows
+                for other, (other_match, *_rest) in list(self._games.items()):
+                    if other != uid and getattr(other_match, "wineprefix", None) == prefix:
+                        self._games.pop(other, None)
+                        self.__dict__.get("_fresh", {}).pop(other, None)
+                        logger.info(f"{other}'s windows no longer followed: {uid} started in the same prefix")
             self._games[uid] = (match, target, time.time(), seen)
             if self._last_home:
                 self._homes[uid] = self._last_home
@@ -1244,6 +1274,9 @@ class WorkspaceMover:
     def forget(self, uid: str):
         with self._lock:
             self._games.pop(uid, None)
+            claims = self.__dict__.get("_claimed", {})
+            for key in [k for k, owner in claims.items() if owner == uid]:
+                claims.pop(key, None)
             self.__dict__.get("_fresh", {}).pop(uid, None)
             self._followed.discard(uid)
             self._homes.pop(uid, None)
@@ -1398,6 +1431,12 @@ class WorkspaceMover:
                                     f"{'the game' if ours else 'not the game'}")
                     if not ours:
                         continue
+                    # a window another launch already took stays where that one put it
+                    claims = self.__dict__.setdefault("_claimed", {})
+                    owner = claims.setdefault(key, uid)
+                    if owner != uid and owner in games:
+                        continue
+                    claims[key] = uid
                     if ws != target:
                         with self._lock:
                             follow = uid not in self._followed

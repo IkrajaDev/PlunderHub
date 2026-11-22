@@ -154,6 +154,10 @@ msgstr "Odtwarzaj animowane okładki w ich własnym tempie. Wyłączone: widać 
 msgid "animations_paused_short_game_running"
 msgstr "trwa gra"
 
+#. English: a launcher is running
+msgid "animations_paused_short_launcher_running"
+msgstr "działa launcher"
+
 #. English: window out of focus
 msgid "animations_paused_short_window_inactive"
 msgstr "okno nieaktywne"
@@ -2506,6 +2510,30 @@ msgstr "Jego launcher jest otwarty – czekam, aż gra się uruchomi"
 msgid "launcher_open"
 msgstr "Otwórz"
 
+#. English: {launcher} is already running in the background – bringing its window up…
+msgid "launcher_stage_background"
+msgstr "{launcher} już działa w tle – przywracam jego okno…"
+
+#. English: {launcher} is working in the background (downloading) – open it from its tray icon.
+msgid "launcher_stage_busy"
+msgstr "{launcher} pracuje w tle (pobiera) – otwórz go z ikony w zasobniku."
+
+#. English: Under Wine it waits about 10 s for its background service.
+msgid "launcher_stage_hint_gog"
+msgstr "Pod Wine czeka ok. 10 s na swoją usługę w tle."
+
+#. English: {launcher} is starting – its window comes up in a moment.
+msgid "launcher_stage_loading"
+msgstr "{launcher} się uruchamia – jego okno zaraz się pojawi."
+
+#. English: Getting Proton ready…
+msgid "launcher_stage_proton"
+msgstr "Przygotowywanie Protona…"
+
+#. English: {launcher} runs in the background with no window – restarting it…
+msgid "launcher_stage_restarting"
+msgstr "{launcher} działa w tle bez okna – uruchamiam go ponownie…"
+
 #. English: Steam is reserving disk space
 msgid "ld_act_allocating"
 msgstr "Steam rezerwuje miejsce na dysku"
@@ -2970,6 +2998,10 @@ msgstr "Niektóre gry (Paradox, Ubisoft…) uruchomią się wtedy od razu"
 msgid "lo_launcher_still_running"
 msgstr "{launcher} się nie zamknął."
 
+#. English: Not available
+msgid "lo_locked_pill"
+msgstr "Niedostępne"
+
 #. English: MangoHud
 msgid "lo_mangohud"
 msgstr "MangoHud"
@@ -3165,6 +3197,14 @@ msgstr "{tool} nie jest zainstalowany - zainstaluj go w Stoczni"
 #. English: This launcher can't store this setting
 msgid "lo_unsupported"
 msgstr "Ten launcher nie może zapisać tego ustawienia"
+
+#. English: Not available: the game starts through its launcher, so this would reach the launcher (or break its window), not the game
+msgid "lo_unsupported_launcher_game"
+msgstr "Niedostępne: gra uruchamia się przez swój launcher, więc to trafiłoby do launchera (lub zepsuło jego okno), a nie do gry"
+
+#. English: Not available for a store's launcher - game settings don't apply to it
+msgid "lo_unsupported_store_launcher"
+msgstr "Niedostępne dla launchera sklepu - ustawienia gier go nie dotyczą"
 
 #. English: none
 msgid "lo_value_none"
@@ -6134,6 +6174,10 @@ msgstr "Otwórz Faugus"
 msgid "tm_fg_open_it"
 msgstr "Otwórz"
 
+#. English: Open {launcher}
+msgid "tm_fg_open_launcher"
+msgstr "Otwórz {launcher}"
+
 #. English: Another file…
 msgid "tm_fg_other_file"
 msgstr "Inny plik…"
@@ -6378,9 +6422,21 @@ msgstr "To ten"
 msgid "tm_fg_title"
 msgstr "Na pokład z Faugus"
 
-#. English: {game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone.
+#. English: In the EA app: click {game} under “Installed games” on the left, then “Manage” → “Uninstall”.
+msgid "tm_fg_uninstall_hint_ea"
+msgstr "W EA app: kliknij {game} w „Installed games” po lewej, potem „Manage” → „Uninstall”."
+
+#. English: In the Epic Games Launcher (it opens on its Library): click ⋯ on {game}, then “Uninstall”.
+msgid "tm_fg_uninstall_hint_epic"
+msgstr "W Epic Games Launcher (otworzy się na Bibliotece): kliknij ⋯ przy {game}, potem „Uninstall”."
+
+#. English: {game} is uninstalled in {launcher} itself. Its card goes by itself once the game is gone.
 msgid "tm_fg_uninstall_in_launcher"
-msgstr "{game} odinstalowuje się w {launcher}, który teraz się otworzy. Karta zniknie, gdy gry już nie będzie."
+msgstr "{game} odinstalowuje się w samym {launcher}. Karta zniknie sama, gdy gry już nie będzie."
+
+#. English: Uninstall in {launcher}
+msgid "tm_fg_uninstall_in_launcher_title"
+msgstr "Odinstaluj w {launcher}"
 
 #. English: WHAT ARE YOU BRINGING?
 msgid "tm_fg_what"

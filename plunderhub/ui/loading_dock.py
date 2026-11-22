@@ -234,7 +234,7 @@ class LoadingDock(Gtk.ScrolledWindow):
         return [u for u in self._uids() if self.view.downloads[u].get("launcher") == "Steam"]
 
     def _game(self, uid):
-        return self.view.games_by_uid.get(uid) or getattr(self.view, "faugus_pending", {}).get(uid)
+        return self.view.dock_game(uid)
 
     def _kind(self, uid: str) -> str:
         """now (downloading / installing), next (waiting) or paused."""
@@ -405,19 +405,70 @@ class LoadingDock(Gtk.ScrolledWindow):
         except Exception:
             pass
         appid = uid.split(":", 1)[1] if uid.startswith("steam:") else None
+        own = self.app.game_index.get(uid)
+        if getattr(own, "store_platform", None) == "store-launcher" and getattr(self.view, "opts", None):
+            # a store launcher in Faugus: PlunderHub's own banner for it, last
+            from pathlib import Path
+            from plunderhub.core.faugus_add import launcher_kind
+            from plunderhub.ui.faugus_aboard import launcher_banner
+            kind = launcher_kind(own.exe_path or "")
+            banner = launcher_banner(kind, Path(self.view.opts["cache"]), self) if kind else None
+            if banner:
+                paths.append(banner)
         scale = self.get_scale_factor() or 1
         game = self._game(uid)
+        # the name to look Steam's picture up by: the game's, or its Aboard entry's
+        title = game.title if game is not None else next(
+            (e.get("title") for e in self.view.aboard() if e.get("uid") == uid), None)
         cache_dir = (self.view.opts or {}).get("cache") if hasattr(self.view, "opts") else None
 
         def work():
             from pathlib import Path
             from plunderhub.gi_setup import GdkPixbuf
             more = list(paths)
-            if appid:
+            steam_id = appid
+            # not a store launcher itself ("Battle.net" would find some game of that name)
+            launcher_entry = getattr(self.app.game_index.get(uid), "store_platform", None) == "store-launcher"
+            from plunderhub.core.faugus_add import LAUNCHERS
+            is_launcher = launcher_entry or (title or "") in {v.get("name") for v in LAUNCHERS.values()}
+            by_name = uid.startswith(("storedl:", "faugus:")) and bool(title) and not is_launcher
+            if steam_id is None and by_name and not more:
+                # a game a store launcher downloads (no card of its own yet, its old art
+                # cleared with its uninstall): Steam's picture of the same game, by its name
+                try:
+                    from plunderhub.core.protondb import steam_appid_by_title
+                    steam_id = steam_appid_by_title(title)
+                except Exception as e:
+                    logger.debug(f"Loading Dock: no Steam id for {title}: {e}")
+            if not steam_id and by_name and not more and getattr(self.app, "api_key", None):
+                # not on Steam (Wargaming's Steel Hunters...): SteamGridDB's, as its card gets
+                try:
+                    gid = self.app._steamgrid_search(title, strict=True)
+                    page, _n = self.app._steamgrid_page("hero", gid, 0) if gid is not None else ([], 0)
+                    stills = [i for i in page if not i.get("animated")]
+                    picks = [i for i in stills if i.get("style") == "official"] + stills
+                    if picks and cache_dir:
+                        from plunderhub.core import treasure
+                        h = treasure._download(picks[0]["url"], Path(cache_dir))
+                        if h:
+                            more.append(str(h))
+                            dl = self.view.downloads.get(uid)
+                            if dl is not None and not dl.get("hero"):
+                                dl["hero"] = str(h)
+                except Exception as e:
+                    logger.debug(f"Loading Dock: no SteamGridDB hero for {title}: {e}")
+            if steam_id:
                 from plunderhub.core import launcher_art
-                h = launcher_art._steam(appid).get("hero")
+                h = launcher_art._steam(steam_id).get("hero")
+                if not h and by_name and cache_dir:
+                    from plunderhub.core import treasure
+                    h = treasure._download("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/"
+                                           f"{steam_id}/library_hero.jpg", Path(cache_dir))
                 if h:
                     more.append(str(h))
+                    dl = self.view.downloads.get(uid)
+                    if dl is not None and not dl.get("hero"):
+                        dl["hero"] = str(h)         # kept for its Aboard card
             if game is not None and cache_dir and getattr(game, "store", "") != "faugus":
                 # last: the one the Dig up card would show (fetched once, kept in the map's cache)
                 try:
@@ -443,9 +494,12 @@ class LoadingDock(Gtk.ScrolledWindow):
                     return
         threading.Thread(target=work, name="plunderhub-dock-hero", daemon=True).start()
 
-    def _launcher_line(self, launcher: str, parts: List[str]) -> Gtk.Widget:
+    def _launcher_line(self, launcher: str, parts: List[str], launcher_uid: Optional[str] = None) -> Gtk.Widget:
         line = Gtk.Box(spacing=7)
-        icon = self.app._load_launcher_icon(launcher, 16)
+        # a store launcher in Faugus (Battle.net...): its own icon, as its card has
+        own = self.app.game_index.get(launcher_uid) if launcher_uid else None
+        icon = self.app._create_game_icon_image(own, 16) if own is not None \
+            else self.app._load_launcher_icon(launcher, 16)
         icon.set_valign(Gtk.Align.CENTER)
         line.pack_start(icon, False, False, 0)
         lab = Gtk.Label(label="   ·   ".join([launcher] + parts), xalign=0)
@@ -540,7 +594,8 @@ class LoadingDock(Gtk.ScrolledWindow):
         top.pack_end(pill, False, False, 0)
         mid.pack_start(top, False, False, 0)
         mid.pack_start(self._launcher_line(e["launcher"], ([_fmt(e["size"])] if e.get("size") else [])
-                                           + [_("ld_done_at").format(time=_when(e["at"]))]), False, False, 0)
+                                           + [_("ld_done_at").format(time=_when(e["at"]))],
+                                           e.get("launcher_uid")), False, False, 0)
         bar = Gtk.ProgressBar()
         bar.get_style_context().add_class("ld-bar")
         bar.set_margin_top(2)
@@ -603,7 +658,7 @@ class LoadingDock(Gtk.ScrolledWindow):
         _ = self._
         dl = self.view.downloads[uid]
         game = self._game(uid)
-        card, content = self._shell(uid)
+        card, content = self._shell(uid, dl.get("hero"))
         mid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         mid.set_valign(Gtk.Align.CENTER)
         line = Gtk.Box(spacing=10)
@@ -622,7 +677,7 @@ class LoadingDock(Gtk.ScrolledWindow):
         pill.set_valign(Gtk.Align.CENTER)
         line.pack_end(pill, False, False, 0)
         mid.pack_start(line, False, False, 0)
-        launcher = self._launcher_line(dl.get("launcher") or "Steam", [])
+        launcher = self._launcher_line(dl.get("launcher") or "Steam", [], dl.get("launcher_uid"))
         mid.pack_start(launcher, False, False, 0)
         bar = Gtk.ProgressBar()
         bar.get_style_context().add_class("ld-bar")
@@ -706,7 +761,9 @@ class LoadingDock(Gtk.ScrolledWindow):
         r["detail"].set_text("   ·   ".join([r["launcher"], act] if act else [r["launcher"]] + parts))
         samples = dl.get("samples") or []
         tiles = r["tiles"]
-        tiles["pct"].set_text(f"{int(frac * 100)} %")
+        # a launcher that keeps its download's size to itself (Wargaming, Amazon): no made-up 0 %
+        unknown = bool(dl.get("store_dl")) and not dl.get("size") and state != "done"
+        tiles["pct"].set_text("–" if unknown else f"{int(frac * 100)} %")
         began = dl.get("began")
         tiles["ld_stat_time"].value.set_text(_took(time.time() - began) if began else "–")
         tiles["now"].set_text(_speed(rate) if rate > 1e5 and not paused and key == "ld_state_downloading" else "")
@@ -1084,7 +1141,7 @@ class InstallCard(Gtk.Revealer):
         if uid is None:
             return
         dl = view.downloads[uid]
-        game = view.games_by_uid.get(uid) or getattr(view, "faugus_pending", {}).get(uid)
+        game = view.dock_game(uid)
         self.title.set_text(game.title if game else uid)
         state = "paused" if dl.get("steam_paused") else dl.get("state")
         key = {"installing": "ld_state_installing", "downloading": "ld_state_downloading",
@@ -1092,7 +1149,8 @@ class InstallCard(Gtk.Revealer):
         self.state.set_text(_(key))
         frac = max(0.0, min(1.0, float(dl.get("frac") or 0)))
         self.bar.set_fraction(frac)
-        self.pct.set_text(f"{int(frac * 100)} %")
+        unknown = bool(dl.get("store_dl")) and not dl.get("size")
+        self.pct.set_text("–" if unknown else f"{int(frac * 100)} %")
         size = float(dl.get("size") or 0)
         got = float(dl.get("got") or frac * size)
         rate = float(dl.get("rate") or dl.get("speed") or 0)

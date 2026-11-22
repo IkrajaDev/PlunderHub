@@ -285,11 +285,11 @@
 #### Your games and stores
 
 - **Treasure Map**: every game you own on Steam, Epic, GOG and Amazon on one page, installed or not. Install or uninstall one with a click, its DLCs picked along. Right-click an installed game for the same menu as in your library.
-- **Loading Dock**: every install you start from the Treasure Map, in one place - what's loading now, what's next (in order, move them up and down), what's paused. Each one shows how long it's been going, its top, lowest and average speed and its own speed graph. Heroic installs pause and resume, any can be stopped. Finished installs stay under Aboard with their numbers until you clear the list. It picks up installs that went on while PlunderHub was closed, and says what Steam is busy with while a download stands at 0 %.
+- **Loading Dock**: every install you start from the Treasure Map, in one place - what's loading now, what's next (in order, move them up and down), what's paused. Each one shows how long it's been going, its top, lowest and average speed and its own speed graph. Heroic installs pause and resume, any can be stopped. Finished installs stay under Aboard with their numbers until you clear the list. It picks up installs that went on while PlunderHub was closed, and says what Steam is busy with while a download stands at 0 %. A game you download inside a store launcher in Faugus (Battle.net, EA app, Epic, GOG Galaxy, Ubisoft Connect, Rockstar, Wargaming) shows up here too, with how far it is and its speed, and gets its card once it's installed.
 - **Steer Steam's downloads**: an opt-in switch in the Loading Dock to pause, resume and reorder Steam's own downloads. Off by default, and it switches itself off once Steam's installs are done.
 - **Harbors**: Battle.net, EA app, Epic, GOG Galaxy, Ubisoft Connect, Rockstar, Amazon and Wargaming get a row of their own under your games, one click away.
 - **Faugus**: install store launchers, Windows games or Linux games from the Treasure Map, each in its own Wine prefix.
-- **Games from store launchers**: games installed with them get their own card, cover, launch options and playtime.
+- **Games from store launchers**: games installed with them get their own card, cover, launch options and playtime. Play starts the game itself - a closed launcher comes up first, and you see what it's doing meanwhile - and Uninstall runs the game's own uninstaller where the store has one.
 - **Bounty Board**: PC games that are free to keep right now on Steam, Epic, GOG and Humble, with how long they stay free. A click opens the store page. Turn it off in Settings if you don't want it.
 
 #### Proton and fixing things
@@ -428,7 +428,8 @@ Other distros (in the PlunderHub folder):
 - **Add to Steam** needs Steam closed for a moment, so PlunderHub restarts it. A Flatpak Steam asks for a permission to start PlunderHub. The Snap Steam can't start other programs.
 - **Treasure Map with a Flatpak Heroic** installs games to Heroic's default folders: the Flatpak can't reach others.
 - **Hyprland rules for `steam_app_*` windows** (forced fullscreen, monitor size) also catch a Windows game's installer: it can open as a blank fullscreen window. Leave installer titles (`Setup`, `Select Setup Language`) out of such a rule.
-- **Games inside store launchers** are new and haven't been tried with every store yet. Wargaming Game Center opens on its own page, press Play there. Uninstall them in their launcher.
+- **Games inside store launchers** (Faugus): Amazon Games hasn't been tried yet. With Faugus as a Flatpak, PlunderHub can't reach into a running launcher: a Battle.net or Wargaming game opens its launcher, press Play there. Epic and Amazon games are uninstalled in their launcher.
+- **GOG games with GOG Galaxy closed** start straight from their own files (much faster than waiting for Galaxy) - Galaxy's cloud saves sync only for a game started while Galaxy is open.
 - **Read-only systems** (Bazzite, Silverblue): Shipwright installs launchers and tools as Flatpaks. System packages come through your system's own tools.
 - **Installing with Steam**: with Steam's window open, Steam's own install window asks. If you press Cancel there, PlunderHub lets the install go after a minute - Steam doesn't tell. With Steam closed or in the tray, Steam is closed for a moment and started again the way it was. On GNOME PlunderHub can't see whether Steam shows a window, so Steam's own install window always asks there.
 - **HDR inside gamescope**: a game in its own exclusive fullscreen mode can start black or as a small picture in a corner. Pick borderless (windowed) in the game's settings - gamescope fills the screen itself.
@@ -440,7 +441,7 @@ Other distros (in the PlunderHub folder):
 
 ## Tested launcher versions
 
-Launchers change their file formats now and then. These are the versions PlunderHub was last checked with (November 20, 2026). If yours is newer and something looks off, please [report it](#reporting-bugs).
+Launchers change their file formats now and then. These are the versions PlunderHub was last checked with (November 22, 2026). If yours is newer and something looks off, please [report it](#reporting-bugs).
 
 | Launcher | Version | Status |
 |---|---|---|
@@ -449,6 +450,19 @@ Launchers change their file formats now and then. These are the versions Plunder
 | Faugus Launcher | 2.5.9 | Tested |
 | Lutris | 0.5.22 | Checked on an earlier setup, no games tried on this version yet |
 | Bottles | - | Not checked on a current version yet |
+
+**Store launchers in Faugus** (installed from the Treasure Map)
+
+| Store launcher | Version | Status |
+|---|---|---|
+| Battle.net | 2.53.8 | Tested |
+| EA app | 13.832.0 | Tested |
+| Epic Games Launcher | 20.3.10 | Tested |
+| GOG Galaxy | 2.1.13 | Tested (let it update itself first: 2.1.6 can't download under Proton) |
+| Ubisoft Connect | 175.2 | Tested |
+| Rockstar Games Launcher | 1.0.110 | Tested |
+| Wargaming Game Center | 26.06 | Tested |
+| Amazon Games | - | Not tried yet |
 
 ## Privacy
 
@@ -459,6 +473,8 @@ PlunderHub collects no data. It only connects to:
 - Steam's store and GOG, for the Treasure Map: a game's details when you open its card (by its ID), and your GOG games list, with the GOG sign-in Heroic already has, until Heroic has written its own
 - Epic and GOG through Heroic's own tools, for a game's DLC list when you open its DLC tab (Steam's comes from Steam's files on your PC)
 - Steam's public achievement numbers (by a game's ID) and Steam's and GOG's image servers, for how rare achievements are and their icons. Your own Steam achievements come from Steam's files on your PC; a GOG game's from GOG, with the GOG sign-in Heroic already has
+- Steam's store search, with a game's title, for a picture of a game a store launcher (Battle.net, GOG Galaxy...) is downloading
+- Wargaming's update server, for the size of a game Wargaming Game Center is downloading - the same public list Game Center asks for, nothing about you
 - SteamGridDB, only with your key
 - ProtonDB, with a game's Steam ID, for its rating on the game page (a game not from Steam is first looked up by its title in Steam's store search; you can turn this off in Settings)
 - GitHub, for updates and Proton downloads

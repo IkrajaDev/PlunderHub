@@ -1739,11 +1739,18 @@ class FaugusBackend(LaunchOptionsBackend):
     # (core/faugus_add.LAUNCHER_ENV) - greyed out, and kept so on every save.
     STORE_LAUNCHER_LOCKED = frozenset({"recommended", "wayland", "fps_check", "fps_entry", "win_fullscreen",
                                        "win_borderless", "launcher_skip", "fsr", "hdr", "target_exe"})
+    # A game such a launcher starts: the launcher's program runs, the game is its
+    # child and gets its environment. So the FPS cap and FSR (environment) reach
+    # the game; Wayland / HDR would break the launcher's window, and window-mode
+    # switches are arguments the launcher gets, not the game.
+    LAUNCHER_GAME_LOCKED = STORE_LAUNCHER_LOCKED - {"recommended", "fps_check", "fps_entry", "fsr"}
 
     def unsupported(self, game: GameItem) -> frozenset:
         base = super().unsupported(game)
-        if game.store_platform in ("store-launcher", "launcher-game"):
+        if game.store_platform == "store-launcher":
             base = base | self.STORE_LAUNCHER_LOCKED
+        elif game.store_platform == "launcher-game":
+            base = base | self.LAUNCHER_GAME_LOCKED
         try:
             _data, entry = self._entries(game)
         except (OSError, ValueError):
@@ -1772,9 +1779,14 @@ class FaugusBackend(LaunchOptionsBackend):
         if game.store_platform in ("store-launcher", "launcher-game"):
             from plunderhub.core.faugus_add import LAUNCHER_ENV, launcher_kind
             words = set(LAUNCHER_SKIP_ARG.split()) | {w for ws in WINDOW_ARGS.values() for w in ws}
-            opts = replace(opts, wayland=False, fps_limit="", fsr=False, hdr=False,
+            # a launcher's game keeps its FPS cap and FSR (see LAUNCHER_GAME_LOCKED)
+            game_of_launcher = game.store_platform == "launcher-game"
+            opts = replace(opts, wayland=False, hdr=False,
+                           fps_limit=opts.fps_limit if game_of_launcher else "",
+                           fsr=opts.fsr if game_of_launcher else False,
                            args=" ".join(w for w in opts.args.split() if w not in words),
-                           env={**{k: v for k, v in opts.env.items() if k != "DXVK_FRAME_RATE"},
+                           env={**{k: v for k, v in opts.env.items()
+                                   if game_of_launcher or k != "DXVK_FRAME_RATE"},
                                 **LAUNCHER_ENV.get(launcher_kind(str(entry.get("path") or "")) or "", {})})
         before = replace(opts, gamemode=False, args="")
         if opts.gamescope.enabled:

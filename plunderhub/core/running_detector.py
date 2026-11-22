@@ -40,6 +40,7 @@ A process merely sitting in a game's folder (a terminal, a file manager)
 never counts - only executables and program arguments do."""
 
 import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -151,9 +152,22 @@ class _Proc:
         args = self.cmdline
         return [a for i, a in enumerate(args) if i == 0 or a.lower().endswith(_PROGRAM_SUFFIXES)]
 
+    def is_setup(self) -> bool:
+        """A game's first-start prerequisites run from its folder (Ubisoft
+        Connect: DirectX, VC++ redists, Easy Anti-Cheat's installer - ~30 s
+        before the game, 11-22): not the game running yet."""
+        first = self.cmdline[0] if self.cmdline else ""
+        return bool(_SETUP_NAMES.search(first.replace("\\", "/").rsplit("/", 1)[-1]))
+
     def is_wine_service(self) -> bool:
         first = self.cmdline[0] if self.cmdline else ""
         return first.replace("\\", "/").rsplit("/", 1)[-1].lower() in WINE_SERVICE_PROCESSES
+
+
+# prerequisite installers a launcher runs from a game's folder before the game
+_SETUP_NAMES = re.compile(r"^(dxsetup|dxwebsetup|vc_?redist[^/]*|vcredist[^/]*|easyanticheat(_eos)?_setup|"
+                          r"battleye_?installer|ue4prereqsetup[^/]*|ueprereqsetup[^/]*|oalinst|physx[^/]*setup[^/]*|"
+                          r"dotnetfx[^/]*|ndp\d+[^/]*)\.exe$", re.IGNORECASE)
 
 
 def _boot_seconds_now() -> float:
@@ -213,6 +227,8 @@ def match_processes(targets: List[GameTarget], proc_root: Path = Path("/proc"),
         if appid is not None:
             hit(by_appid[appid], proc)
             continue
+        if proc.is_setup():
+            continue                     # its first-start installers: not the game yet
         exe = proc.exe
         matched = False
         if exe:

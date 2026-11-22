@@ -154,6 +154,10 @@ msgstr "Az animált borítók a saját tempójukban játszódnak le. Kikapcsolva
 msgid "animations_paused_short_game_running"
 msgstr "fut egy játék"
 
+#. English: a launcher is running
+msgid "animations_paused_short_launcher_running"
+msgstr "fut egy launcher"
+
 #. English: window out of focus
 msgid "animations_paused_short_window_inactive"
 msgstr "az ablak nincs fókuszban"
@@ -2506,6 +2510,30 @@ msgstr "A launchere nyitva van – várunk, hogy elinduljon a játék"
 msgid "launcher_open"
 msgstr "Megnyitás"
 
+#. English: {launcher} is already running in the background – bringing its window up…
+msgid "launcher_stage_background"
+msgstr "A(z) {launcher} már fut a háttérben – előhozom az ablakát…"
+
+#. English: {launcher} is working in the background (downloading) – open it from its tray icon.
+msgid "launcher_stage_busy"
+msgstr "A(z) {launcher} a háttérben dolgozik (letölt) – a tálcaikonjáról hozható elő."
+
+#. English: Under Wine it waits about 10 s for its background service.
+msgid "launcher_stage_hint_gog"
+msgstr "Wine alatt kb. 10 másodpercet vár a háttérszolgáltatására."
+
+#. English: {launcher} is starting – its window comes up in a moment.
+msgid "launcher_stage_loading"
+msgstr "A(z) {launcher} indul – mindjárt megjelenik az ablaka."
+
+#. English: Getting Proton ready…
+msgid "launcher_stage_proton"
+msgstr "Proton előkészítése…"
+
+#. English: {launcher} runs in the background with no window – restarting it…
+msgid "launcher_stage_restarting"
+msgstr "A(z) {launcher} ablak nélkül fut a háttérben – újraindítom…"
+
 #. English: Steam is reserving disk space
 msgid "ld_act_allocating"
 msgstr "A Steam helyet foglal a lemezen"
@@ -2970,6 +2998,10 @@ msgstr "Egyes játékok (Paradox, Ubisoft…) így rögtön elindulnak"
 msgid "lo_launcher_still_running"
 msgstr "A {launcher} nem záródott be."
 
+#. English: Not available
+msgid "lo_locked_pill"
+msgstr "Nem elérhető"
+
 #. English: MangoHud
 msgid "lo_mangohud"
 msgstr "MangoHud"
@@ -3165,6 +3197,14 @@ msgstr "A(z) {tool} nincs telepítve – telepítsd a Hajóácsnál"
 #. English: This launcher can't store this setting
 msgid "lo_unsupported"
 msgstr "Ez a launcher nem tudja tárolni ezt a beállítást"
+
+#. English: Not available: the game starts through its launcher, so this would reach the launcher (or break its window), not the game
+msgid "lo_unsupported_launcher_game"
+msgstr "Nem elérhető: a játék a launcherén keresztül indul, ez a beállítás a launchert érné (vagy elrontaná az ablakát), nem a játékot"
+
+#. English: Not available for a store's launcher - game settings don't apply to it
+msgid "lo_unsupported_store_launcher"
+msgstr "Bolti launchernél nem elérhető - a játékbeállítások nem vonatkoznak rá"
 
 #. English: none
 msgid "lo_value_none"
@@ -6134,6 +6174,10 @@ msgstr "Faugus megnyitása"
 msgid "tm_fg_open_it"
 msgstr "Megnyitás"
 
+#. English: Open {launcher}
+msgid "tm_fg_open_launcher"
+msgstr "{launcher} megnyitása"
+
 #. English: Another file…
 msgid "tm_fg_other_file"
 msgstr "Másik fájl…"
@@ -6378,9 +6422,21 @@ msgstr "Ez az"
 msgid "tm_fg_title"
 msgstr "Fedélzetre a Faugusszal"
 
-#. English: {game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone.
+#. English: In the EA app: click {game} under “Installed games” on the left, then “Manage” → “Uninstall”.
+msgid "tm_fg_uninstall_hint_ea"
+msgstr "Az EA appban: bal oldalt az „Installed games” alatt kattints a(z) {game} játékra, majd „Manage” → „Uninstall”."
+
+#. English: In the Epic Games Launcher (it opens on its Library): click ⋯ on {game}, then “Uninstall”.
+msgid "tm_fg_uninstall_hint_epic"
+msgstr "Az Epic Games Launcherben (a Könyvtárán nyílik meg): kattints a(z) {game} kártyáján a ⋯ gombra, majd „Uninstall”."
+
+#. English: {game} is uninstalled in {launcher} itself. Its card goes by itself once the game is gone.
 msgid "tm_fg_uninstall_in_launcher"
-msgstr "A(z) {game} eltávolítása a(z) {launcher} programban történik, ez most megnyílik. A kártya eltűnik, amint a játék lekerült."
+msgstr "A(z) {game} a(z) {launcher} programban távolítható el. A kártyája magától eltűnik, amint a játék lekerült."
+
+#. English: Uninstall in {launcher}
+msgid "tm_fg_uninstall_in_launcher_title"
+msgstr "Eltávolítás: {launcher}"
 
 #. English: WHAT ARE YOU BRINGING?
 msgid "tm_fg_what"

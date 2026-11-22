@@ -2261,6 +2261,10 @@ class TreasureMap(Gtk.Box):
         self.queue: List[str] = []
         self.games_by_uid: Dict[str, OwnedGame] = {}
         self.faugus_pending: Dict[str, OwnedGame] = {}     # being brought aboard Faugus, not written yet
+        # games a store launcher in Faugus downloads by itself (storedl:<kind>:<code>), shown in the dock
+        self.store_dl_games: Dict[str, object] = {}
+        self._store_dl_busy = False
+        GLib.timeout_add_seconds(3, self._poll_store_downloads)
         self.faugus_running: set = set()                   # Faugus games with a program up in their prefix
         self._fg_poll_id: Optional[int] = None
         self._signature = None
@@ -3206,6 +3210,118 @@ class TreasureMap(Gtk.Box):
         self._update_dock()
         self._loading_dock_changed()
 
+    def dock_game(self, uid: str):
+        """What the Loading Dock shows for uid: a map game, one being brought
+        aboard Faugus, or one a store launcher downloads by itself."""
+        return self.games_by_uid.get(uid) or self.faugus_pending.get(uid) or self.store_dl_games.get(uid)
+
+    # games a store launcher downloads by itself (Battle.net...) ------------------------------
+
+    def _poll_store_downloads(self) -> bool:
+        """Every 3 s: what each store launcher in Faugus downloads (read from
+        its own files, off the GTK thread) - shown in the Loading Dock."""
+        from plunderhub.core import store_downloads
+        from plunderhub.core.faugus_add import launcher_kind
+        if self._store_dl_busy:
+            return True
+        launchers = []
+        for g in list(getattr(self.app, "game_index", {}).values()):
+            if getattr(g, "store_platform", None) != "store-launcher" or "/drive_c/" not in (g.exe_path or ""):
+                continue
+            kind = launcher_kind(g.exe_path)
+            if kind in store_downloads._READERS:
+                launchers.append((kind, g.exe_path.split("/drive_c/")[0], (g.title, g.uid)))
+        if not launchers and not any(d.get("store_dl") for d in self.downloads.values()):
+            return True
+        self._store_dl_busy = True
+
+        def work():
+            found = {}
+            for kind, prefix, title in launchers:
+                for d in store_downloads.downloads(kind, prefix):
+                    found[f"storedl:{kind}:{d.code}"] = (d, title)
+            GLib.idle_add(self._apply_store_downloads, found)
+        threading.Thread(target=work, name="plunderhub-store-downloads", daemon=True).start()
+        return True
+
+    def _apply_store_downloads(self, found: Dict) -> bool:
+        from types import SimpleNamespace
+        from plunderhub.core.faugus_store import known
+        self._store_dl_busy = False
+        now = time.time()
+        changed = False
+        for uid, (d, (launcher, launcher_uid)) in found.items():
+            dl = self.downloads.get(uid)
+            if d.finished:
+                if dl is not None:
+                    self._end_store_download(uid, done=True)
+                    changed = True
+                continue
+            if dl is None:
+                dl = {"frac": 0.0, "state": "downloading", "size": d.total, "speed": 0, "rate": 0, "place": 0,
+                      "launcher": launcher, "t0": time.monotonic(), "wall0": now, "store_dl": True,
+                      "launcher_uid": launcher_uid}       # its icon on the card: the launcher's own
+                # its card once its launcher has written it down: the hero picture from there
+                same = (lambda e: os.path.realpath(str(e.get("install_dir") or "")) == os.path.realpath(d.install_dir)) \
+                    if d.install_dir else (lambda e: str(e.get("store_id") or "").lower() == d.code)
+                gid = next((g for g, e in known().items() if e.get("kind") == d.kind and same(e)), None)
+                hero = self.app.hero_path(f"faugus:{gid}") if gid else None
+                if not hero:
+                    # a game installed before (its card gone with it, its picked art kept):
+                    # the picture its card will get back, under the id its entry will have
+                    try:
+                        from plunderhub.core.faugus_add import format_title
+                        hero = self.app.hero_path(f"faugus:{format_title(re.sub(r'[™®©]', '', d.title).strip())}")
+                    except Exception:
+                        hero = None
+                if hero:
+                    dl["hero"] = str(hero)
+                elif d.art:
+                    dl["hero"] = d.art      # the launcher's own picture of it, before its row is drawn
+                dl["final_uid"] = f"faugus:{gid}" if gid else None
+                self.downloads[uid] = dl
+                self.queue.append(uid)
+                self.store_dl_games[uid] = SimpleNamespace(uid=uid, title=d.title)
+                logger.info(f"Loading Dock: {launcher} downloads {d.title} ({d.code})")
+                self._ensure_tick()
+                changed = True
+            paused = d.paused
+            if (dl["state"] == "paused") != paused:
+                changed = True
+            rate = d.rate
+            if rate < 0:
+                # its launcher says no speed (Epic): how much more is on disk since the last look
+                before, then = dl.get("got"), dl.get("seen")
+                rate = max(0.0, (d.done_bytes - before) / (now - then)) if before is not None and then and now > then \
+                    else 0.0
+                rate = rate if not dl.get("rate") else dl["rate"] * 0.4 + rate * 0.6
+            if d.installing:
+                rate = 0.0          # unpacking: nothing coming in, no time left to make up
+            if d.art and not dl.get("hero"):
+                dl["hero"] = d.art  # the launcher's own picture of it (Steam's by name may be an event's)
+            dl.update(frac=d.frac, rate=0 if paused else rate, size=d.total, got=d.done_bytes,
+                      state="paused" if paused else "installing" if d.installing else "downloading", seen=now)
+        for uid in [u for u in self.queue if self.downloads.get(u, {}).get("store_dl") and u not in found]:
+            dl = self.downloads[uid]
+            if now - dl.get("seen", now) > 20:          # its launcher closed, or it stopped asking
+                self._end_store_download(uid, done=dl.get("frac", 0) >= 0.97)
+                changed = True
+        if changed:
+            self._loading_dock_changed()
+        return False
+
+    def _end_store_download(self, uid: str, done: bool):
+        dl = self.downloads.get(uid) or {}
+        game = self.store_dl_games.get(uid)
+        if done and game is not None:
+            self.record_aboard(uid, game.title, dl.get("launcher") or "Faugus", dl.get("size") or 0,
+                               as_uid=dl.get("final_uid") or None)
+            logger.info(f"Loading Dock: {game.title} downloaded by {dl.get('launcher')}")
+        self.downloads.pop(uid, None)
+        self.store_dl_games.pop(uid, None)
+        if uid in self.queue:
+            self.queue.remove(uid)
+
     def aboard(self) -> List[Dict]:
         """The Loading Dock's Aboard list - kept on disk till the player clears it."""
         log = self.__dict__.get("aboard_log")
@@ -3221,19 +3337,26 @@ class TreasureMap(Gtk.Box):
         except OSError as e:
             logger.warning(f"Couldn't save the Aboard list: {e}")
 
-    def record_aboard(self, uid: str, title: str, launcher: str, size: int):
+    def record_aboard(self, uid: str, title: str, launcher: str, size: int, as_uid: Optional[str] = None):
         """A finished install, for the Loading Dock's Aboard list (till
-        cleared): how long it took and how fast it came, the speed graph."""
+        cleared): how long it took and how fast it came, the speed graph.
+        as_uid: the uid the game has from now on (a Faugus install's
+        "faugus:+x" while it went on)."""
         log = self.aboard()
-        log[:] = [e for e in log if e["uid"] != uid]
+        shown = as_uid or uid
+        log[:] = [e for e in log if e["uid"] != shown]
         dl = self.downloads.get(uid) or {}
         now = time.time()
-        entry = {"uid": uid, "title": title, "launcher": launcher, "size": int(size or 0), "at": now}
+        entry = {"uid": shown, "title": title, "launcher": launcher, "size": int(size or 0), "at": now}
         entry.update(rate_stats(dl.get("samples") or []))
         began = dl.get("began")
         if began:
             entry["took"] = int(round(now - began))
-        hero = ((self.__dict__.get("_card_cache") or {}).get(uid) or ({},))[0].get("hero")
+        if dl.get("launcher_uid"):
+            entry["launcher_uid"] = dl["launcher_uid"]
+        hero = ((self.__dict__.get("_card_cache") or {}).get(uid) or ({},))[0].get("hero") or dl.get("hero")
+        if not hero and as_uid:
+            hero = self.app.hero_path(as_uid)
         if hero:
             entry["hero"] = str(hero)
         log.insert(0, entry)
@@ -3547,13 +3670,13 @@ class TreasureMap(Gtk.Box):
         now = time.monotonic()
         changed = False
         for uid in list(self.queue):
-            game = self.games_by_uid.get(uid)
+            game = self.dock_game(uid)
             dl = self.downloads[uid]
             if game is None:
                 self.queue.remove(uid)
                 continue
             self._sample_rate(dl)
-            if dl.get("direct"):
+            if dl.get("direct") or dl.get("store_dl"):
                 continue
             if game.store == "steam":
                 m = hold_data.steam_manifest(game.app_id)
@@ -4069,6 +4192,135 @@ def show_map(app, on: bool):
     app._home_select_nav_row()                     # the sidebar says which page this is
 
 
+UNINSTALL_FOLLOW_SECONDS = 15 * 60
+# files Proton writes into a game's folder while it runs (not the game's own)
+_PROTON_CACHE = re.compile(r"^(vkd3d-proton\.cache(\.write)?|.*\.dxvk-cache|dxvk\.cache|.*\.dxvk_state_cache)$", re.I)
+
+
+def _follow_uninstall(app, owner):
+    """A store launcher removing a game: its card goes as soon as its folder
+    does (the store games are otherwise looked at once a minute - the user
+    reached for F5, 11-22). Looked at every 3 s for a while; answered No,
+    the folder stays and nothing changes."""
+    import os
+    folder = str(owner.get("install_dir") or "")
+    if not folder:
+        return
+    started = time.time()
+
+    def look():
+        if time.time() - started > UNINSTALL_FOLLOW_SECONDS:
+            return False
+        try:
+            left = os.listdir(folder) if os.path.isdir(folder) else []
+        except OSError:
+            left = []
+        if any(n not in ("uplay_download",) and not _PROTON_CACHE.match(n) for n in left):
+            return True
+        # only what Proton itself wrote there while it ran (vkd3d / DXVK shader caches -
+        # GTA V's folder kept its vkd3d-proton.cache.write, 11-22): cleared with the folder
+        for n in left:
+            if _PROTON_CACHE.match(n):
+                try:
+                    os.remove(os.path.join(folder, n))
+                except OSError:
+                    pass
+        try:
+            os.rmdir(folder)
+        except OSError:
+            pass
+        logger.info(f"Store launcher game removed ({os.path.basename(folder.rstrip('/'))}): its card goes")
+        app._sync_store_games()
+        return False
+    GLib.timeout_add_seconds(3, look)
+
+
+def _own_uninstaller(app, launcher, owner, game_id: str = "") -> bool:
+    """A store launcher's game: its own uninstaller (the one its installer
+    put in the prefix's Windows Uninstall list - Blizzard's, EA's
+    Cleanup.exe...) asks and removes it, run inside the open launcher (a
+    closed one is started first: Battle.net given time to sign in, others
+    a few seconds). False when it has none: the launcher opens instead."""
+    from pathlib import Path
+    from plunderhub.core import battlenet_launch as bl
+    from plunderhub.core.faugus_store import windows_uninstaller
+    install_dir = str(owner.get("install_dir") or "")
+    if "/drive_c/" not in install_dir:
+        return False
+    prefix = install_dir.split("/drive_c/")[0]
+    battle = owner.get("kind") == "battle"
+    command = windows_uninstaller(Path(prefix), install_dir)
+    if command is None and battle:
+        command = bl.uninstaller(prefix, str(owner.get("store_id") or ""))
+    if command is None:
+        return False
+    if bl.launcher_umu(prefix, None) is not None:
+        return bl.start_uninstaller(prefix, command)
+    from plunderhub.core import gog_direct
+    alone = gog_direct.uninstall_command(game_id, command) if game_id else None
+    if alone:
+        # a GOG game with Galaxy closed: its Inno uninstaller needs no Galaxy (~24 s to start)
+        from plunderhub.core.utils import run
+        try:
+            proc = run(alone, None, None)
+            logger.info(f"Store launcher game: {game_id}'s uninstaller started on its own (GOG Galaxy closed)")
+
+            def after():
+                # done (or answered No): the games read again - its card goes (user: needed F5)
+                proc.wait()
+                GLib.idle_add(lambda: app._schedule_debounced_reload() and False)
+            threading.Thread(target=after, name="plunderhub-gog-uninstall", daemon=True).start()
+            return True
+        except Exception as e:
+            logger.warning(f"Couldn't start {game_id}'s uninstaller on its own: {e}")
+    started = time.time()
+    app.launch(launcher.launch_cmd, launcher.title, launcher.env, launcher.uid, launcher.install_dir)
+    seen = {}
+
+    def wait():
+        if time.time() - started > bl.GIVE_UP_SECONDS:
+            return False
+        if bl.launcher_umu(prefix, None) is None:
+            return True
+        if battle:
+            if not bl.signed_in_since(prefix, started):
+                return True
+        elif time.time() - seen.setdefault("at", time.time()) < 8:
+            return True         # the launcher a moment to come up (its uninstall bookkeeping)
+        GLib.timeout_add_seconds(int(bl.SETTLE_SECONDS) + 1, lambda: bl.start_uninstaller(prefix, command) and False)
+        return False
+    GLib.timeout_add_seconds(1, wait)
+    return True
+
+
+def _open_launcher_library(app, launcher, owner):
+    """The launcher, on the page its games are uninstalled from where it
+    can be asked to (Epic: its Library) - started first when closed, and
+    switched there once it has shown its first page."""
+    from plunderhub.core import battlenet_launch as bl
+    kind = str(owner.get("kind") or "")
+    install_dir = str(owner.get("install_dir") or "")
+    prefix = install_dir.split("/drive_c/")[0] if "/drive_c/" in install_dir else ""
+    exe = str(getattr(launcher, "exe_path", "") or "")
+    if not prefix or not exe or kind not in bl.LIBRARY_PAGE:
+        app.launch(launcher.launch_cmd, launcher.title, launcher.env, launcher.uid, launcher.install_dir)
+        return
+    if bl.launcher_umu(prefix, None) is not None:
+        bl.open_library(prefix, kind, exe)
+        return
+    started = time.time()
+    app.launch(launcher.launch_cmd, launcher.title, launcher.env, launcher.uid, launcher.install_dir)
+
+    def wait():
+        if time.time() - started > 120:
+            return False
+        if bl.launcher_umu(prefix, None) is None or not bl.library_ready_since(prefix, kind, started):
+            return True
+        GLib.timeout_add_seconds(2, lambda: bl.open_library(prefix, kind, exe) and False)
+        return False
+    GLib.timeout_add_seconds(1, wait)
+
+
 def _uninstall_from_faugus(app, game):
     """Asked first; the prefix goes too unless it's unticked (a store
     launcher's games live in it) or another Faugus entry uses it. A running
@@ -4084,10 +4336,25 @@ def _uninstall_from_faugus(app, game):
     if owner:
         # its launcher's own job: the launcher opens, the card goes when the game does
         launcher = app.game_index.get(f"faugus:{owner.get('launcher')}")
+        if launcher is not None and _own_uninstaller(app, launcher, owner, gid):
+            _follow_uninstall(app, owner)
+            return
         if launcher is not None:
-            app._show_info_dialog(_("tm_fg_uninstall_in_launcher").format(game=game.title, launcher=launcher.title),
-                                  Gtk.MessageType.INFO)
-            app.launch(launcher.launch_cmd, launcher.title, launcher.env, launcher.uid, launcher.install_dir)
+            text = _("tm_fg_uninstall_in_launcher").format(game=game.title, launcher=launcher.title)
+            # where its Uninstall is, for a launcher that can't be asked to open it itself
+            # (11-22 EA app: its links only launch, open the library or the store)
+            hint_key = f"tm_fg_uninstall_hint_{owner.get('kind')}"
+            if _(hint_key) != hint_key:
+                text += "\n\n" + _(hint_key).format(game=game.title)
+            answer = app._card_dialog(
+                _("tm_fg_uninstall_in_launcher_title").format(launcher=launcher.title),
+                text,
+                [(_("dialog_cancel"), Gtk.ResponseType.CANCEL, "ghost"),
+                 (_("tm_fg_open_launcher").format(launcher=launcher.title), Gtk.ResponseType.OK, "accent")],
+                tone="info", art=app._new_game_art(game))
+            if answer == Gtk.ResponseType.OK:
+                _open_launcher_library(app, launcher, owner)
+                _follow_uninstall(app, owner)       # its card goes once the launcher has removed it
         return
     extra = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     tile = how = None

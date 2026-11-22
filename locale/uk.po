@@ -154,6 +154,10 @@ msgstr "Анімовані обкладинки відтворюються у с
 msgid "animations_paused_short_game_running"
 msgstr "триває гра"
 
+#. English: a launcher is running
+msgid "animations_paused_short_launcher_running"
+msgstr "працює лаунчер"
+
 #. English: window out of focus
 msgid "animations_paused_short_window_inactive"
 msgstr "вікно не у фокусі"
@@ -2506,6 +2510,30 @@ msgstr "Його лаунчер відкрито – чекаємо запуск
 msgid "launcher_open"
 msgstr "Відкрити"
 
+#. English: {launcher} is already running in the background – bringing its window up…
+msgid "launcher_stage_background"
+msgstr "{launcher} вже працює у фоні – викликаю його вікно…"
+
+#. English: {launcher} is working in the background (downloading) – open it from its tray icon.
+msgid "launcher_stage_busy"
+msgstr "{launcher} працює у фоні (завантажує) – відкрийте його через значок у треї."
+
+#. English: Under Wine it waits about 10 s for its background service.
+msgid "launcher_stage_hint_gog"
+msgstr "Під Wine він близько 10 с чекає на свою фонову службу."
+
+#. English: {launcher} is starting – its window comes up in a moment.
+msgid "launcher_stage_loading"
+msgstr "{launcher} запускається – вікно скоро з’явиться."
+
+#. English: Getting Proton ready…
+msgid "launcher_stage_proton"
+msgstr "Підготовка Proton…"
+
+#. English: {launcher} runs in the background with no window – restarting it…
+msgid "launcher_stage_restarting"
+msgstr "{launcher} працює у фоні без вікна – перезапускаю…"
+
 #. English: Steam is reserving disk space
 msgid "ld_act_allocating"
 msgstr "Steam резервує місце на диску"
@@ -2970,6 +2998,10 @@ msgstr "Деякі ігри (Paradox, Ubisoft…) тоді запускають�
 msgid "lo_launcher_still_running"
 msgstr "{launcher} не закрився."
 
+#. English: Not available
+msgid "lo_locked_pill"
+msgstr "Недоступно"
+
 #. English: MangoHud
 msgid "lo_mangohud"
 msgstr "MangoHud"
@@ -3165,6 +3197,14 @@ msgstr "{tool} не встановлено - встановіть його на 
 #. English: This launcher can't store this setting
 msgid "lo_unsupported"
 msgstr "Цей лаунчер не може зберегти цей параметр"
+
+#. English: Not available: the game starts through its launcher, so this would reach the launcher (or break its window), not the game
+msgid "lo_unsupported_launcher_game"
+msgstr "Недоступно: гра запускається через свій лаунчер, тож це потрапило б до лаунчера (або зламало б його вікно), а не до гри"
+
+#. English: Not available for a store's launcher - game settings don't apply to it
+msgid "lo_unsupported_store_launcher"
+msgstr "Недоступно для лаунчера магазину - налаштування ігор до нього не застосовуються"
 
 #. English: none
 msgid "lo_value_none"
@@ -6134,6 +6174,10 @@ msgstr "Відкрити Faugus"
 msgid "tm_fg_open_it"
 msgstr "Відкрити"
 
+#. English: Open {launcher}
+msgid "tm_fg_open_launcher"
+msgstr "Відкрити {launcher}"
+
 #. English: Another file…
 msgid "tm_fg_other_file"
 msgstr "Інший файл…"
@@ -6378,9 +6422,21 @@ msgstr "Цей"
 msgid "tm_fg_title"
 msgstr "Взяти на борт через Faugus"
 
-#. English: {game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone.
+#. English: In the EA app: click {game} under “Installed games” on the left, then “Manage” → “Uninstall”.
+msgid "tm_fg_uninstall_hint_ea"
+msgstr "В EA app: ліворуч у «Installed games» натисніть {game}, потім «Manage» → «Uninstall»."
+
+#. English: In the Epic Games Launcher (it opens on its Library): click ⋯ on {game}, then “Uninstall”.
+msgid "tm_fg_uninstall_hint_epic"
+msgstr "В Epic Games Launcher (він відкриється на Бібліотеці): натисніть ⋯ біля {game}, потім «Uninstall»."
+
+#. English: {game} is uninstalled in {launcher} itself. Its card goes by itself once the game is gone.
 msgid "tm_fg_uninstall_in_launcher"
-msgstr "{game} видаляється в {launcher}, він зараз відкриється. Картка зникне разом із грою."
+msgstr "{game} видаляється в самому {launcher}. Картка зникне сама, коли гри не стане."
+
+#. English: Uninstall in {launcher}
+msgid "tm_fg_uninstall_in_launcher_title"
+msgstr "Видалення в {launcher}"
 
 #. English: WHAT ARE YOU BRINGING?
 msgid "tm_fg_what"

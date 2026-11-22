@@ -500,6 +500,31 @@ def launcher_cover(kind: str, cache: Path, widget: Gtk.Widget) -> Optional[str]:
         return None
 
 
+def launcher_banner(kind: str, cache: Path, widget: Gtk.Widget) -> Optional[str]:
+    """A store launcher's wide picture while it's being installed (the
+    Loading Dock card's hero): its colour, pattern and monogram on the
+    right, as the banner written for it once it's in place."""
+    out = cache / f"faugus-banner-{kind}.png"
+    if out.exists():
+        return str(out)
+    try:
+        w, h = 1920, 620
+        surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+        cr = cairo.Context(surf)
+        s, cx, cy = h * 0.46, w * 0.78, h * 0.5
+        draw_launcher_backdrop(cr, w, h, cx, cy, kind)
+        cr.arc(cx, cy, s / 2 + 12, 0, 2 * math.pi)
+        cr.set_source_rgba(1, 1, 1, 0.16)
+        cr.fill()
+        draw_monogram(cr, widget, cx - s / 2, cy - s / 2, s, kind)
+        cache.mkdir(parents=True, exist_ok=True)
+        surf.write_to_png(str(out))
+        return str(out)
+    except Exception as e:
+        logger.debug(f"Faugus: launcher banner for {kind} not drawn: {e}")
+        return None
+
+
 def _draw_launcher_mark(cr, widget, cx: float, cy: float, s: float, kind: str, icon: Path, ring: float):
     """The launcher's own logo, large with a soft shadow - or, without
     one, its monogram in a ring."""
@@ -1597,9 +1622,14 @@ def start(view, site: fa.FaugusSite, req: fa.AddRequest):
     dl = {"frac": 0.0, "state": "downloading", "size": 0, "speed": 0, "rate": 0, "place": 0,
           "launcher": "Faugus", "t0": time.monotonic(), "wall0": time.time(), "last": None, "bytes": 0,
           "direct": True, "got": 0, "phase": "prepare"}
+    if req.kind in fa.LAUNCHERS:
+        banner = launcher_banner(req.kind, Path(view.opts["cache"]), view)
+        if banner:
+            dl["hero"] = banner        # the Loading Dock card's picture, its Aboard card's too
     view.downloads[uid] = dl
     view.queue.append(uid)
     view.reload(keep_scroll=True)
+    view._ensure_tick()          # its speed sampled every second (with no other install going it never was)
     cache = Path(view.opts["cache"]) / "faugus-add"
     cache.mkdir(parents=True, exist_ok=True)
 
@@ -1619,6 +1649,7 @@ def start(view, site: fa.FaugusSite, req: fa.AddRequest):
         GLib.idle_add(put)
     job = fa.AddJob(site, req, cache, changed)
     dl["job"] = job
+    _follow_speed(dl, job, req)
     logger.info(f"Faugus add: {req.kind} '{req.title}' -> {req.prefix or req.file}")
 
     def run():
@@ -1632,6 +1663,33 @@ def start(view, site: fa.FaugusSite, req: fa.AddRequest):
         view._loading_dock_changed()
     view._own_submit(uid, dl, run)
     view._update_dock()
+
+
+def _follow_speed(dl, job, req):
+    """The install's speed, for the Loading Dock's numbers and graph (the
+    view samples dl["rate"] every second): the installer PlunderHub
+    downloads, then what the prefix's programs write (the launcher's own
+    download of itself, Wine's first set-up)."""
+    from plunderhub.core.prefix_io import PrefixWriteRate
+    prefix = str(req.prefix or "")
+    meter = PrefixWriteRate(prefix) if prefix else None
+    last = {"got": 0, "at": time.monotonic()}
+
+    def tick():
+        if dl.get("finished") or job.state != "working":
+            dl["rate"] = 0
+            return False
+        now = time.monotonic()
+        if job.phase == "download":
+            got = job.downloaded
+            rate = (got - last["got"]) / max(0.001, now - last["at"])
+            last["got"] = got
+        else:
+            rate = meter.poll() if meter is not None and os.path.isdir(prefix) else 0.0
+        last["at"] = now
+        dl["rate"] = rate if not dl["rate"] else dl["rate"] * 0.5 + rate * 0.5
+        return True
+    GLib.timeout_add(1000, tick)
 
 
 def _drop(view, uid):
@@ -1709,8 +1767,10 @@ def _write_when_closed(view, site, req, exe, uid, dl, asked: bool):
                          [(app._("dialog_ok"), Gtk.ResponseType.CLOSE, "ghost")],
                          icon_name="circle-alert-symbolic", transient_for=view.get_toplevel())
         return False
+    # recorded before it's dropped (its speed samples go with it), under the uid its
+    # card has from now on (the hero picture is looked up by it)
+    view.record_aboard(uid, req.title, "Faugus", 0, as_uid=f"faugus:{gid}")
     _drop(view, uid)
-    view.record_aboard(uid, req.title, "Faugus", 0)
     view._toast = app._("tm_toast_aboard").format(game=req.title)
     view._toast_sub = app._("tm_toast_aboard_sub")
     view._toast_until = time.monotonic() + 5

@@ -86,7 +86,7 @@ def recommended(opts: LaunchOptions, ctx: Context, backend: LaunchOptionsBackend
     gamescope = new.gamescope.enabled
     if not missing.get("gamemode"):
         new.gamemode = True     # gamemoderun missing would stop the game starting
-    if ctx.refresh and not gamescope and not new.fps_limit:     # a cap already set stays
+    if ctx.refresh and not gamescope and not new.fps_limit and "fps_check" not in unsupported:  # a set cap stays
         new.fps_limit = str(ctx.refresh)
     new.esync = new.fsync = True
     if ctx.wayland and not gamescope and "wayland" not in unsupported:

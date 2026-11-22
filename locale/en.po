@@ -120,6 +120,9 @@ msgstr "Play animated covers at their own pace. Off: only their first frame show
 msgid "animations_paused_short_game_running"
 msgstr "a game is running"
 
+msgid "animations_paused_short_launcher_running"
+msgstr "a launcher is running"
+
 msgid "animations_paused_short_window_inactive"
 msgstr "window out of focus"
 
@@ -1884,6 +1887,24 @@ msgstr "Its launcher is open – waiting for the game to start"
 msgid "launcher_open"
 msgstr "Open"
 
+msgid "launcher_stage_background"
+msgstr "{launcher} is already running in the background – bringing its window up…"
+
+msgid "launcher_stage_busy"
+msgstr "{launcher} is working in the background (downloading) – open it from its tray icon."
+
+msgid "launcher_stage_hint_gog"
+msgstr "Under Wine it waits about 10 s for its background service."
+
+msgid "launcher_stage_loading"
+msgstr "{launcher} is starting – its window comes up in a moment."
+
+msgid "launcher_stage_proton"
+msgstr "Getting Proton ready…"
+
+msgid "launcher_stage_restarting"
+msgstr "{launcher} runs in the background with no window – restarting it…"
+
 msgid "ld_act_allocating"
 msgstr "Steam is reserving disk space"
 
@@ -2232,6 +2253,9 @@ msgstr "Some games (Paradox, Ubisoft…) then start straight away"
 msgid "lo_launcher_still_running"
 msgstr "{launcher} didn't close."
 
+msgid "lo_locked_pill"
+msgstr "Not available"
+
 msgid "lo_mangohud"
 msgstr "MangoHud"
 
@@ -2378,6 +2402,12 @@ msgstr "{tool} isn't installed - install it in Shipwright"
 
 msgid "lo_unsupported"
 msgstr "This launcher can't store this setting"
+
+msgid "lo_unsupported_launcher_game"
+msgstr "Not available: the game starts through its launcher, so this would reach the launcher (or break its window), not the game"
+
+msgid "lo_unsupported_store_launcher"
+msgstr "Not available for a store's launcher - game settings don't apply to it"
 
 msgid "lo_value_none"
 msgstr "none"
@@ -4605,6 +4635,9 @@ msgstr "Open Faugus"
 msgid "tm_fg_open_it"
 msgstr "Open it"
 
+msgid "tm_fg_open_launcher"
+msgstr "Open {launcher}"
+
 msgid "tm_fg_other_file"
 msgstr "Another file…"
 
@@ -4788,8 +4821,17 @@ msgstr "That's it"
 msgid "tm_fg_title"
 msgstr "Bring it aboard with Faugus"
 
+msgid "tm_fg_uninstall_hint_ea"
+msgstr "In the EA app: click {game} under “Installed games” on the left, then “Manage” → “Uninstall”."
+
+msgid "tm_fg_uninstall_hint_epic"
+msgstr "In the Epic Games Launcher (it opens on its Library): click ⋯ on {game}, then “Uninstall”."
+
 msgid "tm_fg_uninstall_in_launcher"
-msgstr "{game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone."
+msgstr "{game} is uninstalled in {launcher} itself. Its card goes by itself once the game is gone."
+
+msgid "tm_fg_uninstall_in_launcher_title"
+msgstr "Uninstall in {launcher}"
 
 msgid "tm_fg_what"
 msgstr "WHAT ARE YOU BRINGING?"

@@ -538,6 +538,7 @@ class AddJob:
         self.on_change = on_change
         self.state = "working"        # working, pick (choose the .exe), ready (to write), failed, cancelled
         self.phase = "prepare"        # prepare, download, runtime, install, signin, close_it, find
+        self.downloaded = 0           # bytes of the installer PlunderHub downloaded
         self.frac = 0.0
         self.error = ""
         self.exe: Optional[str] = None
@@ -681,6 +682,7 @@ class AddJob:
                     break
                 out.write(chunk)
                 got += len(chunk)
+                self.downloaded = got           # the Loading Dock's speed while it's ours
                 now = time.monotonic()
                 if total and now - last > 0.15:
                     last = now

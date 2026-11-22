@@ -33,6 +33,7 @@ import os
 import re
 import shlex
 import sqlite3
+import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -187,6 +188,42 @@ def _epic(prefix: Path) -> List[StoreGame]:
     return games
 
 
+def windows_uninstaller(prefix: Path, install_dir: str) -> Optional[List[str]]:
+    """The game's own uninstaller as its installer wrote it into the
+    prefix's Windows "Uninstall" list (the entry whose InstallLocation is
+    the game's folder): the host path of the program and its arguments;
+    None when there's none. Blizzard's (Blizzard Uninstaller --uid=...),
+    EA's (Cleanup.exe uninstall_game: the EA app's own Uninstall did
+    nothing on Wine - "Uninstall path ... is empty", it looks in the other
+    registry view), Inno / GOG's unins000.exe..."""
+    want = os.path.realpath(install_dir).rstrip("/").lower()
+    if not want:
+        return None
+    # the machine's list, then the user's (Wargaming writes its games' there - HKCU, 11-22)
+    for reg, under in ((_system_reg(prefix), "Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
+                       (_system_reg(prefix), "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
+                       (prefix / "user.reg", "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall")):
+        if not reg.is_file():
+            continue
+        try:
+            keys = read_reg(reg, under)
+        except OSError:
+            continue
+        for values in keys.values():
+            location = host_path(prefix, values.get("InstallLocation") or "")
+            line = values.get("UninstallString") or ""
+            if location is None or not line or os.path.realpath(location).rstrip("/").lower() != want:
+                continue
+            try:      # a Windows command line: its backslashes aren't escapes
+                words = shlex.split(line.replace("\\", "/"))
+            except ValueError:
+                continue
+            exe = host_path(prefix, words[0]) if words else None
+            if exe is not None and exe.is_file():
+                return [str(exe)] + words[1:]
+    return None
+
+
 def _system_reg(prefix: Path) -> Path:
     return prefix / "system.reg"
 
@@ -202,13 +239,127 @@ def _gog(prefix: Path) -> List[StoreGame]:
     return games
 
 
+def downloading_ubisoft(folder: Path, product: str) -> bool:
+    """Ubisoft Connect is still downloading this game: its download's
+    state (a byte a slice) is in the game's uplay_download/<product>."""
+    try:
+        return any((folder / "uplay_download" / str(product)).glob("*.state"))
+    except OSError:
+        return False
+
+
 def _ubisoft(prefix: Path) -> List[StoreGame]:
     games = []
     for key, values in read_reg(_system_reg(prefix), r"Software\Wow6432Node\Ubisoft\Launcher\Installs").items():
         folder = _existing(prefix, values.get("InstallDir"))
+        if folder is not None and downloading_ubisoft(folder, key):
+            continue        # its Installs key is written as its download starts: a card once it's done
         if folder is not None and "\\" not in key:
             games.append(StoreGame(key, folder.name, str(folder), (f"uplay://launch/{key}/0",)))
     return games
+
+
+# Rockstar's service logs every piece it writes into a game's folder
+# (ProgramData/Rockstar Games/Launcher/service_log.txt, local time):
+#   [2026-11-22 15:41:35.404] [   996] [  3F4] [ 510] Wrote 10485760 bytes (C:\Program Files\...\x64c.rpf)
+# and makes the game's files full size at once (sparse).
+_ROCKSTAR_WROTE = re.compile(r"^\[(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)[.\d]*\].*? Wrote \d+ bytes \((.+)\)\s*$")
+ROCKSTAR_WRITING = 120.0        # written into this long ago: still downloading (or just paused)
+ROCKSTAR_DONE_SHARE = 0.9       # less than this much of its files really there: not done
+
+
+def rockstar_last_write(prefix: Path, folder: Path) -> Optional[float]:
+    """When Rockstar's service last wrote into this game's folder (from
+    its log's tail), None when its tail doesn't say."""
+    log = _follow(prefix, "drive_c/ProgramData/Rockstar Games/Launcher".split("/")) / "service_log.txt"
+    try:
+        with open(log, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - 256 * 1024))
+            lines = f.read().decode("utf-8", "replace").splitlines()
+    except OSError:
+        return None
+    want = os.path.realpath(folder).rstrip("/").lower() + "/"
+    for line in reversed(lines):
+        m = _ROCKSTAR_WROTE.match(line.strip())
+        if not m:
+            continue
+        host = host_path(prefix, m.group(2))
+        if host is None or not (os.path.realpath(host).lower() + "/").startswith(want):
+            continue
+        try:
+            return time.mktime(time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S"))
+        except ValueError:
+            return None
+    return None
+
+
+def disk_share(folder: Path):
+    """(bytes really on disk, length) of a folder's files - a launcher that
+    makes its files full size at once has the first far below the second
+    till it's done."""
+    done = total = 0
+    stack = [str(folder)]
+    while stack:
+        try:
+            with os.scandir(stack.pop()) as it:
+                for entry in it:
+                    try:
+                        if entry.is_dir(follow_symlinks=False):
+                            stack.append(entry.path)
+                        elif entry.is_file(follow_symlinks=False):
+                            st = entry.stat(follow_symlinks=False)
+                            total += st.st_size
+                            done += min(st.st_size, st.st_blocks * 512)
+                    except OSError:
+                        continue
+        except OSError:
+            continue
+    return done, total
+
+
+_ROCKSTAR_INSTALLED = re.compile(r"^\[(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)[.\d]*\].*\[titlemanager\] Installed \S+ "
+                                 r"version in registry updated")
+
+
+def rockstar_installed_at(prefix: Path) -> Optional[float]:
+    """When the launcher last wrote down a finished install ("Installed
+    gta5_gen9 version in registry updated: -> 1.0.1158.16"), from its log's
+    tail; None when it doesn't say."""
+    log = _follow(prefix, "drive_c/users/steamuser/Documents/Rockstar Games/Launcher".split("/")) / "launcher.log"
+    try:
+        with open(log, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - 512 * 1024))
+            lines = f.read().decode("utf-8", "replace").splitlines()
+    except OSError:
+        return None
+    for line in reversed(lines):
+        m = _ROCKSTAR_INSTALLED.match(line.strip())
+        if m:
+            try:
+                return time.mktime(time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S"))
+            except ValueError:
+                return None
+    return None
+
+
+def rockstar_downloading(prefix: Path, folder: Path, version: str = "") -> bool:
+    """Rockstar is still downloading (or has paused) this game: its key has
+    no Version yet (written when the install is done) and its log hasn't
+    said it's installed since it last wrote into the folder. (Wine writes
+    its registry file down a little later: the log says it first.) A key
+    with no Version from an install that's long done: most of its files there."""
+    if version:
+        return False        # installed (an update of it keeps its card)
+    last = rockstar_last_write(prefix, folder)
+    installed = rockstar_installed_at(prefix)
+    if last is not None and installed is not None and installed >= last - 1:
+        return False
+    if last is not None and time.time() - last < ROCKSTAR_WRITING:
+        return True
+    done, total = disk_share(folder)
+    return bool(total) and done / total < ROCKSTAR_DONE_SHARE
 
 
 def _rockstar(prefix: Path) -> List[StoreGame]:
@@ -217,9 +368,16 @@ def _rockstar(prefix: Path) -> List[StoreGame]:
         if "\\" in key or key.lower() in ("launcher", "rockstar games social club", "social club"):
             continue
         folder = _existing(prefix, values.get("InstallFolder"))
+        if folder is not None and rockstar_downloading(prefix, folder, str(values.get("Version") or "")):
+            continue        # its key is written as its download starts: a card once it's done
         if folder is not None:
-            games.append(StoreGame(key, key, str(folder), ("-launchTitleInFolder", values.get("InstallFolder"))))
+            # its folder has the game's full name ("GTAV Enhanced" -> "Grand Theft Auto V Enhanced")
+            games.append(StoreGame(key, folder.name or key, str(folder),
+                                   ("-launchTitleInFolder", values.get("InstallFolder"))))
     return games
+
+
+_EA_LINK = "origin2://game/launch?offerIds="
 
 
 def _ea(prefix: Path) -> List[StoreGame]:
@@ -231,8 +389,11 @@ def _ea(prefix: Path) -> List[StoreGame]:
         title = titles.get("en_us") or next((t for t in titles.values() if t), folder.name)
         ids = [(c.text or "").strip() for c in root.iter() if c.tag == "contentID" and (c.text or "").strip()]
         if ids:
+            # all of them: the first is often not the edition owned - the EA app then
+            # said EntitlementNotFound, reloaded its list and found it only ~7 s later
+            # (11-22 NFS Most Wanted: 71628 given, 71530 owned)
             games.append(StoreGame(ids[0], title, str(folder),
-                                   (f"origin2://game/launch?offerIds={ids[0]}&autoDownload=1",)))
+                                   (f"{_EA_LINK}{','.join(ids)}&autoDownload=1",)))
     return games
 
 
@@ -275,6 +436,38 @@ def _amazon(prefix: Path) -> List[StoreGame]:
     return games
 
 
+def wargaming_exe(folder: Path) -> Optional[Path]:
+    """The program Game Center itself starts for a game it installed (its
+    game_metadata/metadata.xml <executables>: the 64-bit one first -
+    win64\\WorldOfTanks.exe, run with no arguments; the game gets its
+    sign-in from the running Game Center). None when there's none."""
+    try:
+        root = ET.parse(folder / "game_metadata" / "metadata.xml").getroot()
+    except (OSError, ET.ParseError):
+        return None
+    nodes = list(root.iter("executable"))
+    nodes.sort(key=lambda n: n.get("arch") != "x64")
+    for node in nodes:
+        rel = (node.text or "").strip().replace("\\", "/")
+        if rel:
+            exe = _follow(folder, [p for p in rel.split("/") if p])
+            if exe.is_file():
+                return exe
+    return None
+
+
+def wargaming_installed(folder: Path) -> bool:
+    """Game Center has finished installing this game: its game_info.xml
+    says <installed>true</installed> (false from the download's start,
+    app_type.xml "incomplete" meanwhile). No game_info.xml: taken as there."""
+    info = folder / "game_info.xml"
+    try:
+        node = ET.parse(info).getroot().find(".//game/installed")
+    except (OSError, ET.ParseError):
+        return not info.exists()
+    return node is None or (node.text or "").strip().lower() != "false"
+
+
 def _wargaming(prefix: Path) -> List[StoreGame]:
     prefs = _follow(prefix, "drive_c/ProgramData/Wargaming.net/GameCenter/preferences.xml".split("/"))
     if not prefs.is_file():
@@ -283,6 +476,8 @@ def _wargaming(prefix: Path) -> List[StoreGame]:
     for node in ET.parse(prefs).getroot().iterfind(".//games_manager/games/game"):
         path = (node.findtext("working_dir") or "").strip()
         folder = _existing(prefix, path)
+        if folder is not None and not wargaming_installed(folder):
+            continue        # in its list as its download starts: a card once it's installed
         if folder is not None:
             # no launch switch of Game Center is documented: it opens, Play is there
             title = re.sub(r"[_ ](EU|NA|RU|ASIA|CN|KR|CT)$", "", folder.name, flags=re.I).replace("_", " ")
@@ -368,6 +563,15 @@ def _sync(site) -> bool:
         for game in found:
             gid = have.get((lid, game.store_id))
             if gid is not None:
+                # an EA game added with the old one-id link gets the new one (not one changed by hand)
+                entry = next((g for g in entries if g.get("gameid") == gid), None)
+                new_args = shlex.join(game.launch_args)
+                old_args = str(entry.get("game_arguments") or "") if entry else ""
+                if kind == "ea" and entry is not None and old_args != new_args \
+                        and re.fullmatch(r"'?" + re.escape(_EA_LINK) + r"[^,\s']+&autoDownload=1'?", old_args):
+                    entry["game_arguments"] = new_args
+                    added = True
+                    logger.info(f"Faugus store games: {gid} gets every content id in its EA link")
                 continue
             taken = {str(g.get("gameid")) for g in entries}
             title = re.sub(r"[™®©]", "", game.title).strip()

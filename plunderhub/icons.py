@@ -134,6 +134,7 @@ ICON_MAP: Dict[str, Tuple[str, str]] = {
     "arrow-up-to-line-symbolic": ("arrow-up-to-line.svg", "stroke"),
     "circle-question-symbolic": ("circle-question-mark.svg", "stroke"),
     "clock-symbolic": ("clock.svg", "stroke"),
+    "lock-symbolic": ("lock.svg", "stroke"),
     "type-symbolic": ("type.svg", "stroke"),
     "droplets-symbolic": ("bubbles.svg", "stroke"),        # PlunderHub's own: the background bubbles
     "pause-symbolic": ("pause.svg", "stroke"),

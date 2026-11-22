@@ -1473,6 +1473,16 @@ button.bg-path, button.bg-path:hover, button.bg-path:active, button.bg-path:focu
 .pdb-tier-borked {{ color: #ff4d4d; }}
 .pdb-tier-pending {{ color: {fg_dim}; }}
 .gp-note {{ color: {fg_dim}; }}
+/* a setting this launcher / game can't take: dimmed, with a lock pill */
+.gp-setting-locked-text {{ opacity: 0.5; }}
+.gp-locked-pill {{
+    background-color: alpha({fg_dim}, 0.16);
+    color: {fg_dim};
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 75%;
+    font-weight: 700;
+}}
 /* The image picker (image_picker.ImageFilePicker): a file dragged over
    it lights the whole window's edge. */
 .up-root {{ border: 2px solid transparent; border-radius: 12px; }}

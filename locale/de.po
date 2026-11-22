@@ -154,6 +154,10 @@ msgstr "Animierte Cover in ihrem eigenen Tempo abspielen. Aus: Nur das erste Bil
 msgid "animations_paused_short_game_running"
 msgstr "ein Spiel läuft"
 
+#. English: a launcher is running
+msgid "animations_paused_short_launcher_running"
+msgstr "ein Launcher läuft"
+
 #. English: window out of focus
 msgid "animations_paused_short_window_inactive"
 msgstr "Fenster nicht im Fokus"
@@ -2506,6 +2510,30 @@ msgstr "Der Launcher ist offen – wartet, bis das Spiel startet"
 msgid "launcher_open"
 msgstr "Öffnen"
 
+#. English: {launcher} is already running in the background – bringing its window up…
+msgid "launcher_stage_background"
+msgstr "{launcher} läuft schon im Hintergrund – sein Fenster wird geholt…"
+
+#. English: {launcher} is working in the background (downloading) – open it from its tray icon.
+msgid "launcher_stage_busy"
+msgstr "{launcher} arbeitet im Hintergrund (lädt herunter) – über sein Symbol in der Taskleiste öffnen."
+
+#. English: Under Wine it waits about 10 s for its background service.
+msgid "launcher_stage_hint_gog"
+msgstr "Unter Wine wartet er etwa 10 s auf seinen Hintergrunddienst."
+
+#. English: {launcher} is starting – its window comes up in a moment.
+msgid "launcher_stage_loading"
+msgstr "{launcher} startet – sein Fenster kommt gleich."
+
+#. English: Getting Proton ready…
+msgid "launcher_stage_proton"
+msgstr "Proton wird vorbereitet…"
+
+#. English: {launcher} runs in the background with no window – restarting it…
+msgid "launcher_stage_restarting"
+msgstr "{launcher} läuft im Hintergrund ohne Fenster – wird neu gestartet…"
+
 #. English: Steam is reserving disk space
 msgid "ld_act_allocating"
 msgstr "Steam reserviert Speicherplatz"
@@ -2970,6 +2998,10 @@ msgstr "Manche Spiele (Paradox, Ubisoft…) starten dann sofort"
 msgid "lo_launcher_still_running"
 msgstr "{launcher} wurde nicht geschlossen."
 
+#. English: Not available
+msgid "lo_locked_pill"
+msgstr "Nicht verfügbar"
+
 #. English: MangoHud
 msgid "lo_mangohud"
 msgstr "MangoHud"
@@ -3165,6 +3197,14 @@ msgstr "{tool} ist nicht installiert - installiere es in der Werft"
 #. English: This launcher can't store this setting
 msgid "lo_unsupported"
 msgstr "Dieser Launcher kann diese Einstellung nicht speichern"
+
+#. English: Not available: the game starts through its launcher, so this would reach the launcher (or break its window), not the game
+msgid "lo_unsupported_launcher_game"
+msgstr "Nicht verfügbar: Das Spiel startet über seinen Launcher, die Einstellung würde den Launcher erreichen (oder sein Fenster stören), nicht das Spiel"
+
+#. English: Not available for a store's launcher - game settings don't apply to it
+msgid "lo_unsupported_store_launcher"
+msgstr "Nicht verfügbar für den Launcher eines Shops - Spieleinstellungen gelten nicht für ihn"
 
 #. English: none
 msgid "lo_value_none"
@@ -6134,6 +6174,10 @@ msgstr "Faugus öffnen"
 msgid "tm_fg_open_it"
 msgstr "Öffnen"
 
+#. English: Open {launcher}
+msgid "tm_fg_open_launcher"
+msgstr "{launcher} öffnen"
+
 #. English: Another file…
 msgid "tm_fg_other_file"
 msgstr "Andere Datei…"
@@ -6378,9 +6422,21 @@ msgstr "Das ist sie"
 msgid "tm_fg_title"
 msgstr "Mit Faugus an Bord holen"
 
-#. English: {game} is uninstalled in {launcher}, which opens now. Its card goes once the game is gone.
+#. English: In the EA app: click {game} under “Installed games” on the left, then “Manage” → “Uninstall”.
+msgid "tm_fg_uninstall_hint_ea"
+msgstr "In der EA app: links unter „Installed games“ auf {game} klicken, dann „Manage“ → „Uninstall“."
+
+#. English: In the Epic Games Launcher (it opens on its Library): click ⋯ on {game}, then “Uninstall”.
+msgid "tm_fg_uninstall_hint_epic"
+msgstr "Im Epic Games Launcher (er öffnet seine Bibliothek): bei {game} auf ⋯ klicken, dann „Uninstall“."
+
+#. English: {game} is uninstalled in {launcher} itself. Its card goes by itself once the game is gone.
 msgid "tm_fg_uninstall_in_launcher"
-msgstr "{game} wird in {launcher} deinstalliert: Es öffnet sich jetzt. Die Karte verschwindet, sobald das Spiel weg ist."
+msgstr "{game} wird in {launcher} deinstalliert. Die Karte verschwindet von selbst, sobald das Spiel weg ist."
+
+#. English: Uninstall in {launcher}
+msgid "tm_fg_uninstall_in_launcher_title"
+msgstr "In {launcher} deinstallieren"
 
 #. English: WHAT ARE YOU BRINGING?
 msgid "tm_fg_what"

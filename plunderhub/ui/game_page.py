@@ -1516,11 +1516,16 @@ class LaunchOptionsTab(Gtk.Box):
         app._lo_write_widgets(self.ui, self.loaded)
         self._rebuild_env_rows()
         self.unsupported = backend.unsupported(game)
+        # why: a store launcher in Faugus / a game it starts, or the launcher itself can't store it
+        why = self._("lo_unsupported_store_launcher" if game.store_platform == "store-launcher" else
+                     "lo_unsupported_launcher_game" if game.store_platform == "launcher-game" else
+                     "lo_unsupported")
         for key in self.unsupported:
             widget = self.ui.get(key)
             if widget is not None:
                 widget.set_sensitive(False)
-                widget.set_tooltip_text(self._("lo_unsupported"))
+                widget.set_tooltip_text(why)
+                self._mark_locked_row(widget, why)
         self._wire_gamescope_conflicts()
         if "native" in self.ui:
             self.ui["native"].connect("toggled", lambda s: app._lo_apply_native(self.ui, s.get_active()))
@@ -1586,6 +1591,45 @@ class LaunchOptionsTab(Gtk.Box):
             control.set_valign(Gtk.Align.CENTER)
             row.pack_end(control, False, False, 0)
         return row
+
+    def _dialog_parent(self) -> Optional[Gtk.Window]:
+        """The window the tab sits in, for its dialogs: the game page, or
+        Fleet orders (whose stand-in page is no window - 11-20: Recommended
+        there failed with "Expected Gtk.Window")."""
+        top = self.get_toplevel()
+        return top if isinstance(top, Gtk.Window) else None
+
+    def _mark_locked_row(self, widget: Gtk.Widget, why: str):
+        """A setting that can't be switched on here, shown as such: its
+        row's text dimmed and a lock pill after its title (not only a
+        greyed switch, easy to miss)."""
+        row = widget.get_parent()
+        while row is not None and not row.get_style_context().has_class("gp-setting"):
+            row = row.get_parent()
+        # marked on the row itself: an id() of a PyGObject wrapper is reused once
+        # the wrapper is freed - another row then looked marked already
+        if row is None or row.get_style_context().has_class("gp-setting-locked"):
+            return
+        row.get_style_context().add_class("gp-setting-locked")
+        row.set_tooltip_text(why)
+        texts = row.get_children()[0] if row.get_children() else None
+        if not isinstance(texts, Gtk.Box):
+            return
+        top = texts.get_children()[0] if texts.get_children() else None
+        labels = [c for c in texts.get_children() if isinstance(c, Gtk.Label)]
+        if isinstance(top, Gtk.Box):
+            labels += [c for c in top.get_children() if isinstance(c, Gtk.Label)]
+        for label in labels:
+            label.get_style_context().add_class("gp-setting-locked-text")
+        if not isinstance(top, Gtk.Box):
+            return
+        pill = Gtk.Box(spacing=4)
+        pill.get_style_context().add_class("gp-locked-pill")
+        pill.set_valign(Gtk.Align.CENTER)
+        pill.pack_start(_icon("lock-symbolic", 11), False, False, 0)
+        pill.pack_start(Gtk.Label(label=self._("lo_locked_pill")), False, False, 0)
+        pill.show_all()
+        top.pack_start(pill, False, False, 0)
 
     def _section(self, icon_name: str, title: str, rows: List[Gtk.Widget],
                  extra: Optional[Gtk.Widget] = None) -> Gtk.Box:
@@ -1850,7 +1894,7 @@ class LaunchOptionsTab(Gtk.Box):
         after = launch_defaults.recommended(current, app._lo_context(), self.backend, self.game, self.missing)
         found = launch_defaults.changes(current, after)
         if not found:
-            app._show_info_dialog(_("lo_recommended_none"), Gtk.MessageType.INFO, transient_for=self.page)
+            app._show_info_dialog(_("lo_recommended_none"), Gtk.MessageType.INFO, transient_for=self._dialog_parent())
             return
 
         def value(v: str) -> str:
@@ -1861,7 +1905,7 @@ class LaunchOptionsTab(Gtk.Box):
             _("lo_recommended_confirm_text") + "\n\n" + "\n".join(lines) + "\n\n" + _("lo_recommended_save_note"),
             [(_("dialog_cancel"), Gtk.ResponseType.CANCEL, "ghost"),
              (_("lo_recommended_apply"), Gtk.ResponseType.OK, "accent")],
-            tone="question", default=Gtk.ResponseType.OK, transient_for=self.page)
+            tone="question", default=Gtk.ResponseType.OK, transient_for=self._dialog_parent())
         if response != Gtk.ResponseType.OK:
             return
         self.opts = after
@@ -2521,7 +2565,7 @@ class LaunchOptionsTab(Gtk.Box):
         new_opts = self._read()
         if WRAPPER_KEY in self.unsupported and new_opts.wrappers:
             app._show_info_dialog(self._("lo_no_wrappers").format(words=" ".join(new_opts.wrappers)),
-                                  message_type=Gtk.MessageType.ERROR, transient_for=self.page)
+                                  message_type=Gtk.MessageType.ERROR, transient_for=self._dialog_parent())
             return
         if new_opts == self.loaded:
             self.page.response(Gtk.ResponseType.CLOSE)
