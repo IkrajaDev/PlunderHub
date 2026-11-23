@@ -1138,7 +1138,11 @@ class HomeOfferCard(Gtk.Revealer):
         from plunderhub.core import proton_store
         offer = self.data.jobs.offer
         current = proton_store.latest_build("ge")
-        if (offer is None or self.data.jobs.busy() or (current is not None and current.tag == offer.tag)
+        # only a release NEWER than the Latest in place: the offer is found once and can go stale
+        # (11-23: offered 11-13 at start, the user then updated to 11-14 on the Proton page, the card
+        # still offered 11-13 - one click put the older one back)
+        if (offer is None or self.data.jobs.busy()
+                or (current is not None and proton_store._tag_key(current.tag) >= proton_store._tag_key(offer.tag))
                 or offer.tag == self.app.settings.get("pm_offer_later")):
             return None, current
         return offer, current
@@ -1166,7 +1170,8 @@ class HomeOfferCard(Gtk.Revealer):
     def _download(self):
         offer, _current = self._offered()
         if offer is not None:
-            self.data.jobs.install(offer, latest=True)
+            # GitHub is asked again and the newest goes in - never the possibly hours-old offer itself
+            self.data.jobs.update_latest("ge", install_missing=True)
 
 
 # --- the home page's card while a Proton downloads --------------------------------

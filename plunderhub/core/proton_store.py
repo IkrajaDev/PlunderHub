@@ -867,6 +867,10 @@ def latest_outdated(family: str) -> Optional[Release]:
     waiting_tag = (_read_marker(waiting) or {}).get("tag") if waiting.exists() else None
     if current is not None and current.tag == release.tag or waiting_tag == release.tag:
         return None
+    # never "update" to an older one (GitHub's latest flag can lag behind a newer release in place)
+    held = max((_tag_key(t) for t in (current.tag if current else "", waiting_tag or "") if t), default=())
+    if held and held >= _tag_key(release.tag):
+        return None
     return release
 
 

@@ -39,6 +39,7 @@ from plunderhub.ui.proton_jobs import jobs
 
 START_DELAY_MS = 2500
 AUTO_KEY = "proton_auto_download"
+RECHECK_S = 3 * 3600       # a newer Proton-GE is looked for again this often while the app runs
 # Proton-GE Latest missing and fetching it failed (automatic mode): tried
 # again after this (after GitHub's hourly limit resets, when that was it)
 RETRY_S = 15 * 60
@@ -158,6 +159,10 @@ class ProtonUpkeep:
         self._watch_pending()
         if "--self-test" in sys.argv:
             return False
+        # look again every few hours while PlunderHub runs, in both modes: a check made at start goes
+        # stale (11-23: GE put out 11-13 and 11-14 on one day)
+        if not getattr(self, "_recheck_id", None):
+            self._recheck_id = GLib.timeout_add_seconds(RECHECK_S, self._recheck)
         if self.app.settings.get(AUTO_KEY, False):
             self.jobs.update_latest("ge", install_missing=True)
             return False
@@ -177,6 +182,11 @@ class ProtonUpkeep:
         self.jobs.offer = release
         self.jobs._tell(force=True)
         return False
+
+    def _recheck(self) -> bool:
+        if not self.jobs.busy():
+            self._auto_check()
+        return True
 
     def after_scan(self):
         """A launcher may have come: the builds into its folders too."""

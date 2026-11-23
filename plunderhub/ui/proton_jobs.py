@@ -152,12 +152,18 @@ class ProtonJobs:
 
     def _install(self, job: Job, release: proton_store.Release, latest: bool):
         _build, job.placed = proton_store.install(release, latest, self._progress(job), job.cancel)
+        offer = self.offer
+        if latest and offer is not None and offer.family == release.family \
+                and proton_store._tag_key(offer.tag) <= proton_store._tag_key(release.tag):
+            self.offer = None       # it's in (or something newer is): nothing left to offer
 
     def _update(self, job: Job, install_missing: bool):
         family = job.family
         release = proton_store.latest_outdated(family)
         self.checked_at[family] = time.time()
         if release is None:
+            if self.offer is not None and self.offer.family == family:
+                self.offer = None   # up to date now: an older offer must not stay on the card
             return
         if proton_store.latest_build(family) is None and not install_missing:
             return
